@@ -55,4 +55,10 @@ void main() {
     c.setMode(RoomMode.duel);
     expect(c.state.players, 2);
   });
+
+  test('CreateRoomController stores selected package file name', () async {
+    final c = CreateRoomController(_FakeGameApi());
+    c.setPackageFileName('general_quiz_pack.json');
+    expect(c.state.packageFileName, 'general_quiz_pack.json');
+  });
 }

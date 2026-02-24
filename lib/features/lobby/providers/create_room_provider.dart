@@ -26,6 +26,7 @@ class CreateRoomState {
     this.name = '',
     this.password = '',
     this.mode = RoomMode.multiplayer,
+    this.packageFileName = '',
     this.players = 4,
     this.isLoading = false,
   });
@@ -33,6 +34,7 @@ class CreateRoomState {
   final String name;
   final String password;
   final RoomMode mode;
+  final String packageFileName;
   final int players;
   final bool isLoading;
 
@@ -40,6 +42,7 @@ class CreateRoomState {
     String? name,
     String? password,
     RoomMode? mode,
+    String? packageFileName,
     int? players,
     bool? isLoading,
   }) {
@@ -47,6 +50,7 @@ class CreateRoomState {
       name: name ?? this.name,
       password: password ?? this.password,
       mode: mode ?? this.mode,
+      packageFileName: packageFileName ?? this.packageFileName,
       players: players ?? this.players,
       isLoading: isLoading ?? this.isLoading,
     );
@@ -61,6 +65,9 @@ class CreateRoomController extends StateNotifier<CreateRoomState> {
   void setName(String value) => state = state.copyWith(name: value);
 
   void setPassword(String value) => state = state.copyWith(password: value);
+
+  void setPackageFileName(String value) =>
+      state = state.copyWith(packageFileName: value);
 
   void setMode(RoomMode value) {
     // Duel is always 2 players.

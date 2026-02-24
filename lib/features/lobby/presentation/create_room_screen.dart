@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:file_picker/file_picker.dart';
 
 import 'package:guesstogether/core/l10n/app_strings.dart';
 import 'package:guesstogether/core/theme/app_spacing.dart';
@@ -43,6 +44,31 @@ class CreateRoomScreen extends ConsumerWidget {
         ),
       ],
     );
+    Future<void> pickPackageFile() async {
+      try {
+        final FilePickerResult? result = await FilePicker.platform.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: <String>[
+            'json',
+            'csv',
+            'txt',
+            'zip',
+            'xlsx',
+          ],
+        );
+        if (result == null || result.files.isEmpty) {
+          return;
+        }
+        final PlatformFile file = result.files.first;
+        controller.setPackageFileName(file.name);
+      } on Exception {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not open file picker')),
+          );
+        }
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(title: const Text(AppStrings.createRoomTitle)),
@@ -62,10 +88,15 @@ class CreateRoomScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
+                    Text(
+                      AppStrings.createRoomDetailsLabel,
+                      style: text.titleSmall,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
                     TextField(
                       decoration: const InputDecoration(
                         labelText: AppStrings.createRoomNameLabel,
-                        hintText: 'Friday Quiz Night',
+                        hintText: 'Cool Quiz',
                       ),
                       onChanged: controller.setName,
                     ),
@@ -107,6 +138,16 @@ class CreateRoomScreen extends ConsumerWidget {
                         ),
                       ],
                     ),
+                    const SizedBox(height: AppSpacing.md),
+                    Text(
+                      AppStrings.createRoomPackageLabel,
+                      style: text.titleSmall,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    _PackagePickerField(
+                      fileName: state.packageFileName,
+                      onPick: pickPackageFile,
+                    ),
                   ],
                 ),
               ),
@@ -123,6 +164,137 @@ class CreateRoomScreen extends ConsumerWidget {
                       },
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PackagePickerField extends StatefulWidget {
+  const _PackagePickerField({
+    required this.fileName,
+    required this.onPick,
+  });
+
+  final String fileName;
+  final VoidCallback onPick;
+
+  @override
+  State<_PackagePickerField> createState() => _PackagePickerFieldState();
+}
+
+class _PackagePickerFieldState extends State<_PackagePickerField> {
+  bool _hovered = false;
+  bool _pressed = false;
+
+  void _setHovered(bool value) {
+    if (_hovered == value) {
+      return;
+    }
+    setState(() => _hovered = value);
+  }
+
+  void _setPressed(bool value) {
+    if (_pressed == value) {
+      return;
+    }
+    setState(() => _pressed = value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final bool isLight = theme.brightness == Brightness.light;
+    final bool hasFile = widget.fileName.isNotEmpty;
+    final double interaction = _pressed ? 0.2 : (_hovered ? 0.12 : 0.06);
+    final Color base =
+        scheme.surfaceContainerHighest.withValues(alpha: isLight ? 0.66 : 0.44);
+    final Color topColor = Color.alphaBlend(
+      Colors.white.withValues(alpha: isLight ? 0.16 : 0.08),
+      base,
+    );
+    final Color bottomColor = Color.alphaBlend(
+      scheme.primary.withValues(alpha: interaction),
+      base,
+    );
+    final Color borderColor =
+        scheme.outline.withValues(alpha: _hovered ? 0.56 : 0.42);
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 130),
+        curve: Curves.easeOutCubic,
+        scale: _pressed ? 0.99 : (_hovered ? 1.01 : 1),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 170),
+          curve: Curves.easeOutCubic,
+          width: double.infinity,
+          constraints: const BoxConstraints(minHeight: AppSpacing.tapTargetMin + 6),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: borderColor),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: <Color>[topColor, bottomColor],
+            ),
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isLight ? 0.09 : 0.22),
+                blurRadius: _hovered ? 16 : 10,
+                offset: Offset(0, _hovered ? 9 : 6),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: widget.onPick,
+              onHover: _setHovered,
+              onHighlightChanged: _setPressed,
+              overlayColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.pressed)) {
+                  return scheme.primary.withValues(alpha: isLight ? 0.14 : 0.2);
+                }
+                if (states.contains(WidgetState.hovered)) {
+                  return scheme.primary.withValues(alpha: isLight ? 0.06 : 0.12);
+                }
+                return Colors.transparent;
+              }),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: 10,
+                ),
+                child: Row(
+                  children: <Widget>[
+                    Icon(
+                      Icons.file_present_rounded,
+                      size: 20,
+                      color: scheme.primary.withValues(alpha: 0.92),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        hasFile
+                            ? widget.fileName
+                            : AppStrings.createRoomPackagePick,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: hasFile
+                              ? scheme.onSurface
+                              : scheme.onSurfaceVariant.withValues(alpha: 0.88),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),

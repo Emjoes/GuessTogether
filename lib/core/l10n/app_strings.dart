@@ -19,21 +19,37 @@ class AppStrings {
 
   // Create room
   static const String createRoomTitle = 'Create Room';
+  static const String createRoomDetailsLabel = 'Room details';
   static const String createRoomNameLabel = 'Room name';
   static const String createRoomPasswordLabel = 'Password';
   static const String createRoomModeLabel = 'Game mode';
   static const String createRoomModeMultiplayer = 'Multiplayer';
   static const String createRoomModeDuel = 'Duel';
+  static const String createRoomPackageLabel = 'Package';
+  static const String createRoomPackagePick = 'Choose file';
+  static const String createRoomPackageEmpty = 'No file selected';
   static const String createRoomPlayersLabel = 'Players';
   static const String createRoomDuelHint = 'Duel mode is always 2 players';
   static const String createRoomCreateCta = 'Create';
 
   // Join room
-  static const String joinRoomTitle = 'Join by Password';
+  static const String joinRoomTitle = 'Join Game';
   static const String joinRoomCodeLabel = 'Room code';
   static const String joinRoomRecent = 'Recent rooms';
   static const String joinRoomQrStub = 'Join via QR (coming soon)';
   static const String joinRoomErrorInvalid = 'Room not found. Check the code.';
+  static const String joinRoomErrorWrongPassword = 'Wrong password. Try again.';
+  static const String joinRoomSearchLabel = 'Search';
+  static const String joinRoomSearchHint = 'Room name';
+  static const String joinRoomActiveLobbies = 'Active rooms';
+  static const String joinRoomTableRoom = 'Room';
+  static const String joinRoomTablePlayers = 'Players';
+  static const String joinRoomTableType = 'Type';
+  static const String joinRoomTablePassword = 'Pass';
+  static const String joinRoomNoLobbies = 'No active rooms found';
+  static const String joinRoomPasswordDialogTitle = 'Password required';
+  static const String joinRoomPasswordDialogHint = '1234';
+  static const String joinRoomPasswordJoinCta = 'Join';
 
   // Profile
   static const String profileTitle = 'Profile';

@@ -21,7 +21,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: Padding(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.lg,
             AppSpacing.xl,
@@ -34,45 +34,65 @@ class HomeScreen extends ConsumerWidget {
               const _BrandTitle(),
               const SizedBox(height: AppSpacing.lg),
               const _DecorativeLane(),
-              const SizedBox(height: AppSpacing.lg),
-              _ActionTile(
-                icon: Icons.add_circle_outline_rounded,
-                title: AppStrings.homeCreateRoom,
-                onTap: () => context.push(CreateRoomScreen.routePath),
-                gradientColors: const <Color>[
-                  Color(0xFF2B67B9),
-                  Color(0xFF1C4D91),
-                ],
-              ),
               const SizedBox(height: AppSpacing.md),
-              _ActionTile(
-                icon: Icons.password_rounded,
-                title: AppStrings.homeJoinByPassword,
-                onTap: () => context.push(JoinRoomScreen.routePath),
-                gradientColors: const <Color>[
-                  Color(0xFF0F8168),
-                  Color(0xFF0A5F4D),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.md),
-              _ActionTile(
-                icon: Icons.person_outline_rounded,
-                title: AppStrings.homeProfile,
-                onTap: () => context.push(ProfileScreen.routePath),
-                gradientColors: const <Color>[
-                  Color(0xFF6F4AA6),
-                  Color(0xFF543684),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.md),
-              _ActionTile(
-                icon: Icons.settings_rounded,
-                title: AppStrings.homeSettings,
-                onTap: () => context.push(SettingsScreen.routePath),
-                gradientColors: const <Color>[
-                  Color(0xFF8C4D1A),
-                  Color(0xFF6B350D),
-                ],
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints constraints) {
+                    return SingleChildScrollView(
+                      child: ConstrainedBox(
+                        constraints:
+                            BoxConstraints(minHeight: constraints.maxHeight),
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: <Widget>[
+                              _ActionTile(
+                                icon: Icons.add_circle_outline_rounded,
+                                title: AppStrings.homeCreateRoom,
+                                onTap: () => context.push(CreateRoomScreen.routePath),
+                                gradientColors: const <Color>[
+                                  Color(0xFF2B67B9),
+                                  Color(0xFF1C4D91),
+                                ],
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              _ActionTile(
+                                icon: Icons.password_rounded,
+                                title: AppStrings.homeJoinByPassword,
+                                onTap: () => context.push(JoinRoomScreen.routePath),
+                                gradientColors: const <Color>[
+                                  Color(0xFF0F8168),
+                                  Color(0xFF0A5F4D),
+                                ],
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              _ActionTile(
+                                icon: Icons.person_outline_rounded,
+                                title: AppStrings.homeProfile,
+                                onTap: () => context.push(ProfileScreen.routePath),
+                                gradientColors: const <Color>[
+                                  Color(0xFF6F4AA6),
+                                  Color(0xFF543684),
+                                ],
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              _ActionTile(
+                                icon: Icons.settings_rounded,
+                                title: AppStrings.homeSettings,
+                                onTap: () => context.push(SettingsScreen.routePath),
+                                gradientColors: const <Color>[
+                                  Color(0xFF8C4D1A),
+                                  Color(0xFF6B350D),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
             ],
           ),

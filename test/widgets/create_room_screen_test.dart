@@ -18,8 +18,12 @@ void main() {
 
     expect(find.text(AppStrings.createRoomNameLabel), findsOneWidget);
     expect(find.text(AppStrings.createRoomPasswordLabel), findsOneWidget);
+    expect(find.text(AppStrings.createRoomDetailsLabel), findsOneWidget);
     expect(find.text(AppStrings.createRoomModeMultiplayer), findsOneWidget);
     expect(find.text(AppStrings.createRoomModeDuel), findsOneWidget);
+    expect(find.text(AppStrings.createRoomPackageLabel), findsOneWidget);
+    expect(find.text(AppStrings.createRoomPackageEmpty), findsNothing);
+    expect(find.text(AppStrings.createRoomPackagePick), findsOneWidget);
     expect(find.text(AppStrings.createRoomPlayersLabel), findsNothing);
     expect(find.text(AppStrings.createRoomDuelHint), findsNothing);
   });

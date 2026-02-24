@@ -1,15 +1,15 @@
-/// Message schemas for the mock WebSocket layer.
-///
-/// These map to JSON events a real backend would send.
-///
-/// - room_update:    { "type": "room_update", "players": [ { "id": "..", "name": "..", "score": 0 } ] }
-/// - question:       { "type": "question", "id": "q1", "text": "...", "category": "History", "value": 200 }
-/// - answer_result:  { "type": "answer_result", "correct": true, "delta": 200, "playerId": "p1" }
-/// - score_update:   { "type": "score_update", "scores": [ { "playerId": "p1", "score": 400 } ] }
-/// - match_end:      { "type": "match_end", "winnerId": "p1" }
-///
-/// In this local mock implementation we pass strongly-typed classes instead
-/// of raw JSON to keep things easy to test.
+// Message schemas for the mock WebSocket layer.
+//
+// These map to JSON events a real backend would send.
+//
+// - room_update:    { "type": "room_update", "players": [ { "id": "..", "name": "..", "score": 0 } ] }
+// - question:       { "type": "question", "id": "q1", "text": "...", "category": "History", "value": 200 }
+// - answer_result:  { "type": "answer_result", "correct": true, "delta": 200, "playerId": "p1" }
+// - score_update:   { "type": "score_update", "scores": [ { "playerId": "p1", "score": 400 } ] }
+// - match_end:      { "type": "match_end", "winnerId": "p1" }
+//
+// In this local mock implementation we pass strongly-typed classes instead
+// of raw JSON to keep things easy to test.
 
 abstract class WsMessage {}
 

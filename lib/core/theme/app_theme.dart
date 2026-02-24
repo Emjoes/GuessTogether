@@ -93,23 +93,23 @@ ThemeData _buildTheme({required Brightness brightness}) {
         color: scheme.onSurfaceVariant.withValues(alpha: 0.84),
       ),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.all(mediumRadius),
+        borderRadius: const BorderRadius.all(mediumRadius),
         borderSide: BorderSide(color: scheme.outline.withValues(alpha: 0.3)),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.all(mediumRadius),
+        borderRadius: const BorderRadius.all(mediumRadius),
         borderSide: BorderSide(color: scheme.outline.withValues(alpha: 0.34)),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.all(mediumRadius),
+        borderRadius: const BorderRadius.all(mediumRadius),
         borderSide: BorderSide(color: scheme.primary, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.all(mediumRadius),
+        borderRadius: const BorderRadius.all(mediumRadius),
         borderSide: BorderSide(color: scheme.error),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.all(mediumRadius),
+        borderRadius: const BorderRadius.all(mediumRadius),
         borderSide: BorderSide(color: scheme.error, width: 1.5),
       ),
     ),

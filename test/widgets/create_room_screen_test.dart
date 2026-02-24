@@ -17,14 +17,13 @@ void main() {
     expect(find.text('3'), findsOneWidget);
 
     // Tap + increases.
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.tap(find.byIcon(Icons.add_rounded));
     await tester.pump();
     expect(find.text('4'), findsOneWidget);
 
     // Tap - decreases.
-    await tester.tap(find.byIcon(Icons.remove));
+    await tester.tap(find.byIcon(Icons.remove_rounded));
     await tester.pump();
     expect(find.text('3'), findsOneWidget);
   });
 }
-

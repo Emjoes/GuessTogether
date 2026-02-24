@@ -1,2 +1,2 @@
 # GuessTogether
-Мобильное приложение для проведения игр, где участники отвечают на интеллектуальные вопросы
+Mobile quiz game where players compete with each other in real time, guessing answers together in engaging and interactive matches

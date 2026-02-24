@@ -1,0 +1,37 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:guesstogether/features/home/presentation/home_screen.dart';
+import 'package:guesstogether/features/lobby/presentation/create_room_screen.dart';
+
+void main() {
+  testWidgets('HomeScreen navigates to CreateRoom', (tester) async {
+    final router = GoRouter(
+      initialLocation: HomeScreen.routePath,
+      routes: <RouteBase>[
+        GoRoute(
+          path: HomeScreen.routePath,
+          builder: (context, state) => const HomeScreen(),
+        ),
+        GoRoute(
+          path: CreateRoomScreen.routePath,
+          builder: (context, state) => const CreateRoomScreen(),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+
+    expect(find.text('Create Room'), findsOneWidget);
+    await tester.tap(find.text('Create Room'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Create Room'), findsWidgets);
+  });
+}
+

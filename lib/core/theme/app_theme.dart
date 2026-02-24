@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guesstogether/core/theme/app_colors.dart';
 import 'package:guesstogether/core/theme/app_typography.dart';
 
-final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.dark);
+final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
 
 ThemeData buildLightTheme() => _buildTheme(brightness: Brightness.light);
 
@@ -27,6 +27,7 @@ ThemeData _buildTheme({required Brightness brightness}) {
     scaffoldBackgroundColor: Colors.transparent,
     appBarTheme: AppBarTheme(
       centerTitle: false,
+      titleSpacing: 4,
       elevation: 0,
       scrolledUnderElevation: 0,
       foregroundColor: scheme.onSurface,

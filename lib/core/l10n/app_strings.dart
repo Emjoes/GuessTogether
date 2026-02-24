@@ -12,7 +12,7 @@ class AppStrings {
 
   // Home
   static const String homeCreateRoom = 'Create Room';
-  static const String homeJoinByPassword = 'Join by Password';
+  static const String homeJoinByPassword = 'Join Game';
   static const String homeProfile = 'My Profile';
   static const String homeQuickMatch = 'Play Quick Match';
   static const String homeSettings = 'Settings';
@@ -20,11 +20,13 @@ class AppStrings {
   // Create room
   static const String createRoomTitle = 'Create Room';
   static const String createRoomNameLabel = 'Room name';
-  static const String createRoomModeLabel = 'Mode';
-  static const String createRoomTopicLabel = 'Topic';
-  static const String createRoomRoundsLabel = 'Rounds';
-  static const String createRoomFinalWager = 'Enable final wager round';
-  static const String createRoomCreateCta = 'Create Room';
+  static const String createRoomPasswordLabel = 'Password';
+  static const String createRoomModeLabel = 'Game mode';
+  static const String createRoomModeMultiplayer = 'Multiplayer';
+  static const String createRoomModeDuel = 'Duel';
+  static const String createRoomPlayersLabel = 'Players';
+  static const String createRoomDuelHint = 'Duel mode is always 2 players';
+  static const String createRoomCreateCta = 'Create';
 
   // Join room
   static const String joinRoomTitle = 'Join by Password';

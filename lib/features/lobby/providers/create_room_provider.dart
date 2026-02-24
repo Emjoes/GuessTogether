@@ -3,19 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guesstogether/data/api/game_api.dart';
 import 'package:guesstogether/data/api/mock_http_adapter.dart';
 
-enum RoomMode { realtime, bots, duel, custom }
+enum RoomMode { multiplayer, duel }
 
 extension RoomModeLabel on RoomMode {
   String get label {
     switch (this) {
-      case RoomMode.realtime:
-        return 'Realtime 2-4';
-      case RoomMode.bots:
-        return 'Bots';
+      case RoomMode.multiplayer:
+        return 'Multiplayer';
       case RoomMode.duel:
         return 'Duel';
-      case RoomMode.custom:
-        return 'Custom';
     }
   }
 }
@@ -28,42 +24,30 @@ final gameApiProvider = Provider<GameApi>((ref) {
 class CreateRoomState {
   CreateRoomState({
     this.name = '',
-    this.topic = '',
-    this.mode = RoomMode.realtime,
-    this.rounds = 3,
-    this.finalWagerEnabled = true,
-    this.minPlayers = 2,
-    this.maxPlayers = 4,
+    this.password = '',
+    this.mode = RoomMode.multiplayer,
+    this.players = 4,
     this.isLoading = false,
   });
 
   final String name;
-  final String topic;
+  final String password;
   final RoomMode mode;
-  final int rounds;
-  final bool finalWagerEnabled;
-  final int minPlayers;
-  final int maxPlayers;
+  final int players;
   final bool isLoading;
 
   CreateRoomState copyWith({
     String? name,
-    String? topic,
+    String? password,
     RoomMode? mode,
-    int? rounds,
-    bool? finalWagerEnabled,
-    int? minPlayers,
-    int? maxPlayers,
+    int? players,
     bool? isLoading,
   }) {
     return CreateRoomState(
       name: name ?? this.name,
-      topic: topic ?? this.topic,
+      password: password ?? this.password,
       mode: mode ?? this.mode,
-      rounds: rounds ?? this.rounds,
-      finalWagerEnabled: finalWagerEnabled ?? this.finalWagerEnabled,
-      minPlayers: minPlayers ?? this.minPlayers,
-      maxPlayers: maxPlayers ?? this.maxPlayers,
+      players: players ?? this.players,
       isLoading: isLoading ?? this.isLoading,
     );
   }
@@ -76,17 +60,18 @@ class CreateRoomController extends StateNotifier<CreateRoomState> {
 
   void setName(String value) => state = state.copyWith(name: value);
 
-  void setTopic(String value) => state = state.copyWith(topic: value);
+  void setPassword(String value) => state = state.copyWith(password: value);
 
-  void setMode(RoomMode value) => state = state.copyWith(mode: value);
-
-  void setRounds(int value) {
-    final safe = value.clamp(1, 10);
-    state = state.copyWith(rounds: safe);
+  void setMode(RoomMode value) {
+    // Duel is always 2 players.
+    final int nextPlayers = value == RoomMode.duel ? 2 : state.players;
+    state = state.copyWith(mode: value, players: nextPlayers);
   }
 
-  void setFinalWager(bool value) =>
-      state = state.copyWith(finalWagerEnabled: value);
+  void setPlayers(int value) {
+    final int safe = value.clamp(2, 4);
+    state = state.copyWith(players: safe);
+  }
 
   Future<void> createRoom() async {
     state = state.copyWith(isLoading: true);
@@ -94,9 +79,9 @@ class CreateRoomController extends StateNotifier<CreateRoomState> {
       final request = CreateRoomRequest(
         name: state.name,
         mode: state.mode.name,
-        topic: state.topic,
-        rounds: state.rounds,
-        finalWagerEnabled: state.finalWagerEnabled,
+        topic: state.mode == RoomMode.duel ? 'Duel' : 'Multiplayer',
+        rounds: 3,
+        finalWagerEnabled: false,
       );
       await _api.createRoom(request);
     } finally {

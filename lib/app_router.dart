@@ -22,48 +22,96 @@ final appRouterProvider = Provider<GoRouter>(
       GoRoute(
         path: SplashScreen.routePath,
         name: SplashScreen.routeName,
-        builder: (context, state) => const SplashScreen(),
+        pageBuilder: (BuildContext context, GoRouterState state) =>
+            _buildAppPage(state: state, child: const SplashScreen()),
       ),
       GoRoute(
         path: HomeScreen.routePath,
         name: HomeScreen.routeName,
-        builder: (context, state) => const HomeScreen(),
+        pageBuilder: (BuildContext context, GoRouterState state) =>
+            _buildAppPage(state: state, child: const HomeScreen()),
       ),
       GoRoute(
         path: CreateRoomScreen.routePath,
         name: CreateRoomScreen.routeName,
-        builder: (context, state) => const CreateRoomScreen(),
+        pageBuilder: (BuildContext context, GoRouterState state) =>
+            _buildAppPage(state: state, child: const CreateRoomScreen()),
       ),
       GoRoute(
         path: JoinRoomScreen.routePath,
         name: JoinRoomScreen.routeName,
-        builder: (context, state) => const JoinRoomScreen(),
+        pageBuilder: (BuildContext context, GoRouterState state) =>
+            _buildAppPage(state: state, child: const JoinRoomScreen()),
       ),
       GoRoute(
         path: WaitingRoomScreen.routePath,
         name: WaitingRoomScreen.routeName,
-        builder: (context, state) => const WaitingRoomScreen(),
+        pageBuilder: (BuildContext context, GoRouterState state) =>
+            _buildAppPage(state: state, child: const WaitingRoomScreen()),
       ),
       GoRoute(
         path: ProfileScreen.routePath,
         name: ProfileScreen.routeName,
-        builder: (context, state) => const ProfileScreen(),
+        pageBuilder: (BuildContext context, GoRouterState state) =>
+            _buildAppPage(state: state, child: const ProfileScreen()),
       ),
       GoRoute(
         path: SettingsScreen.routePath,
         name: SettingsScreen.routeName,
-        builder: (context, state) => const SettingsScreen(),
+        pageBuilder: (BuildContext context, GoRouterState state) =>
+            _buildAppPage(state: state, child: const SettingsScreen()),
       ),
       GoRoute(
         path: GameScreen.routePath,
         name: GameScreen.routeName,
-        builder: (context, state) => const GameScreen(),
+        pageBuilder: (BuildContext context, GoRouterState state) =>
+            _buildAppPage(state: state, child: const GameScreen()),
       ),
       GoRoute(
         path: ResultScreen.routePath,
         name: ResultScreen.routeName,
-        builder: (context, state) => const ResultScreen(),
+        pageBuilder: (BuildContext context, GoRouterState state) =>
+            _buildAppPage(state: state, child: const ResultScreen()),
       ),
     ],
   ),
 );
+
+CustomTransitionPage<void> _buildAppPage({
+  required GoRouterState state,
+  required Widget child,
+}) {
+  return CustomTransitionPage<void>(
+    key: state.pageKey,
+    child: child,
+    transitionDuration: const Duration(milliseconds: 180),
+    reverseTransitionDuration: const Duration(milliseconds: 150),
+    transitionsBuilder: (
+      BuildContext context,
+      Animation<double> animation,
+      Animation<double> secondaryAnimation,
+      Widget child,
+    ) {
+      final Animation<double> easedFade = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+      );
+      final Animation<Offset> easedSlide = Tween<Offset>(
+        begin: const Offset(0.02, 0),
+        end: Offset.zero,
+      ).animate(
+        CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+        ),
+      );
+      return FadeTransition(
+        opacity: easedFade,
+        child: SlideTransition(
+          position: easedSlide,
+          child: child,
+        ),
+      );
+    },
+  );
+}

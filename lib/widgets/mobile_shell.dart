@@ -64,7 +64,7 @@ class MobileShell extends StatelessWidget {
                     child: Stack(
                       fit: StackFit.expand,
                       children: <Widget>[
-                        const AppBackdrop(),
+                        const RepaintBoundary(child: AppBackdrop()),
                         child,
                       ],
                     ),

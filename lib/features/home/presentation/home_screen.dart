@@ -229,7 +229,7 @@ class _GlowDot extends StatelessWidget {
   }
 }
 
-class _ActionTile extends StatelessWidget {
+class _ActionTile extends StatefulWidget {
   const _ActionTile({
     required this.icon,
     required this.title,
@@ -243,43 +243,145 @@ class _ActionTile extends StatelessWidget {
   final List<Color> gradientColors;
 
   @override
+  State<_ActionTile> createState() => _ActionTileState();
+}
+
+class _ActionTileState extends State<_ActionTile> {
+  bool _hovered = false;
+  bool _pressed = false;
+
+  void _setHovered(bool value) {
+    if (_hovered == value) {
+      return;
+    }
+    setState(() => _hovered = value);
+  }
+
+  void _setPressed(bool value) {
+    if (_pressed == value) {
+      return;
+    }
+    setState(() => _pressed = value);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final TextTheme text = Theme.of(context).textTheme;
-    return AppPanel(
-      padding: EdgeInsets.zero,
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: gradientColors,
+    final ThemeData theme = Theme.of(context);
+    final TextTheme text = theme.textTheme;
+    final bool isLight = theme.brightness == Brightness.light;
+    final double interaction = _pressed ? 0.14 : (_hovered ? 0.09 : 0.04);
+    final List<Color> tileGradient = <Color>[
+      Color.alphaBlend(
+        Colors.white.withValues(alpha: isLight ? 0.08 : 0.05),
+        widget.gradientColors[0],
       ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(22),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Row(
-            children: <Widget>[
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(14),
+      Color.alphaBlend(
+        theme.colorScheme.secondary.withValues(alpha: interaction),
+        widget.gradientColors[1],
+      ),
+    ];
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 130),
+        curve: Curves.easeOutCubic,
+        scale: _pressed ? 0.988 : (_hovered ? 1.008 : 1),
+        child: AnimatedSlide(
+          duration: const Duration(milliseconds: 170),
+          curve: Curves.easeOutCubic,
+          offset: _pressed
+              ? const Offset(0, 0.004)
+              : (_hovered ? const Offset(0, -0.004) : Offset.zero),
+          child: AppPanel(
+            padding: EdgeInsets.zero,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: tileGradient,
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(22),
+                onTap: widget.onTap,
+                onHover: _setHovered,
+                onHighlightChanged: _setPressed,
+                overlayColor: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.pressed)) {
+                    return Colors.black.withValues(alpha: isLight ? 0.08 : 0.16);
+                  }
+                  if (states.contains(WidgetState.hovered)) {
+                    return Colors.white.withValues(alpha: isLight ? 0.08 : 0.06);
+                  }
+                  return Colors.transparent;
+                }),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 170),
+                  curve: Curves.easeOutCubic,
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: _hovered ? 0.4 : 0.24),
+                    ),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: <Color>[
+                        Colors.white.withValues(
+                          alpha: _hovered
+                              ? (isLight ? 0.15 : 0.12)
+                              : (isLight ? 0.08 : 0.06),
+                        ),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                  child: Row(
+                    children: <Widget>[
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 170),
+                        curve: Curves.easeOutCubic,
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(14),
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: <Color>[
+                              Colors.white.withValues(alpha: _hovered ? 0.32 : 0.24),
+                              Colors.white.withValues(alpha: _hovered ? 0.2 : 0.14),
+                            ],
+                          ),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: _hovered ? 0.52 : 0.3),
+                          ),
+                        ),
+                        child: Icon(widget.icon, color: Colors.white),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Text(
+                          widget.title,
+                          style: text.titleMedium?.copyWith(color: Colors.white),
+                        ),
+                      ),
+                      AnimatedSlide(
+                        duration: const Duration(milliseconds: 170),
+                        curve: Curves.easeOutCubic,
+                        offset: _hovered ? const Offset(0.08, 0) : Offset.zero,
+                        child: Icon(
+                          Icons.chevron_right_rounded,
+                          color: Colors.white.withValues(alpha: 0.9),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                child: Icon(icon, color: Colors.white),
               ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Text(
-                  title,
-                  style: text.titleMedium?.copyWith(color: Colors.white),
-                ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: Colors.white.withValues(alpha: 0.85),
-              ),
-            ],
+            ),
           ),
         ),
       ),

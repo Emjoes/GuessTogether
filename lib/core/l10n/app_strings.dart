@@ -53,11 +53,46 @@ class AppStrings {
 
   // Profile
   static const String profileTitle = 'Profile';
-  static const String profileGamesPlayed = 'Games played';
+  static const String profileStatsLabel = 'Game statistics';
+  static const String profileGamesPlayed = 'Games';
+  static const String profileWins = 'Wins';
+  static const String profileLosses = 'Losses';
   static const String profileWinRate = 'Win rate';
+  static const String profileAverageScore = 'Avg score';
   static const String profileBestScore = 'Best score';
+  static const String profileLevel = 'Level';
+  static const String profileXpToNextLevel = 'to next level';
+  static const String profileRecentGames = 'Recent games';
+  static const String profileUserRoleSubtitle = 'Competitive quiz strategist';
+  static const String profileWinStreak = 'streak';
+  static const String profileWinLabel = 'Win';
+  static const String profileLossLabel = 'Loss';
+  static const String profileGameTimeJustNow = 'just now';
+  static const String profileGameTimeToday = 'today';
+  static const String profileGameTimeYesterday = 'yesterday';
+  static const String profileGameTimeTwoDaysAgo = '2 days ago';
   static const String profileAchievements = 'Achievements';
+  static const String profileUnlocked = 'unlocked';
   static const String profileLeaderboards = 'Leaderboards';
+  static const String profileTabStats = 'Statistics';
+  static const String profileTabLeaderboards = 'Leaders';
+  static const String profileTabAchievements = 'Achievements';
+  static const String profileYourRank = 'Your rank';
+  static const String profileRating = 'Rating';
+  static const String profileLeaderboardGlobal = 'Global';
+  static const String profileLeaderboardFriends = 'Friends';
+  static const String profileLeaderboardWeekly = 'Weekly';
+  static const String profilePlayersRankedByLevel =
+      'Players are ranked by level';
+  static const String profileYourPosition = 'Your position';
+  static const String profileAchievementGuide =
+      'Complete requirements to unlock rewards';
+  static const String profileShowCompleted = 'Show completed achievements';
+  static const String profileToUnlock = 'To unlock';
+  static const String profileReward = 'Reward';
+  static const String profileClaimed = 'Claimed';
+  static const String profileNoLeaderboardData = 'No leaderboard data';
+  static const String profileLoadFailed = 'Failed to load profile';
   static const String profileEdit = 'Edit profile';
 
   // Game

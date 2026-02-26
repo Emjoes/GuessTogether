@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:guesstogether/core/l10n/app_strings.dart';
+import 'package:guesstogether/core/l10n/app_locale.dart';
+import 'package:guesstogether/core/l10n/l10n.dart';
 import 'package:guesstogether/core/theme/app_spacing.dart';
 import 'package:guesstogether/core/theme/app_theme.dart';
 import 'package:guesstogether/widgets/app_panel.dart';
@@ -14,9 +15,13 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final ThemeMode themeMode = ref.watch(themeModeProvider);
     final StateController<ThemeMode> themeModeNotifier =
         ref.read(themeModeProvider.notifier);
+    final AppLanguage appLanguage = ref.watch(appLanguageProvider);
+    final StateController<AppLanguage> appLanguageNotifier =
+        ref.read(appLanguageProvider.notifier);
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
     final bool isLight = theme.brightness == Brightness.light;
@@ -42,7 +47,7 @@ class SettingsScreen extends ConsumerWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text(AppStrings.settingsTitle)),
+      appBar: AppBar(title: Text(l10n.settingsTitle)),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(
@@ -60,29 +65,68 @@ class SettingsScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
                     Text(
-                      AppStrings.settingsTheme,
+                      l10n.settingsTheme,
                       style: theme.textTheme.titleSmall,
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     _ThemeModeButton(
                       selected: themeMode == ThemeMode.system,
                       icon: Icons.phone_android_rounded,
-                      label: AppStrings.settingsThemeSystem,
-                      onPressed: () => themeModeNotifier.state = ThemeMode.system,
+                      label: l10n.settingsThemeSystem,
+                      onPressed: () =>
+                          themeModeNotifier.state = ThemeMode.system,
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     _ThemeModeButton(
                       selected: themeMode == ThemeMode.light,
                       icon: Icons.wb_sunny_rounded,
-                      label: AppStrings.settingsThemeLight,
-                      onPressed: () => themeModeNotifier.state = ThemeMode.light,
+                      label: l10n.settingsThemeLight,
+                      onPressed: () =>
+                          themeModeNotifier.state = ThemeMode.light,
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     _ThemeModeButton(
                       selected: themeMode == ThemeMode.dark,
                       icon: Icons.nights_stay_rounded,
-                      label: AppStrings.settingsThemeDark,
+                      label: l10n.settingsThemeDark,
                       onPressed: () => themeModeNotifier.state = ThemeMode.dark,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              AppPanel(
+                gradient: setupGradient,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    Text(
+                      l10n.settingsLanguage,
+                      style: theme.textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    _ThemeModeButton(
+                      selected: appLanguage == AppLanguage.system,
+                      icon: Icons.phone_android_rounded,
+                      label: l10n.settingsLanguageSystem,
+                      onPressed: () =>
+                          appLanguageNotifier.state = AppLanguage.system,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    _ThemeModeButton(
+                      selected: appLanguage == AppLanguage.english,
+                      leading: const _FlagBadge(child: _UkFlag()),
+                      label: l10n.settingsLanguageEnglish,
+                      onPressed: () =>
+                          appLanguageNotifier.state = AppLanguage.english,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    _ThemeModeButton(
+                      selected: appLanguage == AppLanguage.russian,
+                      leading: const _FlagBadge(child: _RuFlag()),
+                      label: l10n.settingsLanguageRussian,
+                      onPressed: () =>
+                          appLanguageNotifier.state = AppLanguage.russian,
                     ),
                   ],
                 ),
@@ -98,13 +142,15 @@ class SettingsScreen extends ConsumerWidget {
 class _ThemeModeButton extends StatefulWidget {
   const _ThemeModeButton({
     required this.selected,
-    required this.icon,
     required this.label,
     required this.onPressed,
-  });
+    this.icon,
+    this.leading,
+  }) : assert(icon != null || leading != null);
 
   final bool selected;
-  final IconData icon;
+  final IconData? icon;
+  final Widget? leading;
   final String label;
   final VoidCallback onPressed;
 
@@ -142,7 +188,8 @@ class _ThemeModeButtonState extends State<_ThemeModeButton> {
             scheme.surfaceContainerHighest
                 .withValues(alpha: isLight ? 0.86 : 0.54),
           )
-        : scheme.surfaceContainerHighest.withValues(alpha: isLight ? 0.66 : 0.44);
+        : scheme.surfaceContainerHighest
+            .withValues(alpha: isLight ? 0.66 : 0.44);
     final Color accent = widget.selected ? scheme.secondary : scheme.primary;
     final Color topColor = Color.alphaBlend(
       Colors.white.withValues(alpha: isLight ? 0.16 : 0.08),
@@ -198,7 +245,8 @@ class _ThemeModeButtonState extends State<_ThemeModeButton> {
                   return scheme.primary.withValues(alpha: isLight ? 0.14 : 0.2);
                 }
                 if (states.contains(WidgetState.hovered)) {
-                  return scheme.primary.withValues(alpha: isLight ? 0.06 : 0.12);
+                  return scheme.primary
+                      .withValues(alpha: isLight ? 0.06 : 0.12);
                 }
                 return Colors.transparent;
               }),
@@ -206,7 +254,8 @@ class _ThemeModeButtonState extends State<_ThemeModeButton> {
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                 child: Row(
                   children: <Widget>[
-                    Icon(widget.icon, size: 20, color: iconColor),
+                    widget.leading ??
+                        Icon(widget.icon, size: 20, color: iconColor),
                     const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
@@ -240,4 +289,137 @@ class _ThemeModeButtonState extends State<_ThemeModeButton> {
       ),
     );
   }
+}
+
+class _FlagBadge extends StatelessWidget {
+  const _FlagBadge({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 26,
+      height: 18,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(3),
+        border: Border.all(
+          color: Theme.of(
+            context,
+          ).colorScheme.outline.withValues(alpha: 0.35),
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: child,
+    );
+  }
+}
+
+class _RuFlag extends StatelessWidget {
+  const _RuFlag();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Expanded(child: ColoredBox(color: Colors.white)),
+        Expanded(child: ColoredBox(color: Color(0xFF0039A6))),
+        Expanded(child: ColoredBox(color: Color(0xFFD52B1E))),
+      ],
+    );
+  }
+}
+
+class _UkFlag extends StatelessWidget {
+  const _UkFlag();
+
+  @override
+  Widget build(BuildContext context) {
+    return const CustomPaint(
+      painter: _UkFlagPainter(),
+      child: SizedBox.expand(),
+    );
+  }
+}
+
+class _UkFlagPainter extends CustomPainter {
+  const _UkFlagPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Rect rect = Offset.zero & size;
+
+    final Paint blue = Paint()..color = const Color(0xFF012169);
+    canvas.drawRect(rect, blue);
+
+    final Paint whiteDiagonal = Paint()
+      ..color = Colors.white
+      ..strokeWidth = size.height * 0.42
+      ..strokeCap = StrokeCap.square;
+    canvas.drawLine(
+      const Offset(0, 0),
+      Offset(size.width, size.height),
+      whiteDiagonal,
+    );
+    canvas.drawLine(
+      Offset(size.width, 0),
+      Offset(0, size.height),
+      whiteDiagonal,
+    );
+
+    final Paint redDiagonal = Paint()
+      ..color = const Color(0xFFC8102E)
+      ..strokeWidth = size.height * 0.2
+      ..strokeCap = StrokeCap.square;
+    canvas.drawLine(
+      const Offset(0, 0),
+      Offset(size.width, size.height),
+      redDiagonal,
+    );
+    canvas.drawLine(
+      Offset(size.width, 0),
+      Offset(0, size.height),
+      redDiagonal,
+    );
+
+    final Paint whiteCross = Paint()..color = Colors.white;
+    canvas.drawRect(
+      Rect.fromCenter(
+        center: Offset(size.width / 2, size.height / 2),
+        width: size.width,
+        height: size.height * 0.36,
+      ),
+      whiteCross,
+    );
+    canvas.drawRect(
+      Rect.fromCenter(
+        center: Offset(size.width / 2, size.height / 2),
+        width: size.width * 0.3,
+        height: size.height,
+      ),
+      whiteCross,
+    );
+
+    final Paint redCross = Paint()..color = const Color(0xFFC8102E);
+    canvas.drawRect(
+      Rect.fromCenter(
+        center: Offset(size.width / 2, size.height / 2),
+        width: size.width,
+        height: size.height * 0.2,
+      ),
+      redCross,
+    );
+    canvas.drawRect(
+      Rect.fromCenter(
+        center: Offset(size.width / 2, size.height / 2),
+        width: size.width * 0.18,
+        height: size.height,
+      ),
+      redCross,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

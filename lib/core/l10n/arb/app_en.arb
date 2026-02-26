@@ -1,0 +1,193 @@
+{
+  "@@locale": "en",
+  "appTitle": "Guess Together",
+  "splashTagline": "Play quiz shows with friends in minutes.",
+  "homeCreateRoom": "Create Room",
+  "homeJoinByPassword": "Join Game",
+  "homeProfile": "My Profile",
+  "homeSettings": "Settings",
+  "createRoomTitle": "Create Room",
+  "createRoomDetailsLabel": "Room details",
+  "createRoomNameLabel": "Room name",
+  "createRoomNameHint": "Cool Quiz",
+  "createRoomPasswordLabel": "Password",
+  "createRoomPasswordHint": "1234",
+  "createRoomModeLabel": "Game mode",
+  "createRoomModeMultiplayer": "Multiplayer",
+  "createRoomModeDuel": "Duel",
+  "createRoomPackageLabel": "Package",
+  "createRoomPackagePick": "Choose file",
+  "createRoomCreateCta": "Create",
+  "createRoomFilePickerError": "Could not open file picker",
+  "joinRoomTitle": "Join Game",
+  "joinRoomErrorInvalid": "Room not found. Check the code.",
+  "joinRoomErrorWrongPassword": "Wrong password. Try again.",
+  "joinRoomSearchLabel": "Search",
+  "joinRoomSearchHint": "Room name",
+  "joinRoomSearchHintText": "Cool Quiz",
+  "joinRoomActiveLobbies": "Active rooms",
+  "joinRoomTableRoom": "Room",
+  "joinRoomTablePlayers": "Players",
+  "joinRoomTableType": "Type",
+  "joinRoomTablePassword": "Pass",
+  "joinRoomNoLobbies": "No active rooms found",
+  "joinRoomPasswordDialogTitle": "Password required",
+  "joinRoomPasswordDialogHint": "1234",
+  "joinRoomPasswordJoinCta": "Join",
+  "joinRoomPlayersCount": "{current}/{max}",
+  "@joinRoomPlayersCount": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "profileTitle": "My Profile",
+  "profileStatsLabel": "Game statistics",
+  "profileGamesPlayed": "Games",
+  "profileWins": "Wins",
+  "profileLosses": "Losses",
+  "profileRecentGames": "Recent games",
+  "profileAchievements": "Achievements",
+  "profileUnlocked": "unlocked",
+  "profileLeaderboards": "Leaderboards",
+  "profileTabStats": "Statistics",
+  "profileTabLeaderboards": "Leaders",
+  "profileTabAchievements": "Achievements",
+  "profileLeaderboardGlobal": "Global",
+  "profileLeaderboardFriends": "Friends",
+  "profileLeaderboardWeekly": "Weekly",
+  "profileShowCompleted": "Show completed",
+  "profileNoLeaderboardData": "No leaderboard data",
+  "profileLoadFailed": "Failed to load profile",
+  "profileWinLabel": "Win",
+  "profileLossLabel": "Loss",
+  "profileGameTimeJustNow": "just now",
+  "profileGameTimeToday": "today",
+  "profileGameTimeYesterday": "yesterday",
+  "profileGameTimeTwoDaysAgo": "2 days ago",
+  "profileXpProgress": "{currentXp} / {xpPerLevel} XP",
+  "@profileXpProgress": {
+    "placeholders": {
+      "currentXp": {
+        "type": "int"
+      },
+      "xpPerLevel": {
+        "type": "int"
+      }
+    }
+  },
+  "profileXpToNextLevel": "{xp} XP to next level",
+  "@profileXpToNextLevel": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "profileUnlockedCount": "{unlocked}/{total} unlocked",
+  "@profileUnlockedCount": {
+    "placeholders": {
+      "unlocked": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "profileProgressValue": "{progress}/{target}",
+  "@profileProgressValue": {
+    "placeholders": {
+      "progress": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "profileRewardXp": "+{xp} XP",
+  "@profileRewardXp": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "profileRecentGameFridayTriviaCrew": "Friday Trivia Crew",
+  "profileRecentGameMovieLegends": "Movie Legends",
+  "profileRecentGameNightBlitz": "Night Blitz",
+  "profileRecentGameQuickSparks": "Quick Sparks",
+  "achievementPerfectRoundTitle": "Perfect Round",
+  "achievementPerfectRoundRequirement": "Answer every question correctly in one round",
+  "achievementConsistentWinnerTitle": "Consistent Winner",
+  "achievementConsistentWinnerRequirement": "Win 20 games",
+  "achievementXpCollectorTitle": "XP Collector",
+  "achievementXpCollectorRequirement": "Reach 10,000 total XP",
+  "achievementDailyChallengerTitle": "Daily Challenger",
+  "achievementDailyChallengerRequirement": "Play 30 games",
+  "achievementStreakRunnerTitle": "Streak Runner",
+  "achievementStreakRunnerRequirement": "Maintain 5-win streak",
+  "achievementVeteranMindTitle": "Veteran Mind",
+  "achievementVeteranMindRequirement": "Reach level 8",
+  "achievementArenaMasterTitle": "Arena Master",
+  "achievementArenaMasterRequirement": "Reach level 12",
+  "achievementMarathonPlayerTitle": "Marathon Player",
+  "achievementMarathonPlayerRequirement": "Play 60 games",
+  "settingsTitle": "Settings",
+  "settingsTheme": "Theme",
+  "settingsThemeLight": "Light",
+  "settingsThemeDark": "Dark",
+  "settingsThemeSystem": "System",
+  "settingsLanguage": "Language",
+  "settingsLanguageSystem": "System",
+  "settingsLanguageEnglish": "English",
+  "settingsLanguageRussian": "Русский",
+  "gameWaitingForPlayers": "Waiting for players...",
+  "gameTapToReveal": "Tap a tile to reveal a question",
+  "gameAnswerCta": "Answer",
+  "gameLiveMatchTitle": "Live Match",
+  "gameMatchEnded": "Match ended",
+  "gameStartScriptedMatch": "Start scripted match",
+  "gamePointsLabel": "{points} pts",
+  "@gamePointsLabel": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "gameBoardSpace200": "Space 200",
+  "gameBoardScience200": "Science 200",
+  "gameBoardGeography400": "Geography 400",
+  "gameBoardHistory400": "History 400",
+  "gameFinalWagerTitle": "Final Wager",
+  "resultsTitle": "Results",
+  "resultsPlayAgain": "Play again",
+  "resultsShare": "Share",
+  "resultWinner": "Winner",
+  "resultPointsLabel": "{points} pts",
+  "@resultPointsLabel": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "waitingRoomTitle": "Waiting Room",
+  "waitingRoomHostPreparing": "Host is preparing the board. Stay on this screen.",
+  "waitingRoomSyncingPlayers": "Syncing players...",
+  "playerRowWaitingRoster": "Waiting for roster...",
+  "timerSemanticsRemaining": "Timer, {seconds} seconds remaining",
+  "@timerSemanticsRemaining": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  }
+}

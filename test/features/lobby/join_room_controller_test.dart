@@ -9,7 +9,8 @@ class _FakeJoinApi implements GameApi {
   bool shouldFailJoin;
 
   @override
-  Future<RoomSummary> joinRoom(String code, {required String playerName}) async {
+  Future<RoomSummary> joinRoom(String code,
+      {required String playerName}) async {
     if (shouldFailJoin) {
       throw Exception('join failed');
     }
@@ -41,15 +42,17 @@ class _FakeJoinApi implements GameApi {
       );
 
   @override
-  Future<List<LeaderboardEntry>> loadLeaderboard(LeaderboardScope scope) async =>
+  Future<List<LeaderboardEntry>> loadLeaderboard(
+          LeaderboardScope scope) async =>
       <LeaderboardEntry>[];
 }
 
 void main() {
-  test('JoinRoomController returns invalidPassword for protected lobby', () async {
+  test('JoinRoomController returns invalidPassword for protected lobby',
+      () async {
     final controller = JoinRoomController(_FakeJoinApi());
-    final LobbyRoom protectedRoom =
-        controller.state.rooms.firstWhere((LobbyRoom room) => room.requiresPassword);
+    final LobbyRoom protectedRoom = controller.state.rooms
+        .firstWhere((LobbyRoom room) => room.requiresPassword);
 
     final JoinLobbyResult result = await controller.joinLobby(
       protectedRoom,
@@ -63,8 +66,8 @@ void main() {
 
   test('JoinRoomController joins open lobby without password', () async {
     final controller = JoinRoomController(_FakeJoinApi());
-    final LobbyRoom openRoom =
-        controller.state.rooms.firstWhere((LobbyRoom room) => !room.requiresPassword);
+    final LobbyRoom openRoom = controller.state.rooms
+        .firstWhere((LobbyRoom room) => !room.requiresPassword);
 
     final JoinLobbyResult result = await controller.joinLobby(openRoom);
 
@@ -76,8 +79,8 @@ void main() {
 
   test('JoinRoomController returns failed when api throws', () async {
     final controller = JoinRoomController(_FakeJoinApi(shouldFailJoin: true));
-    final LobbyRoom openRoom =
-        controller.state.rooms.firstWhere((LobbyRoom room) => !room.requiresPassword);
+    final LobbyRoom openRoom = controller.state.rooms
+        .firstWhere((LobbyRoom room) => !room.requiresPassword);
 
     final JoinLobbyResult result = await controller.joinLobby(openRoom);
 

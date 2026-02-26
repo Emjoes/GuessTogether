@@ -7,6 +7,7 @@ import 'package:guesstogether/features/game/domain/game_models.dart';
 import 'package:guesstogether/features/game/presentation/game_screen.dart';
 import 'package:guesstogether/features/game/providers/game_providers.dart';
 import 'package:guesstogether/services/mock_ws_messages.dart';
+import '../test_app.dart';
 
 class _FakeRealtimeAdapter implements RealtimeAdapter {
   @override
@@ -40,8 +41,9 @@ void main() {
             (ref) => _FakeGameController(),
           ),
         ],
-        child: const MaterialApp(
-          home: GameScreen(),
+        child: buildTestMaterialApp(
+          home: const GameScreen(),
+          locale: const Locale('en'),
         ),
       ),
     );

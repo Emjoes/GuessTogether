@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:guesstogether/features/home/presentation/home_screen.dart';
 import 'package:guesstogether/features/lobby/presentation/create_room_screen.dart';
+import '../test_app.dart';
 
 void main() {
   testWidgets('HomeScreen navigates to CreateRoom', (tester) async {
@@ -23,7 +24,10 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        child: MaterialApp.router(routerConfig: router),
+        child: buildTestMaterialAppRouter(
+          routerConfig: router,
+          locale: const Locale('en'),
+        ),
       ),
     );
 
@@ -34,4 +38,3 @@ void main() {
     expect(find.text('Create Room'), findsWidgets);
   });
 }
-

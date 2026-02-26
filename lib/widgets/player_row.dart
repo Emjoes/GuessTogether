@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:guesstogether/core/l10n/l10n.dart';
 import 'package:guesstogether/core/theme/app_spacing.dart';
 import 'package:guesstogether/features/game/domain/game_models.dart';
 
@@ -12,7 +13,7 @@ class PlayerRow extends StatelessWidget {
   Widget build(BuildContext context) {
     if (players.isEmpty) {
       return Text(
-        'Waiting for roster...',
+        context.l10n.playerRowWaitingRoster,
         style: Theme.of(context).textTheme.bodySmall,
       );
     }

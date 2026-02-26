@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:guesstogether/core/l10n/app_strings.dart';
+import 'package:guesstogether/core/l10n/l10n.dart';
 import 'package:guesstogether/core/theme/app_colors.dart';
 import 'package:guesstogether/core/theme/app_spacing.dart';
 import 'package:guesstogether/features/game/providers/game_providers.dart';
@@ -17,6 +17,7 @@ class ResultScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final game = ref.watch(gameControllerProvider);
     final players = [...game.players]..sort(
         (a, b) => b.score.compareTo(a.score),
@@ -24,7 +25,7 @@ class ResultScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(AppStrings.resultsTitle),
+        title: Text(l10n.resultsTitle),
       ),
       body: SafeArea(
         child: Padding(
@@ -60,7 +61,7 @@ class ResultScreen extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             Text(
-                              'Winner',
+                              l10n.resultWinner,
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyMedium
@@ -74,7 +75,7 @@ class ResultScreen extends ConsumerWidget {
                                   ?.copyWith(color: Colors.white),
                             ),
                             Text(
-                              '${players.first.score} pts',
+                              l10n.resultPointsLabel(players.first.score),
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyMedium
@@ -122,7 +123,7 @@ class ResultScreen extends ConsumerWidget {
               FilledButton.icon(
                 onPressed: () => context.go(HomeScreen.routePath),
                 icon: const Icon(Icons.replay_rounded),
-                label: const Text(AppStrings.resultsPlayAgain),
+                label: Text(l10n.resultsPlayAgain),
               ),
             ],
           ),

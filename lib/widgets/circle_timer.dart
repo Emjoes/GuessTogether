@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'package:guesstogether/core/l10n/l10n.dart';
 import 'package:guesstogether/core/theme/app_colors.dart';
 
 class CircleTimer extends StatefulWidget {
@@ -69,7 +70,7 @@ class _CircleTimerState extends State<CircleTimer>
     final bool urgent = widget.remaining <= 5 && widget.remaining > 0;
 
     return Semantics(
-      label: 'Timer, ${widget.remaining} seconds remaining',
+      label: context.l10n.timerSemanticsRemaining(widget.remaining),
       child: SizedBox(
         width: 64,
         height: 64,

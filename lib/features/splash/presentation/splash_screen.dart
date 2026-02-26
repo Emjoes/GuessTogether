@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:guesstogether/core/l10n/app_strings.dart';
+import 'package:guesstogether/core/l10n/l10n.dart';
 import 'package:guesstogether/core/theme/app_colors.dart';
 import 'package:guesstogether/core/theme/app_spacing.dart';
 import 'package:guesstogether/features/home/presentation/home_screen.dart';
@@ -51,6 +51,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final TextTheme text = Theme.of(context).textTheme;
     return Scaffold(
       body: SafeArea(
@@ -83,7 +84,7 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                       const SizedBox(height: AppSpacing.md),
                       Text(
-                        AppStrings.appTitle,
+                        l10n.appTitle,
                         style: text.displayMedium?.copyWith(
                           color: Colors.white,
                         ),
@@ -91,7 +92,7 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       Text(
-                        AppStrings.splashTagline,
+                        l10n.splashTagline,
                         style: text.bodyLarge?.copyWith(
                           color: Colors.white.withValues(alpha: 0.82),
                         ),

@@ -1,0 +1,194 @@
+﻿{
+  "@@locale": "ru",
+  "appTitle": "Guess Together",
+  "splashTagline": "Играйте в викторины с друзьями за пару минут.",
+  "homeCreateRoom": "Создать комнату",
+  "homeJoinByPassword": "Войти в игру",
+  "homeProfile": "Мой профиль",
+  "homeSettings": "Настройки",
+  "createRoomTitle": "Создать комнату",
+  "createRoomDetailsLabel": "Параметры комнаты",
+  "createRoomNameLabel": "Название комнаты",
+  "createRoomNameHint": "Крутой квиз",
+  "createRoomPasswordLabel": "Пароль",
+  "createRoomPasswordHint": "1234",
+  "createRoomModeLabel": "Режим игры",
+  "createRoomModeMultiplayer": "Мультиплеер",
+  "createRoomModeDuel": "Дуэль",
+  "createRoomPackageLabel": "Пакет вопросов",
+  "createRoomPackagePick": "Выбрать файл",
+  "createRoomCreateCta": "Создать",
+  "createRoomFilePickerError": "Не удалось открыть выбор файла",
+  "joinRoomTitle": "Войти в игру",
+  "joinRoomErrorInvalid": "Комната не найдена. Проверьте код.",
+  "joinRoomErrorWrongPassword": "Неверный пароль. Попробуйте снова.",
+  "joinRoomSearchLabel": "Поиск",
+  "joinRoomSearchHint": "Название комнаты",
+  "joinRoomSearchHintText": "Крутой квиз",
+  "joinRoomActiveLobbies": "Активные комнаты",
+  "joinRoomTableRoom": "Комната",
+  "joinRoomTablePlayers": "Игроки",
+  "joinRoomTableType": "Тип",
+  "joinRoomTablePassword": "Пароль",
+  "joinRoomNoLobbies": "Активные комнаты не найдены",
+  "joinRoomPasswordDialogTitle": "Требуется пароль",
+  "joinRoomPasswordDialogHint": "1234",
+  "joinRoomPasswordJoinCta": "Войти",
+  "joinRoomPlayersCount": "{current}/{max}",
+  "@joinRoomPlayersCount": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "profileTitle": "Мой профиль",
+  "profileStatsLabel": "Статистика игр",
+  "profileGamesPlayed": "Игр",
+  "profileWins": "Побед",
+  "profileLosses": "Поражений",
+  "profileRecentGames": "Недавние игры",
+  "profileAchievements": "Достижения",
+  "profileUnlocked": "открыто",
+  "profileLeaderboards": "Рейтинги",
+  "profileTabStats": "Статистика",
+  "profileTabLeaderboards": "Лидеры",
+  "profileTabAchievements": "Достижения",
+  "profileLeaderboardGlobal": "Общий",
+  "profileLeaderboardFriends": "Друзья",
+  "profileLeaderboardWeekly": "Неделя",
+  "profileShowCompleted": "Показывать выполненные",
+  "profileNoLeaderboardData": "Нет данных рейтинга",
+  "profileLoadFailed": "Не удалось загрузить профиль",
+  "profileWinLabel": "Победа",
+  "profileLossLabel": "Поражение",
+  "profileGameTimeJustNow": "только что",
+  "profileGameTimeToday": "сегодня",
+  "profileGameTimeYesterday": "вчера",
+  "profileGameTimeTwoDaysAgo": "2 дня назад",
+  "profileXpProgress": "{currentXp} / {xpPerLevel} XP",
+  "@profileXpProgress": {
+    "placeholders": {
+      "currentXp": {
+        "type": "int"
+      },
+      "xpPerLevel": {
+        "type": "int"
+      }
+    }
+  },
+  "profileXpToNextLevel": "До следующего уровня: {xp} XP",
+  "@profileXpToNextLevel": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "profileUnlockedCount": "{unlocked}/{total} открыто",
+  "@profileUnlockedCount": {
+    "placeholders": {
+      "unlocked": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "profileProgressValue": "{progress}/{target}",
+  "@profileProgressValue": {
+    "placeholders": {
+      "progress": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "profileRewardXp": "+{xp} XP",
+  "@profileRewardXp": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "profileRecentGameFridayTriviaCrew": "Пятничная викторина",
+  "profileRecentGameMovieLegends": "Легенды кино",
+  "profileRecentGameNightBlitz": "Ночной блиц",
+  "profileRecentGameQuickSparks": "Быстрые искры",
+  "achievementPerfectRoundTitle": "Идеальный раунд",
+  "achievementPerfectRoundRequirement": "Ответьте правильно на все вопросы в одном раунде",
+  "achievementConsistentWinnerTitle": "Стабильный победитель",
+  "achievementConsistentWinnerRequirement": "Выиграйте 20 игр",
+  "achievementXpCollectorTitle": "Коллекционер XP",
+  "achievementXpCollectorRequirement": "Наберите 10 000 XP",
+  "achievementDailyChallengerTitle": "Ежедневный соперник",
+  "achievementDailyChallengerRequirement": "Сыграйте 30 игр",
+  "achievementStreakRunnerTitle": "Серия побед",
+  "achievementStreakRunnerRequirement": "Удерживайте серию из 5 побед",
+  "achievementVeteranMindTitle": "Ветеран ума",
+  "achievementVeteranMindRequirement": "Достигните 8 уровня",
+  "achievementArenaMasterTitle": "Мастер арены",
+  "achievementArenaMasterRequirement": "Достигните 12 уровня",
+  "achievementMarathonPlayerTitle": "Игрок-марафонец",
+  "achievementMarathonPlayerRequirement": "Сыграйте 60 игр",
+  "settingsTitle": "Настройки",
+  "settingsTheme": "Тема",
+  "settingsThemeLight": "Светлая",
+  "settingsThemeDark": "Тёмная",
+  "settingsThemeSystem": "Системная",
+  "settingsLanguage": "Язык",
+  "settingsLanguageSystem": "Системный",
+  "settingsLanguageEnglish": "English",
+  "settingsLanguageRussian": "Русский",
+  "gameWaitingForPlayers": "Ожидание игроков...",
+  "gameTapToReveal": "Нажмите на плитку, чтобы открыть вопрос",
+  "gameAnswerCta": "Ответить",
+  "gameLiveMatchTitle": "Матч",
+  "gameMatchEnded": "Матч завершён",
+  "gameStartScriptedMatch": "Запустить тестовый матч",
+  "gamePointsLabel": "{points} очков",
+  "@gamePointsLabel": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "gameBoardSpace200": "Космос 200",
+  "gameBoardScience200": "Наука 200",
+  "gameBoardGeography400": "География 400",
+  "gameBoardHistory400": "История 400",
+  "gameFinalWagerTitle": "Финальная ставка",
+  "resultsTitle": "Результаты",
+  "resultsPlayAgain": "Играть снова",
+  "resultsShare": "Поделиться",
+  "resultWinner": "Победитель",
+  "resultPointsLabel": "{points} очков",
+  "@resultPointsLabel": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "waitingRoomTitle": "Комната ожидания",
+  "waitingRoomHostPreparing": "Ведущий готовит поле. Оставайтесь на этом экране.",
+  "waitingRoomSyncingPlayers": "Синхронизация игроков...",
+  "playerRowWaitingRoster": "Ожидание списка игроков...",
+  "timerSemanticsRemaining": "Таймер: осталось {seconds} сек.",
+  "@timerSemanticsRemaining": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  }
+}
+

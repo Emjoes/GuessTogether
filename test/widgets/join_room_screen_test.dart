@@ -4,24 +4,23 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:guesstogether/core/l10n/app_strings.dart';
 import 'package:guesstogether/features/lobby/presentation/join_room_screen.dart';
+import '../test_app.dart';
 
 void main() {
   testWidgets('JoinRoomScreen shows active lobbies table', (tester) async {
     await tester.pumpWidget(
       const ProviderScope(
-        child: MaterialApp(
-          home: JoinRoomScreen(),
-        ),
+        child: _JoinRoomApp(),
       ),
     );
 
-    expect(find.text(AppStrings.joinRoomActiveLobbies), findsOneWidget);
-    expect(find.text(AppStrings.joinRoomSearchLabel), findsOneWidget);
+    expect(find.text(AppStrings.joinRoomSearchLabel), findsNothing);
     expect(find.text(AppStrings.joinRoomSearchHint), findsOneWidget);
-    expect(find.text(AppStrings.joinRoomTableRoom), findsOneWidget);
-    expect(find.text(AppStrings.joinRoomTablePlayers), findsOneWidget);
-    expect(find.text(AppStrings.joinRoomTableType), findsOneWidget);
-    expect(find.text(AppStrings.joinRoomTablePassword), findsOneWidget);
+    expect(find.text(AppStrings.joinRoomActiveLobbies), findsOneWidget);
+    expect(find.text(AppStrings.joinRoomTableRoom), findsNothing);
+    expect(find.text(AppStrings.joinRoomTablePlayers), findsNothing);
+    expect(find.text(AppStrings.joinRoomTableType), findsNothing);
+    expect(find.text(AppStrings.joinRoomTablePassword), findsNothing);
     expect(find.text('Friday Trivia Crew'), findsOneWidget);
     expect(find.textContaining('#'), findsNothing);
   });
@@ -29,9 +28,7 @@ void main() {
   testWidgets('JoinRoomScreen filters rooms by name', (tester) async {
     await tester.pumpWidget(
       const ProviderScope(
-        child: MaterialApp(
-          home: JoinRoomScreen(),
-        ),
+        child: _JoinRoomApp(),
       ),
     );
 
@@ -48,9 +45,7 @@ void main() {
   testWidgets('JoinRoomScreen opens password dialog safely', (tester) async {
     await tester.pumpWidget(
       const ProviderScope(
-        child: MaterialApp(
-          home: JoinRoomScreen(),
-        ),
+        child: _JoinRoomApp(),
       ),
     );
 
@@ -66,4 +61,16 @@ void main() {
     expect(find.text(AppStrings.joinRoomPasswordDialogTitle), findsNothing);
     expect(tester.takeException(), isNull);
   });
+}
+
+class _JoinRoomApp extends StatelessWidget {
+  const _JoinRoomApp();
+
+  @override
+  Widget build(BuildContext context) {
+    return buildTestMaterialApp(
+      home: const JoinRoomScreen(),
+      locale: const Locale('en'),
+    );
+  }
 }

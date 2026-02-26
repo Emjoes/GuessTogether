@@ -58,7 +58,8 @@ class JoinRoomState {
     return JoinRoomState(
       rooms: rooms ?? this.rooms,
       isLoading: isLoading ?? this.isLoading,
-      errorText: identical(errorText, _unset) ? this.errorText : errorText as String?,
+      errorText:
+          identical(errorText, _unset) ? this.errorText : errorText as String?,
       joiningRoomId: identical(joiningRoomId, _unset)
           ? this.joiningRoomId
           : joiningRoomId as String?,

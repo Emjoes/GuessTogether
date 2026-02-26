@@ -5,14 +5,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:guesstogether/core/l10n/app_strings.dart';
 import 'package:guesstogether/features/lobby/presentation/create_room_screen.dart';
 import 'package:guesstogether/features/lobby/providers/create_room_provider.dart';
+import '../test_app.dart';
 
 void main() {
   testWidgets('CreateRoomScreen shows required fields', (tester) async {
     await tester.pumpWidget(
       const ProviderScope(
-        child: MaterialApp(
-          home: CreateRoomScreen(),
-        ),
+        child: _CreateRoomApp(),
       ),
     );
 
@@ -28,14 +27,18 @@ void main() {
     expect(find.text(AppStrings.createRoomDuelHint), findsNothing);
   });
 
-  testWidgets('CreateRoomScreen updates mode when tapping duel', (tester) async {
+  testWidgets('CreateRoomScreen updates mode when tapping duel',
+      (tester) async {
     final ProviderContainer container = ProviderContainer();
     addTearDown(container.dispose);
 
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(home: CreateRoomScreen()),
+        child: buildTestMaterialApp(
+          home: const CreateRoomScreen(),
+          locale: const Locale('en'),
+        ),
       ),
     );
 
@@ -47,4 +50,16 @@ void main() {
       RoomMode.duel,
     );
   });
+}
+
+class _CreateRoomApp extends StatelessWidget {
+  const _CreateRoomApp();
+
+  @override
+  Widget build(BuildContext context) {
+    return buildTestMaterialApp(
+      home: const CreateRoomScreen(),
+      locale: const Locale('en'),
+    );
+  }
 }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:guesstogether/core/l10n/app_strings.dart';
+import 'package:guesstogether/core/l10n/l10n.dart';
 import 'package:guesstogether/core/theme/app_spacing.dart';
 import 'package:guesstogether/features/game/domain/game_models.dart';
 import 'package:guesstogether/features/game/providers/game_providers.dart';
@@ -19,6 +19,7 @@ class GameScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final game = ref.watch(gameControllerProvider);
     final controller = ref.read(gameControllerProvider.notifier);
 
@@ -35,7 +36,7 @@ class GameScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Live Match'),
+        title: Text(l10n.gameLiveMatchTitle),
       ),
       body: SafeArea(
         child: Padding(
@@ -57,7 +58,7 @@ class GameScreen extends ConsumerWidget {
                         Expanded(
                           child: Text(
                             game.currentQuestion?.category ??
-                                AppStrings.gameTapToReveal,
+                                l10n.gameTapToReveal,
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                         ),
@@ -88,10 +89,10 @@ class GameScreen extends ConsumerWidget {
                   icon: const Icon(Icons.play_arrow_rounded),
                   label: Text(
                     game.isMatchEnded
-                        ? 'Match ended'
+                        ? l10n.gameMatchEnded
                         : (game.players.isEmpty
-                            ? 'Start scripted match'
-                            : AppStrings.gameAnswerCta),
+                            ? l10n.gameStartScriptedMatch
+                            : l10n.gameAnswerCta),
                   ),
                 ),
               ),
@@ -110,6 +111,7 @@ class _GameBoardOrQuestion extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     if (game.currentQuestion != null) {
       return AnimatedSwitcher(
         duration: const Duration(milliseconds: 250),
@@ -145,7 +147,9 @@ class _GameBoardOrQuestion extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Chip(
-                  label: Text('${game.currentQuestion!.value} pts'),
+                  label: Text(
+                    l10n.gamePointsLabel(game.currentQuestion!.value),
+                  ),
                 ),
               ],
             ),
@@ -155,10 +159,10 @@ class _GameBoardOrQuestion extends StatelessWidget {
     }
 
     final List<String> categories = <String>[
-      'Space 200',
-      'Science 200',
-      'Geography 400',
-      'History 400',
+      l10n.gameBoardSpace200,
+      l10n.gameBoardScience200,
+      l10n.gameBoardGeography400,
+      l10n.gameBoardHistory400,
     ];
 
     return GridView.builder(

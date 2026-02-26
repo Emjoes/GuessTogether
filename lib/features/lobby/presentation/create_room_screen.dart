@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
 
-import 'package:guesstogether/core/l10n/app_strings.dart';
+import 'package:guesstogether/core/l10n/l10n.dart';
 import 'package:guesstogether/core/theme/app_spacing.dart';
 import 'package:guesstogether/features/game/presentation/game_screen.dart';
 import 'package:guesstogether/features/lobby/providers/create_room_provider.dart';
@@ -17,6 +17,7 @@ class CreateRoomScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final CreateRoomState state = ref.watch(createRoomControllerProvider);
     final CreateRoomController controller =
         ref.read(createRoomControllerProvider.notifier);
@@ -64,14 +65,14 @@ class CreateRoomScreen extends ConsumerWidget {
       } on Exception {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not open file picker')),
+            SnackBar(content: Text(l10n.createRoomFilePickerError)),
           );
         }
       }
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text(AppStrings.createRoomTitle)),
+      appBar: AppBar(title: Text(l10n.createRoomTitle)),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(
@@ -89,29 +90,29 @@ class CreateRoomScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
                     Text(
-                      AppStrings.createRoomDetailsLabel,
+                      l10n.createRoomDetailsLabel,
                       style: text.titleSmall,
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     TextField(
-                      decoration: const InputDecoration(
-                        labelText: AppStrings.createRoomNameLabel,
-                        hintText: 'Cool Quiz',
+                      decoration: InputDecoration(
+                        labelText: l10n.createRoomNameLabel,
+                        hintText: l10n.createRoomNameHint,
                       ),
                       onChanged: controller.setName,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     TextField(
-                      decoration: const InputDecoration(
-                        labelText: AppStrings.createRoomPasswordLabel,
-                        hintText: '1234',
+                      decoration: InputDecoration(
+                        labelText: l10n.createRoomPasswordLabel,
+                        hintText: l10n.createRoomPasswordHint,
                       ),
                       keyboardType: TextInputType.number,
                       onChanged: controller.setPassword,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     Text(
-                      AppStrings.createRoomModeLabel,
+                      l10n.createRoomModeLabel,
                       style: text.titleSmall,
                     ),
                     const SizedBox(height: AppSpacing.sm),
@@ -124,7 +125,7 @@ class CreateRoomScreen extends ConsumerWidget {
                             size: 20,
                             color: color,
                           ),
-                          label: AppStrings.createRoomModeMultiplayer,
+                          label: l10n.createRoomModeMultiplayer,
                           onPressed: () =>
                               controller.setMode(RoomMode.multiplayer),
                         ),
@@ -133,14 +134,14 @@ class CreateRoomScreen extends ConsumerWidget {
                           selected: state.mode == RoomMode.duel,
                           iconBuilder: (Color color) =>
                               _CrossedSwordsIcon(size: 20, color: color),
-                          label: AppStrings.createRoomModeDuel,
+                          label: l10n.createRoomModeDuel,
                           onPressed: () => controller.setMode(RoomMode.duel),
                         ),
                       ],
                     ),
                     const SizedBox(height: AppSpacing.md),
                     Text(
-                      AppStrings.createRoomPackageLabel,
+                      l10n.createRoomPackageLabel,
                       style: text.titleSmall,
                     ),
                     const SizedBox(height: AppSpacing.sm),
@@ -204,6 +205,7 @@ class _PackagePickerFieldState extends State<_PackagePickerField> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
     final bool isLight = theme.brightness == Brightness.light;
@@ -232,7 +234,8 @@ class _PackagePickerFieldState extends State<_PackagePickerField> {
           duration: const Duration(milliseconds: 170),
           curve: Curves.easeOutCubic,
           width: double.infinity,
-          constraints: const BoxConstraints(minHeight: AppSpacing.tapTargetMin + 6),
+          constraints:
+              const BoxConstraints(minHeight: AppSpacing.tapTargetMin + 6),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: borderColor),
@@ -261,7 +264,8 @@ class _PackagePickerFieldState extends State<_PackagePickerField> {
                   return scheme.primary.withValues(alpha: isLight ? 0.14 : 0.2);
                 }
                 if (states.contains(WidgetState.hovered)) {
-                  return scheme.primary.withValues(alpha: isLight ? 0.06 : 0.12);
+                  return scheme.primary
+                      .withValues(alpha: isLight ? 0.06 : 0.12);
                 }
                 return Colors.transparent;
               }),
@@ -280,9 +284,7 @@ class _PackagePickerFieldState extends State<_PackagePickerField> {
                     const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
-                        hasFile
-                            ? widget.fileName
-                            : AppStrings.createRoomPackagePick,
+                        hasFile ? widget.fileName : l10n.createRoomPackagePick,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: hasFile
@@ -349,7 +351,8 @@ class _ModeButtonState extends State<_ModeButton> {
             scheme.surfaceContainerHighest
                 .withValues(alpha: isLight ? 0.86 : 0.54),
           )
-        : scheme.surfaceContainerHighest.withValues(alpha: isLight ? 0.66 : 0.44);
+        : scheme.surfaceContainerHighest
+            .withValues(alpha: isLight ? 0.66 : 0.44);
     final Color accent = widget.selected ? scheme.secondary : scheme.primary;
     final Color topColor = Color.alphaBlend(
       Colors.white.withValues(alpha: isLight ? 0.16 : 0.08),
@@ -405,7 +408,8 @@ class _ModeButtonState extends State<_ModeButton> {
                   return scheme.primary.withValues(alpha: isLight ? 0.14 : 0.2);
                 }
                 if (states.contains(WidgetState.hovered)) {
-                  return scheme.primary.withValues(alpha: isLight ? 0.06 : 0.12);
+                  return scheme.primary
+                      .withValues(alpha: isLight ? 0.06 : 0.12);
                 }
                 return Colors.transparent;
               }),
@@ -482,20 +486,24 @@ class _CreateButtonState extends State<_CreateButton> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
     final bool isLight = theme.brightness == Brightness.light;
     final bool enabled = widget.onPressed != null;
-    final double interaction = enabled ? (_pressed ? 0.16 : (_hovered ? 0.1 : 0.04)) : 0;
+    final double interaction =
+        enabled ? (_pressed ? 0.16 : (_hovered ? 0.1 : 0.04)) : 0;
     final Color startBase = enabled
         ? scheme.primary
-        : scheme.surfaceContainerHighest.withValues(alpha: isLight ? 0.5 : 0.38);
+        : scheme.surfaceContainerHighest
+            .withValues(alpha: isLight ? 0.5 : 0.38);
     final Color endBase = enabled
         ? Color.alphaBlend(
             scheme.secondary.withValues(alpha: isLight ? 0.22 : 0.16),
             scheme.primary.withValues(alpha: isLight ? 0.95 : 0.9),
           )
-        : scheme.surfaceContainerHighest.withValues(alpha: isLight ? 0.42 : 0.32);
+        : scheme.surfaceContainerHighest
+            .withValues(alpha: isLight ? 0.42 : 0.32);
     final Color topColor = Color.alphaBlend(
       Colors.white.withValues(alpha: isLight ? 0.14 : 0.07),
       startBase,
@@ -532,7 +540,8 @@ class _CreateButtonState extends State<_CreateButton> {
             boxShadow: enabled
                 ? <BoxShadow>[
                     BoxShadow(
-                      color: scheme.primary.withValues(alpha: isLight ? 0.24 : 0.3),
+                      color: scheme.primary
+                          .withValues(alpha: isLight ? 0.24 : 0.3),
                       blurRadius: _hovered ? 22 : 14,
                       offset: Offset(0, _hovered ? 11 : 8),
                     ),
@@ -566,14 +575,15 @@ class _CreateButtonState extends State<_CreateButton> {
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2.2,
-                          valueColor: AlwaysStoppedAnimation<Color>(contentColor),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(contentColor),
                         ),
                       )
                     else
                       Icon(Icons.rocket_launch_rounded, color: contentColor),
                     const SizedBox(width: AppSpacing.sm),
                     Text(
-                      AppStrings.createRoomCreateCta,
+                      l10n.createRoomCreateCta,
                       style: theme.textTheme.labelLarge?.copyWith(
                         color: contentColor,
                         fontWeight: FontWeight.w700,

@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:guesstogether/app_router.dart';
+import 'package:guesstogether/core/l10n/app_locale.dart';
+import 'package:guesstogether/core/l10n/generated/app_localizations.dart';
 import 'package:guesstogether/core/theme/app_theme.dart';
 import 'package:guesstogether/widgets/mobile_shell.dart';
 
@@ -24,12 +26,16 @@ class GuessTogetherApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
     final themeMode = ref.watch(themeModeProvider);
+    final appLanguage = ref.watch(appLanguageProvider);
 
     return MaterialApp.router(
       title: 'Guess Together',
       theme: buildLightTheme(),
       darkTheme: buildDarkTheme(),
       themeMode: themeMode,
+      locale: appLanguage.locale,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
       routerConfig: router,
       builder: (context, child) {
         return MobileShell(child: child ?? const SizedBox.shrink());

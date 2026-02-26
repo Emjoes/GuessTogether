@@ -35,7 +35,8 @@ void main() {
     await Future<void>.delayed(Duration.zero);
 
     expect(c.state.players.length, 2);
-    expect(c.state.players.first, const Player(id: 'p1', name: 'You', score: 10));
+    expect(
+        c.state.players.first, const Player(id: 'p1', name: 'You', score: 10));
 
     c.dispose();
     await adapter.dispose();
@@ -55,4 +56,3 @@ void main() {
     await adapter.dispose();
   });
 }
-

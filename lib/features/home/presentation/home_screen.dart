@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:guesstogether/core/l10n/app_strings.dart';
+import 'package:guesstogether/core/l10n/l10n.dart';
 import 'package:guesstogether/core/theme/app_colors.dart';
 import 'package:guesstogether/core/theme/app_spacing.dart';
 import 'package:guesstogether/features/lobby/presentation/create_room_screen.dart';
@@ -19,6 +19,7 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -49,8 +50,9 @@ class HomeScreen extends ConsumerWidget {
                             children: <Widget>[
                               _ActionTile(
                                 icon: Icons.add_circle_outline_rounded,
-                                title: AppStrings.homeCreateRoom,
-                                onTap: () => context.push(CreateRoomScreen.routePath),
+                                title: l10n.homeCreateRoom,
+                                onTap: () =>
+                                    context.push(CreateRoomScreen.routePath),
                                 gradientColors: const <Color>[
                                   Color(0xFF2B67B9),
                                   Color(0xFF1C4D91),
@@ -59,8 +61,9 @@ class HomeScreen extends ConsumerWidget {
                               const SizedBox(height: AppSpacing.md),
                               _ActionTile(
                                 icon: Icons.password_rounded,
-                                title: AppStrings.homeJoinByPassword,
-                                onTap: () => context.push(JoinRoomScreen.routePath),
+                                title: l10n.homeJoinByPassword,
+                                onTap: () =>
+                                    context.push(JoinRoomScreen.routePath),
                                 gradientColors: const <Color>[
                                   Color(0xFF0F8168),
                                   Color(0xFF0A5F4D),
@@ -69,8 +72,9 @@ class HomeScreen extends ConsumerWidget {
                               const SizedBox(height: AppSpacing.md),
                               _ActionTile(
                                 icon: Icons.person_outline_rounded,
-                                title: AppStrings.homeProfile,
-                                onTap: () => context.push(ProfileScreen.routePath),
+                                title: l10n.homeProfile,
+                                onTap: () =>
+                                    context.push(ProfileScreen.routePath),
                                 gradientColors: const <Color>[
                                   Color(0xFF6F4AA6),
                                   Color(0xFF543684),
@@ -79,8 +83,9 @@ class HomeScreen extends ConsumerWidget {
                               const SizedBox(height: AppSpacing.md),
                               _ActionTile(
                                 icon: Icons.settings_rounded,
-                                title: AppStrings.homeSettings,
-                                onTap: () => context.push(SettingsScreen.routePath),
+                                title: l10n.homeSettings,
+                                onTap: () =>
+                                    context.push(SettingsScreen.routePath),
                                 gradientColors: const <Color>[
                                   Color(0xFF8C4D1A),
                                   Color(0xFF6B350D),
@@ -109,8 +114,9 @@ class _BrandTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final TextTheme text = theme.textTheme;
+    final l10n = context.l10n;
     final bool isLight = theme.brightness == Brightness.light;
-    const String title = AppStrings.appTitle;
+    final String title = l10n.appTitle;
     final List<Color> titleGradient = isLight
         ? <Color>[
             const Color(0xFF2B4F86),
@@ -329,10 +335,12 @@ class _ActionTileState extends State<_ActionTile> {
                 onHighlightChanged: _setPressed,
                 overlayColor: WidgetStateProperty.resolveWith((states) {
                   if (states.contains(WidgetState.pressed)) {
-                    return Colors.black.withValues(alpha: isLight ? 0.08 : 0.16);
+                    return Colors.black
+                        .withValues(alpha: isLight ? 0.08 : 0.16);
                   }
                   if (states.contains(WidgetState.hovered)) {
-                    return Colors.white.withValues(alpha: isLight ? 0.08 : 0.06);
+                    return Colors.white
+                        .withValues(alpha: isLight ? 0.08 : 0.06);
                   }
                   return Colors.transparent;
                 }),
@@ -343,7 +351,8 @@ class _ActionTileState extends State<_ActionTile> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(22),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: _hovered ? 0.4 : 0.24),
+                      color:
+                          Colors.white.withValues(alpha: _hovered ? 0.4 : 0.24),
                     ),
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
@@ -371,12 +380,15 @@ class _ActionTileState extends State<_ActionTile> {
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: <Color>[
-                              Colors.white.withValues(alpha: _hovered ? 0.32 : 0.24),
-                              Colors.white.withValues(alpha: _hovered ? 0.2 : 0.14),
+                              Colors.white
+                                  .withValues(alpha: _hovered ? 0.32 : 0.24),
+                              Colors.white
+                                  .withValues(alpha: _hovered ? 0.2 : 0.14),
                             ],
                           ),
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: _hovered ? 0.52 : 0.3),
+                            color: Colors.white
+                                .withValues(alpha: _hovered ? 0.52 : 0.3),
                           ),
                         ),
                         child: Icon(widget.icon, color: Colors.white),
@@ -385,7 +397,8 @@ class _ActionTileState extends State<_ActionTile> {
                       Expanded(
                         child: Text(
                           widget.title,
-                          style: text.titleMedium?.copyWith(color: Colors.white),
+                          style:
+                              text.titleMedium?.copyWith(color: Colors.white),
                         ),
                       ),
                       AnimatedSlide(

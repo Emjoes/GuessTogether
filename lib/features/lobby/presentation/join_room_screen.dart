@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:guesstogether/core/l10n/app_strings.dart';
+import 'package:guesstogether/core/l10n/l10n.dart';
 import 'package:guesstogether/core/theme/app_spacing.dart';
 import 'package:guesstogether/features/game/presentation/game_screen.dart';
 import 'package:guesstogether/features/lobby/providers/join_room_provider.dart';
@@ -22,18 +22,19 @@ class _JoinRoomScreenState extends ConsumerState<JoinRoomScreen> {
   String _searchQuery = '';
 
   Future<String?> _requestPassword(BuildContext context) async {
+    final l10n = context.l10n;
     String password = '';
     final String? result = await showDialog<String>(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: const Text(AppStrings.joinRoomPasswordDialogTitle),
+          title: Text(l10n.joinRoomPasswordDialogTitle),
           content: TextField(
             autofocus: true,
             obscureText: true,
-            decoration: const InputDecoration(
-              labelText: AppStrings.createRoomPasswordLabel,
-              hintText: AppStrings.joinRoomPasswordDialogHint,
+            decoration: InputDecoration(
+              labelText: l10n.createRoomPasswordLabel,
+              hintText: l10n.joinRoomPasswordDialogHint,
             ),
             onChanged: (String value) {
               password = value;
@@ -51,7 +52,7 @@ class _JoinRoomScreenState extends ConsumerState<JoinRoomScreen> {
             ),
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(password.trim()),
-              child: const Text(AppStrings.joinRoomPasswordJoinCta),
+              child: Text(l10n.joinRoomPasswordJoinCta),
             ),
           ],
         );
@@ -84,17 +85,18 @@ class _JoinRoomScreenState extends ConsumerState<JoinRoomScreen> {
         context.push(GameScreen.routePath);
       case JoinLobbyResult.invalidPassword:
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text(AppStrings.joinRoomErrorWrongPassword)),
+          SnackBar(content: Text(context.l10n.joinRoomErrorWrongPassword)),
         );
       case JoinLobbyResult.failed:
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text(AppStrings.joinRoomErrorInvalid)),
+          SnackBar(content: Text(context.l10n.joinRoomErrorInvalid)),
         );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final JoinRoomState state = ref.watch(joinRoomControllerProvider);
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
@@ -130,7 +132,7 @@ class _JoinRoomScreenState extends ConsumerState<JoinRoomScreen> {
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text(AppStrings.joinRoomTitle)),
+      appBar: AppBar(title: Text(l10n.joinRoomTitle)),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(
@@ -147,16 +149,11 @@ class _JoinRoomScreenState extends ConsumerState<JoinRoomScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
-                    Text(
-                      AppStrings.joinRoomSearchLabel,
-                      style: text.titleSmall,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
                     TextField(
-                      decoration: const InputDecoration(
-                        labelText: AppStrings.joinRoomSearchHint,
-                        hintText: 'Cool Quiz',
-                        prefixIcon: Icon(Icons.search_rounded),
+                      decoration: InputDecoration(
+                        labelText: l10n.joinRoomSearchHint,
+                        hintText: l10n.joinRoomSearchHintText,
+                        prefixIcon: const Icon(Icons.search_rounded),
                       ),
                       onChanged: (String value) {
                         setState(() => _searchQuery = value);
@@ -172,35 +169,37 @@ class _JoinRoomScreenState extends ConsumerState<JoinRoomScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
                     Text(
-                      AppStrings.joinRoomActiveLobbies,
+                      l10n.joinRoomActiveLobbies,
                       style: text.titleSmall,
                     ),
                     const SizedBox(height: AppSpacing.sm),
-                    const _LobbyTableHeader(),
-                    const SizedBox(height: AppSpacing.sm),
                     if (rooms.isEmpty)
                       Padding(
-                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                        padding:
+                            const EdgeInsets.symmetric(vertical: AppSpacing.md),
                         child: Text(
-                          AppStrings.joinRoomNoLobbies,
+                          l10n.joinRoomNoLobbies,
                           textAlign: TextAlign.center,
                           style: text.bodySmall?.copyWith(
-                            color: scheme.onSurfaceVariant.withValues(alpha: 0.92),
+                            color:
+                                scheme.onSurfaceVariant.withValues(alpha: 0.92),
                           ),
                         ),
                       )
                     else
                       Column(
-                        children: List<Widget>.generate(rooms.length, (int index) {
+                        children:
+                            List<Widget>.generate(rooms.length, (int index) {
                           final LobbyRoom room = rooms[index];
                           return Padding(
                             padding: EdgeInsets.only(
-                              bottom: index == rooms.length - 1 ? 0 : AppSpacing.sm,
+                              bottom:
+                                  index == rooms.length - 1 ? 0 : AppSpacing.sm,
                             ),
                             child: _LobbyRow(
                               room: room,
-                              isLoading:
-                                  state.isLoading && state.joiningRoomId == room.id,
+                              isLoading: state.isLoading &&
+                                  state.joiningRoomId == room.id,
                               onTap: () => _handleJoin(room),
                             ),
                           );
@@ -212,46 +211,6 @@ class _JoinRoomScreenState extends ConsumerState<JoinRoomScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _LobbyTableHeader extends StatelessWidget {
-  const _LobbyTableHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final TextStyle? style = theme.textTheme.labelSmall?.copyWith(
-      color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.88),
-      fontWeight: FontWeight.w700,
-    );
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-      child: Row(
-        children: <Widget>[
-          Expanded(flex: 5, child: Text(AppStrings.joinRoomTableRoom, style: style)),
-          Expanded(
-            flex: 2,
-            child: Center(
-              child: Text(AppStrings.joinRoomTablePlayers, style: style),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Center(
-              child: Text(AppStrings.joinRoomTableType, style: style),
-            ),
-          ),
-          Expanded(
-            flex: 1,
-            child: Center(
-              child: Text(AppStrings.joinRoomTablePassword, style: style),
-            ),
-          ),
-          const SizedBox(width: 24),
-        ],
       ),
     );
   }
@@ -294,6 +253,7 @@ class _LobbyRowState extends State<_LobbyRow> {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
+    final l10n = context.l10n;
     final bool isLight = theme.brightness == Brightness.light;
     final double interaction = _pressed ? 0.2 : (_hovered ? 0.12 : 0.06);
     final Color base =
@@ -310,8 +270,9 @@ class _LobbyRowState extends State<_LobbyRow> {
         scheme.outline.withValues(alpha: _hovered ? 0.56 : 0.42);
 
     return MouseRegion(
-      cursor:
-          widget.isLoading ? SystemMouseCursors.basic : SystemMouseCursors.click,
+      cursor: widget.isLoading
+          ? SystemMouseCursors.basic
+          : SystemMouseCursors.click,
       child: AnimatedScale(
         duration: const Duration(milliseconds: 130),
         curve: Curves.easeOutCubic,
@@ -319,7 +280,8 @@ class _LobbyRowState extends State<_LobbyRow> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 170),
           curve: Curves.easeOutCubic,
-          constraints: const BoxConstraints(minHeight: AppSpacing.tapTargetMin + 6),
+          constraints:
+              const BoxConstraints(minHeight: AppSpacing.tapTargetMin + 6),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: borderColor),
@@ -348,7 +310,8 @@ class _LobbyRowState extends State<_LobbyRow> {
                   return scheme.primary.withValues(alpha: isLight ? 0.14 : 0.2);
                 }
                 if (states.contains(WidgetState.hovered)) {
-                  return scheme.primary.withValues(alpha: isLight ? 0.06 : 0.12);
+                  return scheme.primary
+                      .withValues(alpha: isLight ? 0.06 : 0.12);
                 }
                 return Colors.transparent;
               }),
@@ -371,8 +334,10 @@ class _LobbyRowState extends State<_LobbyRow> {
                       flex: 2,
                       child: _IconLabelCell(
                         icon: Icons.groups_rounded,
-                        label:
-                            '${widget.room.currentPlayers}/${widget.room.maxPlayers}',
+                        label: l10n.joinRoomPlayersCount(
+                          widget.room.currentPlayers,
+                          widget.room.maxPlayers,
+                        ),
                       ),
                     ),
                     Expanded(
@@ -413,14 +378,14 @@ class _LobbyRowState extends State<_LobbyRow> {
                                 height: 16,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor:
-                                      AlwaysStoppedAnimation<Color>(scheme.primary),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      scheme.primary),
                                 ),
                               )
                             : Icon(
                                 Icons.chevron_right_rounded,
-                                color:
-                                    scheme.onSurfaceVariant.withValues(alpha: 0.84),
+                                color: scheme.onSurfaceVariant
+                                    .withValues(alpha: 0.84),
                               ),
                       ),
                     ),

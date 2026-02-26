@@ -3,7 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:guesstogether/core/l10n/app_strings.dart';
+import 'package:guesstogether/core/l10n/generated/app_localizations.dart';
+import 'package:guesstogether/core/l10n/l10n.dart';
 import 'package:guesstogether/core/theme/app_spacing.dart';
 import 'package:guesstogether/data/api/game_api.dart';
 import 'package:guesstogether/data/api/mock_http_adapter.dart';
@@ -44,6 +45,7 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final AsyncValue<ProfileSummary> profileAsync = ref.watch(profileProvider);
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
@@ -70,15 +72,16 @@ class ProfileScreen extends ConsumerWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text(AppStrings.profileTitle)),
+      appBar: AppBar(title: Text(l10n.profileTitle)),
       body: SafeArea(
         child: profileAsync.when(
           data: (ProfileSummary profile) {
             final _ProfileMetrics metrics =
                 _ProfileMetrics.fromProfile(profile);
-            final List<_RecentGame> recentGames =
-                _buildRecentGames(metrics.averageScore);
+            final List<_RecentGame> recentGames = _buildRecentGames(
+                l10n: l10n, averageScore: metrics.averageScore);
             final List<_AchievementItem> achievements = _buildAchievements(
+              l10n: l10n,
               wins: metrics.wins,
               gamesPlayed: profile.gamesPlayed,
               level: metrics.level,
@@ -156,7 +159,7 @@ class ProfileScreen extends ConsumerWidget {
           },
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (Object _, StackTrace __) =>
-              const Center(child: Text(AppStrings.profileLoadFailed)),
+              Center(child: Text(l10n.profileLoadFailed)),
         ),
       ),
     );
@@ -231,6 +234,7 @@ class _UserHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
     final bool isLight = theme.brightness == Brightness.light;
@@ -310,14 +314,14 @@ class _UserHeader extends StatelessWidget {
           Row(
             children: <Widget>[
               Text(
-                '$xpInLevel / $xpPerLevel XP',
+                l10n.profileXpProgress(xpInLevel, xpPerLevel),
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: scheme.onSurfaceVariant.withValues(alpha: 0.9),
                 ),
               ),
               const Spacer(),
               Text(
-                '$xpToNextLevel XP ${AppStrings.profileXpToNextLevel}',
+                l10n.profileXpToNextLevel(xpToNextLevel),
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: scheme.onSurfaceVariant.withValues(alpha: 0.9),
                 ),
@@ -396,6 +400,7 @@ class _ProfileTabSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     Widget buildButton({
       required bool selected,
       required IconData icon,
@@ -421,7 +426,7 @@ class _ProfileTabSelector extends StatelessWidget {
             child: buildButton(
               selected: selectedTab == ProfileTabSection.statistics,
               icon: Icons.bar_chart_rounded,
-              label: AppStrings.profileTabStats,
+              label: l10n.profileTabStats,
               tab: ProfileTabSection.statistics,
             ),
           ),
@@ -430,7 +435,7 @@ class _ProfileTabSelector extends StatelessWidget {
             child: buildButton(
               selected: selectedTab == ProfileTabSection.leaderboards,
               icon: Icons.emoji_events_rounded,
-              label: AppStrings.profileTabLeaderboards,
+              label: l10n.profileTabLeaderboards,
               tab: ProfileTabSection.leaderboards,
             ),
           ),
@@ -439,7 +444,7 @@ class _ProfileTabSelector extends StatelessWidget {
             child: buildButton(
               selected: selectedTab == ProfileTabSection.achievements,
               icon: Icons.workspace_premium_rounded,
-              label: AppStrings.profileTabAchievements,
+              label: l10n.profileTabAchievements,
               tab: ProfileTabSection.achievements,
             ),
           ),
@@ -464,6 +469,7 @@ class _StatisticsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final ThemeData theme = Theme.of(context);
     final int played = profile.gamesPlayed;
 
@@ -473,7 +479,7 @@ class _StatisticsSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Text(
-            AppStrings.profileStatsLabel,
+            l10n.profileStatsLabel,
             style: theme.textTheme.titleSmall,
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -484,7 +490,7 @@ class _StatisticsSection extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
-            AppStrings.profileRecentGames,
+            l10n.profileRecentGames,
             style: theme.textTheme.titleSmall,
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -518,11 +524,12 @@ class _WinLossOverview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Row(
       children: <Widget>[
         Expanded(
           child: _CounterCard(
-            label: AppStrings.profileWins,
+            label: l10n.profileWins,
             value: '$wins',
             icon: Icons.check_circle_rounded,
             tone: _CounterCardTone.positive,
@@ -531,7 +538,7 @@ class _WinLossOverview extends StatelessWidget {
         const SizedBox(width: AppSpacing.sm),
         Expanded(
           child: _CounterCard(
-            label: AppStrings.profileLosses,
+            label: l10n.profileLosses,
             value: '$losses',
             icon: Icons.cancel_rounded,
             tone: _CounterCardTone.negative,
@@ -540,7 +547,7 @@ class _WinLossOverview extends StatelessWidget {
         const SizedBox(width: AppSpacing.sm),
         Expanded(
           child: _CounterCard(
-            label: AppStrings.profileGamesPlayed,
+            label: l10n.profileGamesPlayed,
             value: '$played',
             icon: Icons.sports_esports_rounded,
             tone: _CounterCardTone.neutral,
@@ -657,6 +664,7 @@ class _LeaderboardsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
 
@@ -666,7 +674,7 @@ class _LeaderboardsSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Text(
-            AppStrings.profileLeaderboards,
+            l10n.profileLeaderboards,
             style: theme.textTheme.titleSmall,
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -684,7 +692,7 @@ class _LeaderboardsSection extends StatelessWidget {
                         child: _GradientToggleButton(
                           selected: selectedScope == LeaderboardScope.global,
                           icon: Icons.public_rounded,
-                          label: AppStrings.profileLeaderboardGlobal,
+                          label: l10n.profileLeaderboardGlobal,
                           onPressed: () =>
                               onScopeChanged(LeaderboardScope.global),
                         ),
@@ -694,7 +702,7 @@ class _LeaderboardsSection extends StatelessWidget {
                         child: _GradientToggleButton(
                           selected: selectedScope == LeaderboardScope.friends,
                           icon: Icons.group_rounded,
-                          label: AppStrings.profileLeaderboardFriends,
+                          label: l10n.profileLeaderboardFriends,
                           onPressed: () =>
                               onScopeChanged(LeaderboardScope.friends),
                         ),
@@ -704,7 +712,7 @@ class _LeaderboardsSection extends StatelessWidget {
                         child: _GradientToggleButton(
                           selected: selectedScope == LeaderboardScope.weekly,
                           icon: Icons.calendar_view_week_rounded,
-                          label: AppStrings.profileLeaderboardWeekly,
+                          label: l10n.profileLeaderboardWeekly,
                           onPressed: () =>
                               onScopeChanged(LeaderboardScope.weekly),
                         ),
@@ -714,7 +722,7 @@ class _LeaderboardsSection extends StatelessWidget {
                   const SizedBox(height: AppSpacing.md),
                   if (rows.isEmpty)
                     Text(
-                      AppStrings.profileNoLeaderboardData,
+                      l10n.profileNoLeaderboardData,
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: scheme.onSurfaceVariant.withValues(alpha: 0.9),
@@ -748,7 +756,7 @@ class _LeaderboardsSection extends StatelessWidget {
               child: Center(child: CircularProgressIndicator()),
             ),
             error: (Object _, StackTrace __) => Text(
-              AppStrings.profileNoLeaderboardData,
+              l10n.profileNoLeaderboardData,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: scheme.onSurfaceVariant.withValues(alpha: 0.9),
@@ -776,6 +784,7 @@ class _AchievementsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
     final bool isLight = theme.brightness == Brightness.light;
@@ -795,13 +804,12 @@ class _AchievementsSection extends StatelessWidget {
           Row(
             children: <Widget>[
               Text(
-                AppStrings.profileAchievements,
+                l10n.profileAchievements,
                 style: theme.textTheme.titleSmall,
               ),
               const Spacer(),
               Text(
-                '$unlockedCount/${achievements.length} '
-                '${AppStrings.profileUnlocked}',
+                l10n.profileUnlockedCount(unlockedCount, achievements.length),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: scheme.onSurfaceVariant.withValues(alpha: 0.92),
                 ),
@@ -838,7 +846,7 @@ class _AchievementsSection extends StatelessWidget {
               children: <Widget>[
                 Expanded(
                   child: Text(
-                    AppStrings.profileShowCompleted,
+                    l10n.profileShowCompleted,
                     style: theme.textTheme.labelMedium,
                   ),
                 ),
@@ -1118,11 +1126,10 @@ class _RecentGameRow extends StatelessWidget {
               color: resultColor.withValues(alpha: 0.16),
               border: Border.all(color: resultColor.withValues(alpha: 0.5)),
             ),
-            child: Text(
-              game.won
-                  ? AppStrings.profileWinLabel
-                  : AppStrings.profileLossLabel,
-              style: theme.textTheme.labelSmall?.copyWith(color: resultColor),
+            child: Icon(
+              game.won ? Icons.check_rounded : Icons.close_rounded,
+              size: 14,
+              color: resultColor,
             ),
           ),
         ],
@@ -1291,6 +1298,7 @@ class _AchievementCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
     final bool isLight = theme.brightness == Brightness.light;
@@ -1385,12 +1393,12 @@ class _AchievementCard extends StatelessWidget {
             Row(
               children: <Widget>[
                 Text(
-                  '${item.progress}/${item.target}',
+                  l10n.profileProgressValue(item.progress, item.target),
                   style: bottomValueStyle,
                 ),
                 const Spacer(),
                 Text(
-                  '+${item.rewardXp} XP',
+                  l10n.profileRewardXp(item.rewardXp),
                   style: bottomValueStyle,
                 ),
               ],
@@ -1521,44 +1529,48 @@ class _RecentGame {
 
 enum _RecentGameMode { multiplayer, duel }
 
-List<_RecentGame> _buildRecentGames(int averageScore) {
+List<_RecentGame> _buildRecentGames({
+  required AppLocalizations l10n,
+  required int averageScore,
+}) {
   return <_RecentGame>[
     _RecentGame(
-      title: 'Friday Trivia Crew',
+      title: l10n.profileRecentGameFridayTriviaCrew,
       score: averageScore + 780,
       won: true,
-      whenLabel: AppStrings.profileGameTimeJustNow,
-      modeLabel: AppStrings.createRoomModeMultiplayer,
+      whenLabel: l10n.profileGameTimeJustNow,
+      modeLabel: l10n.createRoomModeMultiplayer,
       mode: _RecentGameMode.multiplayer,
     ),
     _RecentGame(
-      title: 'Movie Legends',
+      title: l10n.profileRecentGameMovieLegends,
       score: averageScore - 230,
       won: false,
-      whenLabel: AppStrings.profileGameTimeToday,
-      modeLabel: AppStrings.createRoomModeDuel,
+      whenLabel: l10n.profileGameTimeToday,
+      modeLabel: l10n.createRoomModeDuel,
       mode: _RecentGameMode.duel,
     ),
     _RecentGame(
-      title: 'Night Blitz',
+      title: l10n.profileRecentGameNightBlitz,
       score: averageScore + 420,
       won: true,
-      whenLabel: AppStrings.profileGameTimeYesterday,
-      modeLabel: AppStrings.createRoomModeMultiplayer,
+      whenLabel: l10n.profileGameTimeYesterday,
+      modeLabel: l10n.createRoomModeMultiplayer,
       mode: _RecentGameMode.multiplayer,
     ),
     _RecentGame(
-      title: 'Quick Sparks',
+      title: l10n.profileRecentGameQuickSparks,
       score: averageScore - 110,
       won: true,
-      whenLabel: AppStrings.profileGameTimeTwoDaysAgo,
-      modeLabel: AppStrings.createRoomModeDuel,
+      whenLabel: l10n.profileGameTimeTwoDaysAgo,
+      modeLabel: l10n.createRoomModeDuel,
       mode: _RecentGameMode.duel,
     ),
   ];
 }
 
 List<_AchievementItem> _buildAchievements({
+  required AppLocalizations l10n,
   required int wins,
   required int gamesPlayed,
   required int level,
@@ -1567,8 +1579,8 @@ List<_AchievementItem> _buildAchievements({
 }) {
   return <_AchievementItem>[
     _AchievementItem(
-      title: 'Perfect Round',
-      requirement: 'Answer every question correctly in one round',
+      title: l10n.achievementPerfectRoundTitle,
+      requirement: l10n.achievementPerfectRoundRequirement,
       icon: Icons.bolt_rounded,
       tier: _AchievementTier.epic,
       progress: math.min(1, wins ~/ 15),
@@ -1576,8 +1588,8 @@ List<_AchievementItem> _buildAchievements({
       rewardXp: 260,
     ),
     _AchievementItem(
-      title: 'Consistent Winner',
-      requirement: 'Win 20 games',
+      title: l10n.achievementConsistentWinnerTitle,
+      requirement: l10n.achievementConsistentWinnerRequirement,
       icon: Icons.emoji_events_rounded,
       tier: _AchievementTier.rare,
       progress: wins,
@@ -1585,8 +1597,8 @@ List<_AchievementItem> _buildAchievements({
       rewardXp: 180,
     ),
     _AchievementItem(
-      title: 'XP Collector',
-      requirement: 'Reach 10,000 total XP',
+      title: l10n.achievementXpCollectorTitle,
+      requirement: l10n.achievementXpCollectorRequirement,
       icon: Icons.auto_awesome_rounded,
       tier: _AchievementTier.epic,
       progress: totalXp,
@@ -1594,8 +1606,8 @@ List<_AchievementItem> _buildAchievements({
       rewardXp: 320,
     ),
     _AchievementItem(
-      title: 'Daily Challenger',
-      requirement: 'Play 30 games',
+      title: l10n.achievementDailyChallengerTitle,
+      requirement: l10n.achievementDailyChallengerRequirement,
       icon: Icons.calendar_month_rounded,
       tier: _AchievementTier.common,
       progress: gamesPlayed,
@@ -1603,8 +1615,8 @@ List<_AchievementItem> _buildAchievements({
       rewardXp: 120,
     ),
     _AchievementItem(
-      title: 'Streak Runner',
-      requirement: 'Maintain 5-win streak',
+      title: l10n.achievementStreakRunnerTitle,
+      requirement: l10n.achievementStreakRunnerRequirement,
       icon: Icons.local_fire_department_rounded,
       tier: _AchievementTier.rare,
       progress: streak,
@@ -1612,8 +1624,8 @@ List<_AchievementItem> _buildAchievements({
       rewardXp: 160,
     ),
     _AchievementItem(
-      title: 'Veteran Mind',
-      requirement: 'Reach level 8',
+      title: l10n.achievementVeteranMindTitle,
+      requirement: l10n.achievementVeteranMindRequirement,
       icon: Icons.psychology_rounded,
       tier: _AchievementTier.common,
       progress: level,
@@ -1621,8 +1633,8 @@ List<_AchievementItem> _buildAchievements({
       rewardXp: 150,
     ),
     _AchievementItem(
-      title: 'Arena Master',
-      requirement: 'Reach level 12',
+      title: l10n.achievementArenaMasterTitle,
+      requirement: l10n.achievementArenaMasterRequirement,
       icon: Icons.shield_rounded,
       tier: _AchievementTier.epic,
       progress: level,
@@ -1630,8 +1642,8 @@ List<_AchievementItem> _buildAchievements({
       rewardXp: 400,
     ),
     _AchievementItem(
-      title: 'Marathon Player',
-      requirement: 'Play 60 games',
+      title: l10n.achievementMarathonPlayerTitle,
+      requirement: l10n.achievementMarathonPlayerRequirement,
       icon: Icons.timer_rounded,
       tier: _AchievementTier.rare,
       progress: gamesPlayed,

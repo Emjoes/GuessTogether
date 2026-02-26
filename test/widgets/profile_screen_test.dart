@@ -4,15 +4,14 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:guesstogether/core/l10n/app_strings.dart';
 import 'package:guesstogether/features/profile/presentation/profile_screen.dart';
+import '../test_app.dart';
 
 void main() {
   testWidgets('ProfileScreen shows tabbed profile sections',
       (WidgetTester tester) async {
     await tester.pumpWidget(
       const ProviderScope(
-        child: MaterialApp(
-          home: ProfileScreen(),
-        ),
+        child: _ProfileApp(),
       ),
     );
 
@@ -33,4 +32,16 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(AppStrings.profileAchievements), findsWidgets);
   });
+}
+
+class _ProfileApp extends StatelessWidget {
+  const _ProfileApp();
+
+  @override
+  Widget build(BuildContext context) {
+    return buildTestMaterialApp(
+      home: const ProfileScreen(),
+      locale: const Locale('en'),
+    );
+  }
 }

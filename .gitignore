@@ -42,14 +42,6 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Generated platform folders (keep only source and tests in git)
-/android/
-/ios/
-/linux/
-/macos/
-/windows/
-/web/
-
 # Final build artifacts (packages/installers)
 *.apk
 *.aab

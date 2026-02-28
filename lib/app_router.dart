@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:guesstogether/core/debug/loading_debug_gate.dart';
 import 'package:guesstogether/features/game/presentation/game_screen.dart';
 import 'package:guesstogether/features/home/presentation/home_screen.dart';
 import 'package:guesstogether/features/lobby/presentation/create_room_screen.dart';
@@ -23,55 +26,91 @@ final appRouterProvider = Provider<GoRouter>(
         path: SplashScreen.routePath,
         name: SplashScreen.routeName,
         pageBuilder: (BuildContext context, GoRouterState state) =>
-            _buildAppPage(state: state, child: const SplashScreen()),
+            _buildAppPage(
+          state: state,
+          child: const SplashScreen(),
+          showEntryLoader: true,
+        ),
       ),
       GoRoute(
         path: HomeScreen.routePath,
         name: HomeScreen.routeName,
         pageBuilder: (BuildContext context, GoRouterState state) =>
-            _buildAppPage(state: state, child: const HomeScreen()),
+            _buildAppPage(
+          state: state,
+          child: const HomeScreen(),
+          showEntryLoader: false,
+        ),
       ),
       GoRoute(
         path: CreateRoomScreen.routePath,
         name: CreateRoomScreen.routeName,
         pageBuilder: (BuildContext context, GoRouterState state) =>
-            _buildAppPage(state: state, child: const CreateRoomScreen()),
+            _buildAppPage(
+          state: state,
+          child: const CreateRoomScreen(),
+          showEntryLoader: true,
+        ),
       ),
       GoRoute(
         path: JoinRoomScreen.routePath,
         name: JoinRoomScreen.routeName,
         pageBuilder: (BuildContext context, GoRouterState state) =>
-            _buildAppPage(state: state, child: const JoinRoomScreen()),
+            _buildAppPage(
+          state: state,
+          child: const JoinRoomScreen(),
+          showEntryLoader: true,
+        ),
       ),
       GoRoute(
         path: WaitingRoomScreen.routePath,
         name: WaitingRoomScreen.routeName,
         pageBuilder: (BuildContext context, GoRouterState state) =>
-            _buildAppPage(state: state, child: const WaitingRoomScreen()),
+            _buildAppPage(
+          state: state,
+          child: const WaitingRoomScreen(),
+          showEntryLoader: true,
+        ),
       ),
       GoRoute(
         path: ProfileScreen.routePath,
         name: ProfileScreen.routeName,
         pageBuilder: (BuildContext context, GoRouterState state) =>
-            _buildAppPage(state: state, child: const ProfileScreen()),
+            _buildAppPage(
+              state: state,
+              child: const ProfileScreen(),
+              showEntryLoader: false,
+            ),
       ),
       GoRoute(
         path: SettingsScreen.routePath,
         name: SettingsScreen.routeName,
         pageBuilder: (BuildContext context, GoRouterState state) =>
-            _buildAppPage(state: state, child: const SettingsScreen()),
+            _buildAppPage(
+          state: state,
+          child: const SettingsScreen(),
+          showEntryLoader: true,
+        ),
       ),
       GoRoute(
         path: GameScreen.routePath,
         name: GameScreen.routeName,
         pageBuilder: (BuildContext context, GoRouterState state) =>
-            _buildAppPage(state: state, child: const GameScreen()),
+            _buildAppPage(
+          state: state,
+          child: const GameScreen(),
+          showEntryLoader: true,
+        ),
       ),
       GoRoute(
         path: ResultScreen.routePath,
         name: ResultScreen.routeName,
         pageBuilder: (BuildContext context, GoRouterState state) =>
-            _buildAppPage(state: state, child: const ResultScreen()),
+            _buildAppPage(
+          state: state,
+          child: const ResultScreen(),
+          showEntryLoader: true,
+        ),
       ),
     ],
   ),
@@ -80,10 +119,13 @@ final appRouterProvider = Provider<GoRouter>(
 CustomTransitionPage<void> _buildAppPage({
   required GoRouterState state,
   required Widget child,
+  required bool showEntryLoader,
 }) {
+  final Widget pageChild =
+      showEntryLoader ? _RouteEntryLoader(child: child) : child;
   return CustomTransitionPage<void>(
     key: state.pageKey,
-    child: child,
+    child: pageChild,
     transitionDuration: const Duration(milliseconds: 180),
     reverseTransitionDuration: const Duration(milliseconds: 150),
     transitionsBuilder: (
@@ -114,4 +156,50 @@ CustomTransitionPage<void> _buildAppPage({
       );
     },
   );
+}
+
+class _RouteEntryLoader extends StatefulWidget {
+  const _RouteEntryLoader({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_RouteEntryLoader> createState() => _RouteEntryLoaderState();
+}
+
+class _RouteEntryLoaderState extends State<_RouteEntryLoader> {
+  bool _ready = !isLoadingDebugGateSupported;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_ready) {
+      return;
+    }
+    unawaited(_prepare());
+  }
+
+  Future<void> _prepare() async {
+    await LoadingDebugGate.instance.delayed(
+      const Duration(milliseconds: 260),
+    );
+    if (!mounted) {
+      return;
+    }
+    setState(() => _ready = true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_ready) {
+      return widget.child;
+    }
+    return const Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: CircularProgressIndicator(),
+        ),
+      ),
+    );
+  }
 }

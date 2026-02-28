@@ -6,6 +6,7 @@ import 'package:guesstogether/core/l10n/l10n.dart';
 import 'package:guesstogether/core/theme/app_spacing.dart';
 import 'package:guesstogether/core/theme/app_theme.dart';
 import 'package:guesstogether/widgets/app_panel.dart';
+import 'package:guesstogether/widgets/back_shortcut_scope.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -46,92 +47,79 @@ class SettingsScreen extends ConsumerWidget {
       ],
     );
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.settingsTitle)),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.sm,
-            AppSpacing.lg,
-            AppSpacing.xl,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              AppPanel(
-                gradient: setupGradient,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    Text(
-                      l10n.settingsTheme,
-                      style: theme.textTheme.titleSmall,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    _ThemeModeButton(
-                      selected: themeMode == ThemeMode.system,
-                      icon: Icons.phone_android_rounded,
-                      label: l10n.settingsThemeSystem,
-                      onPressed: () =>
-                          themeModeNotifier.state = ThemeMode.system,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    _ThemeModeButton(
-                      selected: themeMode == ThemeMode.light,
-                      icon: Icons.wb_sunny_rounded,
-                      label: l10n.settingsThemeLight,
-                      onPressed: () =>
-                          themeModeNotifier.state = ThemeMode.light,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    _ThemeModeButton(
-                      selected: themeMode == ThemeMode.dark,
-                      icon: Icons.nights_stay_rounded,
-                      label: l10n.settingsThemeDark,
-                      onPressed: () => themeModeNotifier.state = ThemeMode.dark,
-                    ),
-                  ],
+    return BackShortcutScope(
+      child: Scaffold(
+        appBar: AppBar(title: Text(l10n.settingsTitle)),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.sm,
+              AppSpacing.lg,
+              AppSpacing.xl,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                AppPanel(
+                  gradient: setupGradient,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      Text(
+                        l10n.settingsTheme,
+                        style: theme.textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      _ThemeModeButton(
+                        selected: themeMode == ThemeMode.light,
+                        icon: Icons.wb_sunny_rounded,
+                        label: l10n.settingsThemeLight,
+                        onPressed: () =>
+                            themeModeNotifier.state = ThemeMode.light,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      _ThemeModeButton(
+                        selected: themeMode == ThemeMode.dark,
+                        icon: Icons.nights_stay_rounded,
+                        label: l10n.settingsThemeDark,
+                        onPressed: () =>
+                            themeModeNotifier.state = ThemeMode.dark,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              AppPanel(
-                gradient: setupGradient,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    Text(
-                      l10n.settingsLanguage,
-                      style: theme.textTheme.titleSmall,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    _ThemeModeButton(
-                      selected: appLanguage == AppLanguage.system,
-                      icon: Icons.phone_android_rounded,
-                      label: l10n.settingsLanguageSystem,
-                      onPressed: () =>
-                          appLanguageNotifier.state = AppLanguage.system,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    _ThemeModeButton(
-                      selected: appLanguage == AppLanguage.english,
-                      leading: const _FlagBadge(child: _UkFlag()),
-                      label: l10n.settingsLanguageEnglish,
-                      onPressed: () =>
-                          appLanguageNotifier.state = AppLanguage.english,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    _ThemeModeButton(
-                      selected: appLanguage == AppLanguage.russian,
-                      leading: const _FlagBadge(child: _RuFlag()),
-                      label: l10n.settingsLanguageRussian,
-                      onPressed: () =>
-                          appLanguageNotifier.state = AppLanguage.russian,
-                    ),
-                  ],
+                const SizedBox(height: AppSpacing.md),
+                AppPanel(
+                  gradient: setupGradient,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      Text(
+                        l10n.settingsLanguage,
+                        style: theme.textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      _ThemeModeButton(
+                        selected: appLanguage == AppLanguage.english,
+                        leading: const _FlagBadge(child: _UkFlag()),
+                        label: l10n.settingsLanguageEnglish,
+                        onPressed: () =>
+                            appLanguageNotifier.state = AppLanguage.english,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      _ThemeModeButton(
+                        selected: appLanguage == AppLanguage.russian,
+                        leading: const _FlagBadge(child: _RuFlag()),
+                        label: l10n.settingsLanguageRussian,
+                        onPressed: () =>
+                            appLanguageNotifier.state = AppLanguage.russian,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

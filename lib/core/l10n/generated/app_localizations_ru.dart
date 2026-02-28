@@ -199,12 +199,12 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String profileUnlockedCount(int unlocked, int total) {
-    return '$unlocked/$total открыто';
+    return '$unlocked / $total открыто';
   }
 
   @override
   String profileProgressValue(int progress, int target) {
-    return '$progress/$target';
+    return '$progress / $target';
   }
 
   @override
@@ -318,6 +318,60 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get gameStartScriptedMatch => 'Запустить тестовый матч';
+
+  @override
+  String get gameLeaveDialogTitle => 'Покинуть матч?';
+
+  @override
+  String get gameLeaveDialogBody =>
+      'Вы сможете подключиться к этому матчу позже.';
+
+  @override
+  String get gameLeaveStay => 'Остаться';
+
+  @override
+  String get gameLeaveLeave => 'Выйти';
+
+  @override
+  String gameScoreDialogTitle(String playerName) {
+    return 'Установить счет: $playerName';
+  }
+
+  @override
+  String get gameScoreFieldLabel => 'Счет';
+
+  @override
+  String get gameScoreFieldHint => '0';
+
+  @override
+  String get gameScoreDialogCancel => 'Отмена';
+
+  @override
+  String get gameScoreDialogSave => 'Сохранить';
+
+  @override
+  String get gameHostStartCta => 'Старт';
+
+  @override
+  String get gameHostPauseCta => 'Пауза';
+
+  @override
+  String get gameHostUnpauseCta => 'Продолжить';
+
+  @override
+  String get gameCopyLinkCta => 'Ссылка';
+
+  @override
+  String get gameConnectLinkCopied => 'Ссылка для подключения скопирована';
+
+  @override
+  String get gameHostAcceptCta => 'Принять';
+
+  @override
+  String get gameHostRejectCta => 'Отклонить';
+
+  @override
+  String get gamePassCta => 'Пас';
 
   @override
   String gamePointsLabel(int points) {

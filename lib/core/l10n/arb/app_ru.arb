@@ -88,7 +88,7 @@
       }
     }
   },
-  "profileUnlockedCount": "{unlocked}/{total} открыто",
+  "profileUnlockedCount": "{unlocked} / {total} открыто",
   "@profileUnlockedCount": {
     "placeholders": {
       "unlocked": {
@@ -99,7 +99,7 @@
       }
     }
   },
-  "profileProgressValue": "{progress}/{target}",
+  "profileProgressValue": "{progress} / {target}",
   "@profileProgressValue": {
     "placeholders": {
       "progress": {
@@ -153,6 +153,30 @@
   "gameLiveMatchTitle": "Матч",
   "gameMatchEnded": "Матч завершён",
   "gameStartScriptedMatch": "Запустить тестовый матч",
+  "gameLeaveDialogTitle": "Покинуть матч?",
+  "gameLeaveDialogBody": "Вы сможете подключиться к этому матчу позже.",
+  "gameLeaveStay": "Остаться",
+  "gameLeaveLeave": "Выйти",
+  "gameScoreDialogTitle": "Установить счет: {playerName}",
+  "@gameScoreDialogTitle": {
+    "placeholders": {
+      "playerName": {
+        "type": "String"
+      }
+    }
+  },
+  "gameScoreFieldLabel": "Счет",
+  "gameScoreFieldHint": "0",
+  "gameScoreDialogCancel": "Отмена",
+  "gameScoreDialogSave": "Сохранить",
+  "gameHostStartCta": "Старт",
+  "gameHostPauseCta": "Пауза",
+  "gameHostUnpauseCta": "Продолжить",
+  "gameCopyLinkCta": "Ссылка",
+  "gameConnectLinkCopied": "Ссылка для подключения скопирована",
+  "gameHostAcceptCta": "Принять",
+  "gameHostRejectCta": "Отклонить",
+  "gamePassCta": "Пас",
   "gamePointsLabel": "{points} очков",
   "@gamePointsLabel": {
     "placeholders": {

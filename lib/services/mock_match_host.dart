@@ -43,7 +43,7 @@ class MockMatchHost {
     _controller.add(
       RoomUpdateMessage(
         players: <WsPlayer>[
-          WsPlayer(id: 'p1', name: 'You', score: 0),
+          WsPlayer(id: 'p1', name: 'Serge', score: 0),
           WsPlayer(id: 'p2', name: 'QuizBot', score: 0),
           WsPlayer(id: 'p3', name: 'Brainiac', score: 0),
         ],

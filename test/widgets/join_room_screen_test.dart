@@ -55,7 +55,7 @@ void main() {
     expect(find.text(AppStrings.joinRoomPasswordDialogTitle), findsOneWidget);
     expect(tester.takeException(), isNull);
 
-    await tester.tap(find.byType(TextButton).first);
+    await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
 
     expect(find.text(AppStrings.joinRoomPasswordDialogTitle), findsNothing);

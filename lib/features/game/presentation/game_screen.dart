@@ -1,4 +1,10 @@
+import 'dart:async';
+import 'dart:math' as math;
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -8,24 +14,140 @@ import 'package:guesstogether/features/game/domain/game_models.dart';
 import 'package:guesstogether/features/game/providers/game_providers.dart';
 import 'package:guesstogether/features/result/presentation/result_screen.dart';
 import 'package:guesstogether/widgets/app_panel.dart';
-import 'package:guesstogether/widgets/circle_timer.dart';
-import 'package:guesstogether/widgets/player_row.dart';
+import 'package:guesstogether/widgets/back_shortcut_scope.dart';
 
-class GameScreen extends ConsumerWidget {
+Color _timedFrameActiveStripeColor(ColorScheme scheme) {
+  if (scheme.brightness == Brightness.light) {
+    return const Color(0xFF8F6400);
+  }
+  return const Color(0xFFD7B34A);
+}
+
+class GameScreen extends ConsumerStatefulWidget {
   const GameScreen({super.key});
 
   static const String routePath = '/game';
   static const String routeName = 'game';
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = context.l10n;
-    final game = ref.watch(gameControllerProvider);
-    final controller = ref.read(gameControllerProvider.notifier);
+  ConsumerState<GameScreen> createState() => _GameScreenState();
+}
 
-    ref.listen(
+class _GameScreenState extends ConsumerState<GameScreen> {
+  bool _exitDialogOpen = false;
+
+  Future<bool> _confirmExitMatch() async {
+    final l10n = context.l10n;
+    final bool? shouldLeave = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text(l10n.gameLeaveDialogTitle),
+          content: Text(l10n.gameLeaveDialogBody),
+          actions: <Widget>[
+            FilledButton.tonal(
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(
+                  dialogContext,
+                ).colorScheme.surfaceContainerHighest,
+                foregroundColor: Theme.of(
+                  dialogContext,
+                ).colorScheme.onSurfaceVariant,
+              ),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(l10n.gameLeaveStay),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(l10n.gameLeaveLeave),
+            ),
+          ],
+        );
+      },
+    );
+    return shouldLeave ?? false;
+  }
+
+  Future<void> _attemptLeaveMatch() async {
+    if (_exitDialogOpen || !mounted) {
+      return;
+    }
+    _exitDialogOpen = true;
+    try {
+      final bool shouldLeave = await _confirmExitMatch();
+      if (shouldLeave && mounted) {
+        Navigator.of(context).pop();
+      }
+    } finally {
+      _exitDialogOpen = false;
+    }
+  }
+
+  Future<void> _copyReconnectLink() async {
+    final l10n = context.l10n;
+    const String reconnectLink = 'guesstogether://match/reconnect';
+    await Clipboard.setData(const ClipboardData(text: reconnectLink));
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        duration: const Duration(milliseconds: 1200),
+        content: Text(l10n.gameConnectLinkCopied),
+      ),
+    );
+  }
+
+  bool _panelTimerActive(GameState game) {
+    return game.phase == GamePhase.answerWindow;
+  }
+
+  bool _panelTimerPaused(GameState game) {
+    if (game.isPaused) {
+      return true;
+    }
+    return game.phase == GamePhase.answerWindow &&
+        game.pendingAnswerPlayerId != null;
+  }
+
+  double _panelTimerProgress(GameState game) {
+    if (game.phaseSecondsTotal <= 0) {
+      return 1;
+    }
+    return (game.phaseSecondsLeft / game.phaseSecondsTotal).clamp(0, 1);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final GameState game = ref.watch(gameControllerProvider);
+    final GameController controller = ref.read(gameControllerProvider.notifier);
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final bool isLight = theme.brightness == Brightness.light;
+    final Color questionStripeColor = isLight
+        ? const Color(0xFF563600)
+        : _timedFrameActiveStripeColor(scheme);
+    final GameViewRole role = ref.watch(gameViewRoleProvider);
+    final String selectedLocalPlayerId = ref.watch(localPlayerIdProvider);
+    final GameViewRole effectiveRole = role;
+    final String effectiveLocalPlayerId = game.players.any(
+      (Player p) => p.id == selectedLocalPlayerId,
+    )
+        ? selectedLocalPlayerId
+        : game.players.first.id;
+
+    if (effectiveLocalPlayerId != selectedLocalPlayerId) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        ref.read(localPlayerIdProvider.notifier).state = effectiveLocalPlayerId;
+      });
+    }
+
+    ref.listen<GameState>(
       gameControllerProvider,
-      (previous, next) {
+      (GameState? previous, GameState next) {
         if (previous?.isMatchEnded == false &&
             next.isMatchEnded &&
             context.mounted) {
@@ -34,66 +156,295 @@ class GameScreen extends ConsumerWidget {
       },
     );
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.gameLiveMatchTitle),
+    return BackShortcutScope(
+      child: PopScope<void>(
+        canPop: false,
+        onPopInvokedWithResult: (bool didPop, void _) async {
+          if (didPop) {
+            return;
+          }
+          await _attemptLeaveMatch();
+        },
+        child: Scaffold(
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.md,
+                AppSpacing.lg,
+                AppSpacing.md,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  _CompactPlayersStrip(
+                    players: game.players,
+                    game: game,
+                    localPlayerId: effectiveLocalPlayerId,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Expanded(
+                    child: _TimedFrame(
+                      strokeScale: isLight ? 1.22 : 1,
+                      activeColorOverride: questionStripeColor,
+                      progress: _panelTimerProgress(game),
+                      active: _panelTimerActive(game),
+                      paused: _panelTimerPaused(game),
+                      secondsLeft: game.phaseSecondsLeft,
+                      secondsTotal: game.phaseSecondsTotal,
+                      borderRadius: 22,
+                      child: Stack(
+                        children: <Widget>[
+                          AppPanel(
+                            padding: const EdgeInsets.all(AppSpacing.sm),
+                            child: _MatchStageBody(
+                              game: game,
+                              role: effectiveRole,
+                              localPlayerId: effectiveLocalPlayerId,
+                              onPickQuestion: (String questionId) {
+                                controller.chooseQuestion(
+                                  questionId,
+                                  hostOverride:
+                                      effectiveRole == GameViewRole.host,
+                                );
+                              },
+                            ),
+                          ),
+                          if (game.isPaused)
+                            const Positioned(
+                              right: 12,
+                              bottom: 12,
+                              child: _PausedCornerBadge(),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  _CompactControlsBar(
+                    game: game,
+                    role: effectiveRole,
+                    localPlayerId: effectiveLocalPlayerId,
+                    onStart: () => unawaited(controller.startMatch()),
+                    onTogglePause: controller.togglePause,
+                    onCopyLink: () => unawaited(_copyReconnectLink()),
+                    onAnswer: () =>
+                        controller.requestAnswer(effectiveLocalPlayerId),
+                    onPass: () =>
+                        controller.passQuestion(effectiveLocalPlayerId),
+                    onAccept: controller.hostAcceptAnswer,
+                    onReject: controller.hostRejectAnswer,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.sm,
-            AppSpacing.lg,
-            AppSpacing.xl,
+    );
+  }
+}
+
+class _PausedCornerBadge extends StatelessWidget {
+  const _PausedCornerBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    return CircleAvatar(
+      radius: 16,
+      backgroundColor: scheme.surface.withValues(alpha: 0.94),
+      child: Icon(
+        Icons.pause_circle_filled_rounded,
+        size: 22,
+        color: scheme.primary,
+      ),
+    );
+  }
+}
+
+class _CompactPlayersStrip extends StatelessWidget {
+  const _CompactPlayersStrip({
+    required this.players,
+    required this.game,
+    required this.localPlayerId,
+  });
+
+  final List<Player> players;
+  final GameState game;
+  final String localPlayerId;
+
+  @override
+  Widget build(BuildContext context) {
+    final List<Player> shownPlayers = players.take(4).toList();
+    return Row(
+      children: shownPlayers.map((Player player) {
+        final bool isLocal = player.id == localPlayerId;
+        return Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            child: _CompactPlayerTile(
+              player: player,
+              isLocal: isLocal,
+              game: game,
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _CompactPlayerTile extends StatelessWidget {
+  const _CompactPlayerTile({
+    required this.player,
+    required this.isLocal,
+    required this.game,
+  });
+
+  final Player player;
+  final bool isLocal;
+  final GameState game;
+
+  bool _isAnswerPhaseForPlayer() {
+    return game.phase == GamePhase.answerWindow &&
+        game.pendingAnswerPlayerId == player.id;
+  }
+
+  double _activeProgress() {
+    if (game.phase == GamePhase.answerWindow &&
+        game.pendingAnswerPlayerId == player.id) {
+      if (game.pendingAnswerSecondsTotal <= 0) {
+        return 1;
+      }
+      return (game.pendingAnswerSecondsLeft / game.pendingAnswerSecondsTotal)
+          .clamp(0, 1);
+    }
+    if (game.phaseSecondsTotal <= 0) {
+      return 1;
+    }
+    final double value =
+        (game.phaseSecondsLeft / game.phaseSecondsTotal).clamp(0, 1);
+    return value;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final bool isLight = theme.brightness == Brightness.light;
+    final Color stripeColor = _timedFrameActiveStripeColor(scheme);
+    final Color border =
+        scheme.outline.withValues(alpha: isLight ? 0.72 : 0.55);
+    final Color localNameColor = isLocal
+        ? scheme.primary.withValues(alpha: 0.98)
+        : scheme.onSurface.withValues(alpha: 0.78);
+    final Color scoreColor =
+        (isLocal ? scheme.primary : scheme.secondary).withValues(alpha: 0.96);
+    final bool isSelecting = game.phase == GamePhase.boardSelection &&
+        player.id == game.currentChooserId;
+    final bool isAnswering = _isAnswerPhaseForPlayer();
+    final bool isCorrect = game.phase == GamePhase.answerReveal &&
+        game.lastCorrectAnswerPlayerId == player.id;
+    final bool showAnswerOutcome = game.phase == GamePhase.answerWindow ||
+        game.phase == GamePhase.answerReveal;
+    final bool isWrong =
+        showAnswerOutcome && game.wrongAnswerPlayerIds.contains(player.id);
+    final bool isPassed =
+        showAnswerOutcome && game.passedPlayerIds.contains(player.id);
+    final bool active = isSelecting || isAnswering;
+    final bool showTurnAccent = isSelecting || isAnswering;
+    final double progress = _activeProgress();
+    final int frameSecondsLeft =
+        isAnswering ? game.pendingAnswerSecondsLeft : game.phaseSecondsLeft;
+    final int frameSecondsTotal =
+        isAnswering ? game.pendingAnswerSecondsTotal : game.phaseSecondsTotal;
+    final Color tileColor;
+    if (showTurnAccent) {
+      tileColor = Color.alphaBlend(
+        stripeColor.withValues(alpha: isLight ? 0.24 : 0.22),
+        scheme.surfaceContainerHighest.withValues(alpha: isLight ? 0.86 : 0.58),
+      );
+    } else if (isCorrect) {
+      tileColor =
+          const Color(0xFF2F8F4E).withValues(alpha: isLight ? 0.28 : 0.5);
+    } else if (isWrong) {
+      tileColor = scheme.error.withValues(alpha: isLight ? 0.16 : 0.22);
+    } else if (isPassed) {
+      tileColor = scheme.onSurface.withValues(alpha: isLight ? 0.12 : 0.16);
+    } else {
+      tileColor = scheme.surfaceContainerHighest
+          .withValues(alpha: isLight ? 0.82 : 0.58);
+    }
+    final Color tileBorderColor = showTurnAccent
+        ? stripeColor.withValues(alpha: isLight ? 0.92 : 0.72)
+        : border;
+    final List<BoxShadow> tileShadows = showTurnAccent
+        ? <BoxShadow>[
+            BoxShadow(
+              color: stripeColor.withValues(alpha: isLight ? 0.36 : 0.28),
+              blurRadius: 14,
+              spreadRadius: 0.6,
+            ),
+          ]
+        : const <BoxShadow>[];
+    final Gradient? tileGradient = showTurnAccent
+        ? LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: <Color>[
+              stripeColor.withValues(alpha: isLight ? 0.26 : 0.3),
+              stripeColor.withValues(alpha: isLight ? 0.1 : 0.08),
+            ],
+          )
+        : null;
+
+    return _TimedFrame(
+      progress: progress,
+      active: active,
+      paused: game.isPaused ||
+          (game.phase == GamePhase.answerWindow &&
+              game.pendingAnswerPlayerId != null &&
+              game.pendingAnswerPlayerId != player.id),
+      secondsLeft: frameSecondsLeft,
+      secondsTotal: frameSecondsTotal,
+      borderRadius: 12,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: null,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          constraints: const BoxConstraints(minHeight: 58),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: tileBorderColor),
+            color: tileColor,
+            gradient: tileGradient,
+            boxShadow: tileShadows,
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              AppPanel(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: Text(
-                            game.currentQuestion?.category ??
-                                l10n.gameTapToReveal,
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                        ),
-                        CircleTimer(
-                          remaining: game.remainingSeconds,
-                          total: 20,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    PlayerRow(players: game.players),
-                  ],
+              Text(
+                player.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: localNameColor,
+                  fontWeight: isLocal ? FontWeight.w800 : FontWeight.w700,
+                  letterSpacing: isLocal ? 0.2 : 0,
                 ),
               ),
-              const SizedBox(height: AppSpacing.md),
-              Expanded(
-                child: _GameBoardOrQuestion(game: game),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              SizedBox(
-                height: AppSpacing.tapTargetMin + 4,
-                child: FilledButton.icon(
-                  onPressed: game.isMatchEnded
-                      ? null
-                      : () {
-                          controller.startMatch();
-                        },
-                  icon: const Icon(Icons.play_arrow_rounded),
-                  label: Text(
-                    game.isMatchEnded
-                        ? l10n.gameMatchEnded
-                        : (game.players.isEmpty
-                            ? l10n.gameStartScriptedMatch
-                            : l10n.gameAnswerCta),
-                  ),
+              const SizedBox(height: 2),
+              Text(
+                '${player.score}',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: scoreColor,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ],
@@ -104,103 +455,951 @@ class GameScreen extends ConsumerWidget {
   }
 }
 
-class _GameBoardOrQuestion extends StatelessWidget {
-  const _GameBoardOrQuestion({required this.game});
+class _MatchStageBody extends StatelessWidget {
+  const _MatchStageBody({
+    required this.game,
+    required this.role,
+    required this.localPlayerId,
+    required this.onPickQuestion,
+  });
 
   final GameState game;
+  final GameViewRole role;
+  final String localPlayerId;
+  final ValueChanged<String> onPickQuestion;
+
+  @override
+  Widget build(BuildContext context) {
+    if (game.phase == GamePhase.waitingForHost) {
+      return const Center(
+        child: Text('Host should start the match.'),
+      );
+    }
+    if (game.phase == GamePhase.finished) {
+      return const Center(
+        child: Text('Match finished.'),
+      );
+    }
+
+    if (game.phase == GamePhase.boardSelection) {
+      final bool canPick = role == GameViewRole.host ||
+          (role == GameViewRole.player &&
+              localPlayerId == game.currentChooserId);
+      return _JeopardyBoard(
+        questions: game.boardQuestions,
+        enabled: canPick && !game.isPaused,
+        onPickQuestion: onPickQuestion,
+      );
+    }
+
+    return _QuestionView(game: game, role: role);
+  }
+}
+
+class _JeopardyBoard extends StatelessWidget {
+  const _JeopardyBoard({
+    required this.questions,
+    required this.enabled,
+    required this.onPickQuestion,
+  });
+
+  final List<Question> questions;
+  final bool enabled;
+  final ValueChanged<String> onPickQuestion;
+
+  @override
+  Widget build(BuildContext context) {
+    final List<String> categories = questions
+        .map((Question question) => question.category)
+        .toSet()
+        .toList();
+    final List<int> values = questions
+        .map((Question question) => question.value)
+        .toSet()
+        .toList()
+      ..sort();
+
+    Question? findQuestion(String category, int value) {
+      for (final Question question in questions) {
+        if (question.category == category && question.value == value) {
+          return question;
+        }
+      }
+      return null;
+    }
+
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        final double topicColumnWidth = math.max(
+          88,
+          math.min(132, constraints.maxWidth * 0.28),
+        );
+
+        return Column(
+          children: <Widget>[
+            for (final String category in categories)
+              Expanded(
+                child: Row(
+                  children: <Widget>[
+                    SizedBox(
+                      width: topicColumnWidth,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 3,
+                          vertical: 3,
+                        ),
+                        child: _BoardHeaderCell(title: category),
+                      ),
+                    ),
+                    Expanded(
+                      child: Row(
+                        children: values.map((int value) {
+                          final Question? question =
+                              findQuestion(category, value);
+                          return Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 3,
+                                vertical: 3,
+                              ),
+                              child: _BoardQuestionCell(
+                                question: question,
+                                enabled: enabled,
+                                onTap: () {
+                                  if (question != null) {
+                                    onPickQuestion(question.id);
+                                  }
+                                },
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _BoardHeaderCell extends StatelessWidget {
+  const _BoardHeaderCell({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final bool isLight = theme.brightness == Brightness.light;
+    final ColorScheme scheme = theme.colorScheme;
+    return Container(
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        color: isLight ? const Color(0xFF3D6FB7) : const Color(0xFF1E3C70),
+        border: Border.all(
+          color: isLight
+              ? scheme.primary.withValues(alpha: 0.34)
+              : Colors.white.withValues(alpha: 0.14),
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: Text(
+        title,
+        textAlign: TextAlign.center,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: theme.textTheme.labelMedium?.copyWith(
+          color: Colors.white,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _BoardQuestionCell extends StatelessWidget {
+  const _BoardQuestionCell({
+    required this.question,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final Question? question;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final bool isLight = theme.brightness == Brightness.light;
+    final ColorScheme scheme = theme.colorScheme;
+    final bool isUsed = question == null || question!.used;
+    final bool canTap = enabled && !isUsed;
+    return InkWell(
+      borderRadius: BorderRadius.circular(10),
+      onTap: canTap ? onTap : null,
+      child: Ink(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          color: isUsed
+              ? (isLight ? const Color(0xFFB8C9E7) : const Color(0xFF0F2445))
+              : (isLight ? const Color(0xFF3F74BE) : const Color(0xFF1D4A8A)),
+          border: Border.all(
+            color: isUsed
+                ? (isLight
+                    ? scheme.outline.withValues(alpha: 0.32)
+                    : Colors.transparent)
+                : Colors.white.withValues(alpha: canTap ? 0.56 : 0.24),
+          ),
+        ),
+        child: Center(
+          child: Text(
+            isUsed ? '' : '${question!.value}',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color:
+                  isLight ? const Color(0xFFFFEDAD) : const Color(0xFFF7D66A),
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuestionView extends StatelessWidget {
+  const _QuestionView({
+    required this.game,
+    required this.role,
+  });
+
+  final GameState game;
+  final GameViewRole role;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final bool isLight = theme.brightness == Brightness.light;
+    final Question? question = game.currentQuestion;
+    if (question == null) {
+      return const Center(child: Text('No active clue.'));
+    }
+
+    final bool revealAnswer = game.phase == GamePhase.answerReveal;
+    final bool animateQuestion = game.phase == GamePhase.answerWindow &&
+        !game.isPaused &&
+        game.pendingAnswerPlayerId == null;
+    final bool showHostAnswer = role == GameViewRole.host && !revealAnswer;
+    final String infoText = revealAnswer
+        ? 'Correct answer'
+        : '${question.category} - ${question.value}';
+
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: <Color>[
+            if (isLight) ...<Color>[
+              const Color(0xFFDCE8FF),
+              const Color(0xFFC9DBFF),
+            ] else ...<Color>[
+              const Color(0xFF162546),
+              const Color(0xFF0F1D39),
+            ],
+          ],
+        ),
+        border: Border.all(
+          color: isLight
+              ? scheme.primary.withValues(alpha: 0.32)
+              : Colors.white.withValues(alpha: 0.12),
+        ),
+      ),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(
+            infoText,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: revealAnswer
+                  ? (isLight
+                      ? const Color(0xFF1F7A3D)
+                      : const Color(0xFF9EF3B2))
+                  : (isLight
+                      ? scheme.onSurfaceVariant
+                      : Colors.white.withValues(alpha: 0.7)),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Expanded(
+            child: Center(
+              child: revealAnswer
+                  ? Text(
+                      question.answer,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: isLight
+                            ? const Color(0xFF1F7A3D)
+                            : const Color(0xFF9EF3B2),
+                        fontWeight: FontWeight.w700,
+                        height: 1.28,
+                      ),
+                    )
+                  : _TypewriterQuestion(
+                      text: question.text,
+                      animate: animateQuestion,
+                      paused: game.isPaused,
+                      color: isLight ? scheme.onSurface : Colors.white,
+                    ),
+            ),
+          ),
+          if (showHostAnswer) ...<Widget>[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              question.answer,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color:
+                    isLight ? const Color(0xFF1F7A3D) : const Color(0xFF9EF3B2),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _TypewriterQuestion extends StatefulWidget {
+  const _TypewriterQuestion({
+    required this.text,
+    required this.animate,
+    required this.paused,
+    required this.color,
+  });
+
+  final String text;
+  final bool animate;
+  final bool paused;
+  final Color color;
+
+  @override
+  State<_TypewriterQuestion> createState() => _TypewriterQuestionState();
+}
+
+class _TypewriterQuestionState extends State<_TypewriterQuestion> {
+  Timer? _timer;
+  int _visibleChars = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeForNewText();
+    _syncTicker();
+  }
+
+  @override
+  void didUpdateWidget(covariant _TypewriterQuestion oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.text != widget.text) {
+      _initializeForNewText();
+    }
+    _syncTicker();
+  }
+
+  void _initializeForNewText() {
+    setState(() => _visibleChars = 0);
+  }
+
+  void _syncTicker() {
+    if (widget.paused || !widget.animate) {
+      _timer?.cancel();
+      _timer = null;
+      return;
+    }
+    if (_visibleChars >= widget.text.length) {
+      _timer?.cancel();
+      _timer = null;
+      return;
+    }
+    if (_timer != null) {
+      return;
+    }
+    _timer = Timer.periodic(const Duration(milliseconds: 44), (Timer timer) {
+      if (!mounted) {
+        timer.cancel();
+        _timer = null;
+        return;
+      }
+      if (widget.paused || !widget.animate) {
+        timer.cancel();
+        _timer = null;
+        return;
+      }
+      if (_visibleChars >= widget.text.length) {
+        timer.cancel();
+        _timer = null;
+        return;
+      }
+      setState(() {
+        _visibleChars = (_visibleChars + 1).clamp(0, widget.text.length);
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final String visible = widget.text.substring(0, _visibleChars);
+    return Text(
+      visible,
+      textAlign: TextAlign.center,
+      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            color: widget.color,
+            fontWeight: FontWeight.w700,
+            height: 1.3,
+          ),
+    );
+  }
+}
+
+class _CompactControlsBar extends StatelessWidget {
+  const _CompactControlsBar({
+    required this.game,
+    required this.role,
+    required this.localPlayerId,
+    required this.onStart,
+    required this.onTogglePause,
+    required this.onCopyLink,
+    required this.onAnswer,
+    required this.onPass,
+    required this.onAccept,
+    required this.onReject,
+  });
+
+  final GameState game;
+  final GameViewRole role;
+  final String localPlayerId;
+  final VoidCallback onStart;
+  final VoidCallback onTogglePause;
+  final VoidCallback onCopyLink;
+  final VoidCallback onAnswer;
+  final VoidCallback onPass;
+  final VoidCallback onAccept;
+  final VoidCallback onReject;
+
+  @override
+  Widget build(BuildContext context) {
+    if (role == GameViewRole.host) {
+      return _HostCompactControls(
+        game: game,
+        onStart: onStart,
+        onTogglePause: onTogglePause,
+        onCopyLink: onCopyLink,
+        onAccept: onAccept,
+        onReject: onReject,
+      );
+    }
+    return _PlayerCompactControls(
+      game: game,
+      localPlayerId: localPlayerId,
+      onAnswer: onAnswer,
+      onPass: onPass,
+    );
+  }
+}
+
+class _HostCompactControls extends StatelessWidget {
+  const _HostCompactControls({
+    required this.game,
+    required this.onStart,
+    required this.onTogglePause,
+    required this.onCopyLink,
+    required this.onAccept,
+    required this.onReject,
+  });
+
+  final GameState game;
+  final VoidCallback onStart;
+  final VoidCallback onTogglePause;
+  final VoidCallback onCopyLink;
+  final VoidCallback onAccept;
+  final VoidCallback onReject;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    if (game.currentQuestion != null) {
-      return AnimatedSwitcher(
-        duration: const Duration(milliseconds: 250),
-        switchInCurve: Curves.easeOutBack,
-        switchOutCurve: Curves.easeIn,
-        child: AppPanel(
-          key: ValueKey<String>(game.currentQuestion!.id),
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: <Color>[
-              Color(0xFF1C2140),
-              Color(0xFF2C2F52),
-            ],
-          ),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Text(
-                  game.currentQuestion!.category,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white70,
-                      ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  game.currentQuestion!.text,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Colors.white,
-                      ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Chip(
+    final ThemeData theme = Theme.of(context);
+    final bool isLight = theme.brightness == Brightness.light;
+    final bool pending = game.pendingAnswerPlayerId != null &&
+        game.phase == GamePhase.answerWindow;
+    final bool waiting = game.phase == GamePhase.waitingForHost;
+    final bool paused = game.isPaused;
+    final bool canModerate = pending && !game.isMatchEnded;
+    final bool canTogglePauseOrStart = !game.isMatchEnded;
+    final ButtonStyle hostMainStyle = FilledButton.styleFrom();
+    final ButtonStyle copyLinkStyle = hostMainStyle;
+    final ButtonStyle acceptStyle = FilledButton.styleFrom(
+      backgroundColor:
+          isLight ? const Color(0xFF2A8346) : const Color(0xFF2F8F4E),
+      foregroundColor: Colors.white,
+      disabledBackgroundColor:
+          (isLight ? const Color(0xFF2A8346) : const Color(0xFF2F8F4E))
+              .withValues(alpha: 0.32),
+      disabledForegroundColor: Colors.white.withValues(alpha: 0.62),
+    );
+    final ButtonStyle rejectStyle = FilledButton.styleFrom(
+      backgroundColor: const Color(0xFFA93E3E),
+      foregroundColor: const Color(0xFFFFEBEB),
+      disabledBackgroundColor: const Color(0xFFA93E3E).withValues(alpha: 0.34),
+      disabledForegroundColor: const Color(0xFFFFEBEB).withValues(alpha: 0.62),
+    );
+
+    return AppPanel(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: FilledButton.icon(
+                  style: hostMainStyle,
+                  onPressed: canTogglePauseOrStart
+                      ? (waiting ? onStart : onTogglePause)
+                      : null,
+                  icon: Icon(
+                    waiting
+                        ? Icons.play_arrow_rounded
+                        : (paused
+                            ? Icons.play_arrow_rounded
+                            : Icons.pause_rounded),
+                  ),
                   label: Text(
-                    l10n.gamePointsLabel(game.currentQuestion!.value),
+                    waiting
+                        ? l10n.gameHostStartCta
+                        : (paused
+                            ? l10n.gameHostUnpauseCta
+                            : l10n.gameHostPauseCta),
                   ),
                 ),
-              ],
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: FilledButton.icon(
+                  style: copyLinkStyle,
+                  onPressed: game.isMatchEnded ? null : onCopyLink,
+                  icon: const Icon(Icons.link_rounded),
+                  label: Text(l10n.gameCopyLinkCta),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: FilledButton.icon(
+                  style: acceptStyle,
+                  onPressed: canModerate ? onAccept : null,
+                  icon: const Icon(Icons.check_rounded),
+                  label: Text(l10n.gameHostAcceptCta),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: FilledButton.icon(
+                  style: rejectStyle,
+                  onPressed: canModerate ? onReject : null,
+                  icon: const Icon(Icons.close_rounded),
+                  label: Text(l10n.gameHostRejectCta),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlayerCompactControls extends StatelessWidget {
+  const _PlayerCompactControls({
+    required this.game,
+    required this.localPlayerId,
+    required this.onAnswer,
+    required this.onPass,
+  });
+
+  final GameState game;
+  final String localPlayerId;
+  final VoidCallback onAnswer;
+  final VoidCallback onPass;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final ThemeData theme = Theme.of(context);
+    final bool isLight = theme.brightness == Brightness.light;
+    final bool canAnswer = game.phase == GamePhase.answerWindow &&
+        !game.isPaused &&
+        game.pendingAnswerPlayerId == null &&
+        !game.passedPlayerIds.contains(localPlayerId) &&
+        !game.wrongAnswerPlayerIds.contains(localPlayerId);
+    final ButtonStyle answerStyle = FilledButton.styleFrom(
+      backgroundColor:
+          isLight ? const Color(0xFF2A8346) : const Color(0xFF2F8F4E),
+      foregroundColor: Colors.white,
+      disabledBackgroundColor:
+          (isLight ? const Color(0xFF2A8346) : const Color(0xFF2F8F4E))
+              .withValues(alpha: 0.36),
+      disabledForegroundColor: Colors.white.withValues(alpha: 0.62),
+    );
+    final ButtonStyle passStyle = FilledButton.styleFrom(
+      backgroundColor:
+          isLight ? const Color(0xFF5F6774) : const Color(0xFF6F7681),
+      foregroundColor: Colors.white,
+      disabledBackgroundColor:
+          (isLight ? const Color(0xFF5F6774) : const Color(0xFF6F7681))
+              .withValues(alpha: 0.34),
+      disabledForegroundColor: Colors.white.withValues(alpha: 0.62),
+    );
+
+    return AppPanel(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: FilledButton.icon(
+              style: answerStyle,
+              onPressed: canAnswer ? onAnswer : null,
+              icon: const Icon(Icons.check_rounded),
+              label: Text(l10n.gameAnswerCta),
             ),
           ),
-        ),
-      );
+          const SizedBox(width: 8),
+          Expanded(
+            child: FilledButton.icon(
+              style: passStyle,
+              onPressed: canAnswer ? onPass : null,
+              icon: const Icon(Icons.close_rounded),
+              label: Text(l10n.gamePassCta),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TimedFrame extends StatefulWidget {
+  const _TimedFrame({
+    required this.progress,
+    required this.active,
+    required this.paused,
+    required this.secondsLeft,
+    required this.secondsTotal,
+    required this.borderRadius,
+    required this.child,
+    this.strokeScale = 1,
+    this.activeColorOverride,
+  });
+
+  final double progress;
+  final bool active;
+  final bool paused;
+  final int secondsLeft;
+  final int secondsTotal;
+  final double borderRadius;
+  final Widget child;
+  final double strokeScale;
+  final Color? activeColorOverride;
+
+  @override
+  State<_TimedFrame> createState() => _TimedFrameState();
+}
+
+class _TimedFrameState extends State<_TimedFrame>
+    with SingleTickerProviderStateMixin {
+  late final Ticker _ticker;
+  DateTime? _anchorAt;
+  double _anchorSecondsLeft = 0;
+  double _display = 1;
+
+  bool get _canRun =>
+      widget.active && !widget.paused && widget.secondsTotal > 0;
+
+  double get _safeTotal => math.max(1, widget.secondsTotal).toDouble();
+
+  double _computeDisplayNow() {
+    if (_anchorAt == null || widget.secondsTotal <= 0) {
+      return widget.progress.clamp(0, 1);
+    }
+    final double elapsed =
+        DateTime.now().difference(_anchorAt!).inMicroseconds / 1000000;
+    final double secondsLeft =
+        (_anchorSecondsLeft - elapsed).clamp(0, _safeTotal);
+    return (secondsLeft / _safeTotal).clamp(0, 1);
+  }
+
+  void _setDisplay(double value) {
+    final double clamped = value.clamp(0, 1);
+    if ((clamped - _display).abs() < 0.0001) {
+      return;
+    }
+    setState(() {
+      _display = clamped;
+    });
+  }
+
+  void _anchorTo(double secondsLeft, {bool snapToAnchor = false}) {
+    _anchorSecondsLeft = secondsLeft.clamp(0, _safeTotal);
+    _anchorAt = DateTime.now();
+    if (snapToAnchor) {
+      _setDisplay(_anchorSecondsLeft / _safeTotal);
+    }
+  }
+
+  void _syncAnchorFromState(double secondsLeft, {bool snapToAnchor = false}) {
+    final double currentSeconds = (_display * _safeTotal).clamp(0, _safeTotal);
+    final double targetSeconds = secondsLeft.clamp(0, _safeTotal);
+    final double monotonicSeconds = math.min(currentSeconds, targetSeconds);
+    _anchorTo(monotonicSeconds, snapToAnchor: snapToAnchor);
+  }
+
+  void _startTickerIfNeeded() {
+    if (_canRun && !_ticker.isActive) {
+      _ticker.start();
+    }
+  }
+
+  void _stopTicker() {
+    if (_ticker.isActive) {
+      _ticker.stop();
+    }
+  }
+
+  void _onTick(Duration elapsed) {
+    if (!_canRun) {
+      return;
+    }
+    _setDisplay(_computeDisplayNow());
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _display = widget.progress.clamp(0, 1);
+    _ticker = createTicker(_onTick);
+    _anchorTo(widget.secondsLeft.toDouble());
+    _startTickerIfNeeded();
+  }
+
+  @override
+  void didUpdateWidget(covariant _TimedFrame oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final double target = widget.progress.clamp(0, 1);
+    final bool enteringPaused = !oldWidget.paused && widget.paused;
+    final bool leavingPaused = oldWidget.paused && !widget.paused;
+    final bool tickUpdated = oldWidget.secondsLeft != widget.secondsLeft;
+    final bool totalUpdated = oldWidget.secondsTotal != widget.secondsTotal;
+    final bool restarted = target > oldWidget.progress + 0.0001;
+
+    if (!widget.active || widget.secondsTotal <= 0) {
+      _stopTicker();
+      _anchorAt = null;
+      _setDisplay(target);
+      return;
     }
 
-    final List<String> categories = <String>[
-      l10n.gameBoardSpace200,
-      l10n.gameBoardScience200,
-      l10n.gameBoardGeography400,
-      l10n.gameBoardHistory400,
-    ];
+    if (enteringPaused) {
+      _setDisplay(_computeDisplayNow());
+      _stopTicker();
+      _anchorTo(_display * _safeTotal);
+      return;
+    }
 
-    return GridView.builder(
-      itemCount: categories.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: AppSpacing.md,
-        crossAxisSpacing: AppSpacing.md,
-        childAspectRatio: 2.15,
+    if (widget.paused) {
+      _stopTicker();
+      return;
+    }
+
+    if (leavingPaused) {
+      _syncAnchorFromState(widget.secondsLeft.toDouble());
+      _startTickerIfNeeded();
+      return;
+    }
+
+    if (totalUpdated || restarted) {
+      _anchorTo(widget.secondsLeft.toDouble(), snapToAnchor: true);
+      _startTickerIfNeeded();
+      return;
+    }
+
+    if (tickUpdated) {
+      _syncAnchorFromState(widget.secondsLeft.toDouble());
+      _startTickerIfNeeded();
+      return;
+    }
+
+    _startTickerIfNeeded();
+  }
+
+  @override
+  void dispose() {
+    _ticker.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final bool isLight = scheme.brightness == Brightness.light;
+    return CustomPaint(
+      painter: _TimedFramePainter(
+        progress: _display,
+        active: widget.active,
+        borderRadius: widget.borderRadius,
+        activeColor:
+            widget.activeColorOverride ?? _timedFrameActiveStripeColor(scheme),
+        idleColor: scheme.outline.withValues(alpha: isLight ? 0.68 : 0.45),
+        activeStrokeWidth: 3.8 * widget.strokeScale,
+        idleStrokeWidth: 3.2 * widget.strokeScale,
       ),
-      itemBuilder: (BuildContext context, int index) {
-        final String label = categories[index];
-        return InkWell(
-          borderRadius: BorderRadius.circular(18),
-          onTap: () {},
-          child: Ink(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: index.isEven
-                    ? const <Color>[Color(0xFF173057), Color(0xFF23407D)]
-                    : const <Color>[Color(0xFF2B2E56), Color(0xFF3C416E)],
-              ),
-            ),
-            child: Center(
-              child: Text(
-                label,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Colors.white,
-                    ),
-              ),
-            ),
-          ),
-        );
-      },
+      child: widget.child,
     );
+  }
+}
+
+class _TimedFramePainter extends CustomPainter {
+  const _TimedFramePainter({
+    required this.progress,
+    required this.active,
+    required this.borderRadius,
+    required this.activeColor,
+    required this.idleColor,
+    required this.activeStrokeWidth,
+    required this.idleStrokeWidth,
+  });
+
+  final double progress;
+  final bool active;
+  final double borderRadius;
+  final Color activeColor;
+  final Color idleColor;
+  final double activeStrokeWidth;
+  final double idleStrokeWidth;
+
+  Path _clockwiseBorderPath(Rect rect, double radius) {
+    final double r = math.max(
+      0,
+      math.min(radius, math.min(rect.width, rect.height) / 2),
+    );
+    final double left = rect.left;
+    final double top = rect.top;
+    final double right = rect.right;
+    final double bottom = rect.bottom;
+    final double topCenterX = (left + right) / 2;
+
+    final Path path = Path()..moveTo(topCenterX, top);
+    path.lineTo(right - r, top);
+    if (r > 0) {
+      path.arcToPoint(
+        Offset(right, top + r),
+        radius: Radius.circular(r),
+        clockwise: true,
+      );
+    }
+    path.lineTo(right, bottom - r);
+    if (r > 0) {
+      path.arcToPoint(
+        Offset(right - r, bottom),
+        radius: Radius.circular(r),
+        clockwise: true,
+      );
+    }
+    path.lineTo(left + r, bottom);
+    if (r > 0) {
+      path.arcToPoint(
+        Offset(left, bottom - r),
+        radius: Radius.circular(r),
+        clockwise: true,
+      );
+    }
+    path.lineTo(left, top + r);
+    if (r > 0) {
+      path.arcToPoint(
+        Offset(left + r, top),
+        radius: Radius.circular(r),
+        clockwise: true,
+      );
+    }
+    path.close();
+    return path;
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double pathInset = activeStrokeWidth / 2;
+    final Rect rect = Offset.zero & size;
+    final Path borderPath = _clockwiseBorderPath(
+      rect.deflate(pathInset),
+      borderRadius,
+    );
+
+    final Paint idlePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = idleStrokeWidth
+      ..color = idleColor;
+    canvas.drawPath(borderPath, idlePaint);
+
+    final double clamped = progress.clamp(0, 1);
+    if (!active || clamped <= 0) {
+      return;
+    }
+
+    final Paint activePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = activeStrokeWidth
+      ..strokeCap = StrokeCap.butt
+      ..color = activeColor;
+
+    final Iterable<ui.PathMetric> metrics = borderPath.computeMetrics();
+    for (final ui.PathMetric metric in metrics) {
+      final double start = metric.length * (1 - clamped);
+      final Path extract = metric.extractPath(start, metric.length);
+      canvas.drawPath(extract, activePaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _TimedFramePainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.active != active ||
+        oldDelegate.borderRadius != borderRadius ||
+        oldDelegate.activeColor != activeColor ||
+        oldDelegate.idleColor != idleColor ||
+        oldDelegate.activeStrokeWidth != activeStrokeWidth ||
+        oldDelegate.idleStrokeWidth != idleStrokeWidth;
   }
 }

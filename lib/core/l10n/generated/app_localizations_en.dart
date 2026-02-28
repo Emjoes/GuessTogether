@@ -199,12 +199,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String profileUnlockedCount(int unlocked, int total) {
-    return '$unlocked/$total unlocked';
+    return '$unlocked / $total unlocked';
   }
 
   @override
   String profileProgressValue(int progress, int target) {
-    return '$progress/$target';
+    return '$progress / $target';
   }
 
   @override
@@ -317,6 +317,59 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gameStartScriptedMatch => 'Start scripted match';
+
+  @override
+  String get gameLeaveDialogTitle => 'Leave match?';
+
+  @override
+  String get gameLeaveDialogBody => 'You can reconnect to this match later.';
+
+  @override
+  String get gameLeaveStay => 'Stay';
+
+  @override
+  String get gameLeaveLeave => 'Leave';
+
+  @override
+  String gameScoreDialogTitle(String playerName) {
+    return 'Set score: $playerName';
+  }
+
+  @override
+  String get gameScoreFieldLabel => 'Score';
+
+  @override
+  String get gameScoreFieldHint => '0';
+
+  @override
+  String get gameScoreDialogCancel => 'Cancel';
+
+  @override
+  String get gameScoreDialogSave => 'Save';
+
+  @override
+  String get gameHostStartCta => 'Start';
+
+  @override
+  String get gameHostPauseCta => 'Pause';
+
+  @override
+  String get gameHostUnpauseCta => 'Unpause';
+
+  @override
+  String get gameCopyLinkCta => 'Link';
+
+  @override
+  String get gameConnectLinkCopied => 'Connect link copied';
+
+  @override
+  String get gameHostAcceptCta => 'Accept';
+
+  @override
+  String get gameHostRejectCta => 'Reject';
+
+  @override
+  String get gamePassCta => 'Pass';
 
   @override
   String gamePointsLabel(int points) {

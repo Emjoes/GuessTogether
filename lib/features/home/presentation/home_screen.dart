@@ -60,7 +60,7 @@ class HomeScreen extends ConsumerWidget {
                               ),
                               const SizedBox(height: AppSpacing.md),
                               _ActionTile(
-                                icon: Icons.password_rounded,
+                                icon: Icons.login_rounded,
                                 title: l10n.homeJoinByPassword,
                                 onTap: () =>
                                     context.push(JoinRoomScreen.routePath),

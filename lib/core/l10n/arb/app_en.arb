@@ -88,7 +88,7 @@
       }
     }
   },
-  "profileUnlockedCount": "{unlocked}/{total} unlocked",
+  "profileUnlockedCount": "{unlocked} / {total} unlocked",
   "@profileUnlockedCount": {
     "placeholders": {
       "unlocked": {
@@ -99,7 +99,7 @@
       }
     }
   },
-  "profileProgressValue": "{progress}/{target}",
+  "profileProgressValue": "{progress} / {target}",
   "@profileProgressValue": {
     "placeholders": {
       "progress": {
@@ -153,6 +153,30 @@
   "gameLiveMatchTitle": "Live Match",
   "gameMatchEnded": "Match ended",
   "gameStartScriptedMatch": "Start scripted match",
+  "gameLeaveDialogTitle": "Leave match?",
+  "gameLeaveDialogBody": "You can reconnect to this match later.",
+  "gameLeaveStay": "Stay",
+  "gameLeaveLeave": "Leave",
+  "gameScoreDialogTitle": "Set score: {playerName}",
+  "@gameScoreDialogTitle": {
+    "placeholders": {
+      "playerName": {
+        "type": "String"
+      }
+    }
+  },
+  "gameScoreFieldLabel": "Score",
+  "gameScoreFieldHint": "0",
+  "gameScoreDialogCancel": "Cancel",
+  "gameScoreDialogSave": "Save",
+  "gameHostStartCta": "Start",
+  "gameHostPauseCta": "Pause",
+  "gameHostUnpauseCta": "Unpause",
+  "gameCopyLinkCta": "Link",
+  "gameConnectLinkCopied": "Connect link copied",
+  "gameHostAcceptCta": "Accept",
+  "gameHostRejectCta": "Reject",
+  "gamePassCta": "Pass",
   "gamePointsLabel": "{points} pts",
   "@gamePointsLabel": {
     "placeholders": {

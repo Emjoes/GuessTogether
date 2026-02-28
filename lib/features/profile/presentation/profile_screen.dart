@@ -9,10 +9,11 @@ import 'package:guesstogether/core/theme/app_spacing.dart';
 import 'package:guesstogether/data/api/game_api.dart';
 import 'package:guesstogether/data/api/mock_http_adapter.dart';
 import 'package:guesstogether/widgets/app_panel.dart';
+import 'package:guesstogether/widgets/back_shortcut_scope.dart';
 
 final gameApiProvider = Provider<GameApi>((ref) => MockHttpAdapter());
 
-final profileProvider = FutureProvider<ProfileSummary>((ref) async {
+final profileProvider = FutureProvider.autoDispose<ProfileSummary>((ref) async {
   final GameApi api = ref.watch(gameApiProvider);
   return api.loadProfile();
 });
@@ -71,95 +72,98 @@ class ProfileScreen extends ConsumerWidget {
       ],
     );
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.profileTitle)),
-      body: SafeArea(
-        child: profileAsync.when(
-          data: (ProfileSummary profile) {
-            final _ProfileMetrics metrics =
-                _ProfileMetrics.fromProfile(profile);
-            final List<_RecentGame> recentGames = _buildRecentGames(
-                l10n: l10n, averageScore: metrics.averageScore);
-            final List<_AchievementItem> achievements = _buildAchievements(
-              l10n: l10n,
-              wins: metrics.wins,
-              gamesPlayed: profile.gamesPlayed,
-              level: metrics.level,
-              totalXp: metrics.totalXp,
-              streak: metrics.winStreak,
-            );
+    return BackShortcutScope(
+      child: Scaffold(
+        appBar: AppBar(title: Text(l10n.profileTitle)),
+        body: SafeArea(
+          child: profileAsync.when(
+            data: (ProfileSummary profile) {
+              final _ProfileMetrics metrics =
+                  _ProfileMetrics.fromProfile(profile);
+              final List<_RecentGame> recentGames = _buildRecentGames(
+                  l10n: l10n, averageScore: metrics.averageScore);
+              final List<_AchievementItem> achievements = _buildAchievements(
+                l10n: l10n,
+                wins: metrics.wins,
+                gamesPlayed: profile.gamesPlayed,
+                level: metrics.level,
+                totalXp: metrics.totalXp,
+                streak: metrics.winStreak,
+              );
 
-            final AsyncValue<List<LeaderboardEntry>> leaderboardAsync =
-                ref.watch(leaderboardProvider);
-            final LeaderboardScope selectedScope =
-                ref.watch(leaderboardScopeProvider);
-            final StateController<LeaderboardScope> scopeController =
-                ref.read(leaderboardScopeProvider.notifier);
-            final ProfileTabSection selectedTab = ref.watch(profileTabProvider);
-            final StateController<ProfileTabSection> tabController =
-                ref.read(profileTabProvider.notifier);
-            final bool showCompletedAchievements =
-                ref.watch(showCompletedAchievementsProvider);
-            final StateController<bool> showCompletedController =
-                ref.read(showCompletedAchievementsProvider.notifier);
+              final AsyncValue<List<LeaderboardEntry>> leaderboardAsync =
+                  ref.watch(leaderboardProvider);
+              final LeaderboardScope selectedScope =
+                  ref.watch(leaderboardScopeProvider);
+              final StateController<LeaderboardScope> scopeController =
+                  ref.read(leaderboardScopeProvider.notifier);
+              final ProfileTabSection selectedTab =
+                  ref.watch(profileTabProvider);
+              final StateController<ProfileTabSection> tabController =
+                  ref.read(profileTabProvider.notifier);
+              final bool showCompletedAchievements =
+                  ref.watch(showCompletedAchievementsProvider);
+              final StateController<bool> showCompletedController =
+                  ref.read(showCompletedAchievementsProvider.notifier);
 
-            return SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
-                AppSpacing.sm,
-                AppSpacing.lg,
-                AppSpacing.xl,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  _UserHeader(
-                    profile: profile,
-                    level: metrics.level,
-                    progress: metrics.xpProgress,
-                    xpInLevel: metrics.xpInLevel,
-                    xpPerLevel: _ProfileMetrics.xpPerLevel,
-                    gradient: panelGradient,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  _ProfileTabSelector(
-                    selectedTab: selectedTab,
-                    onChanged: (ProfileTabSection tab) =>
-                        tabController.state = tab,
-                    gradient: panelGradient,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  if (selectedTab == ProfileTabSection.statistics)
-                    _StatisticsSection(
+              return SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.sm,
+                  AppSpacing.lg,
+                  AppSpacing.xl,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    _UserHeader(
                       profile: profile,
-                      metrics: metrics,
-                      recentGames: recentGames,
-                      gradient: panelGradient,
-                    )
-                  else if (selectedTab == ProfileTabSection.leaderboards)
-                    _LeaderboardsSection(
-                      leaderboardAsync: leaderboardAsync,
-                      selectedScope: selectedScope,
-                      onScopeChanged: (LeaderboardScope scope) {
-                        scopeController.state = scope;
-                      },
-                      gradient: panelGradient,
-                    )
-                  else
-                    _AchievementsSection(
-                      achievements: achievements,
-                      showCompleted: showCompletedAchievements,
-                      onShowCompletedChanged: (bool value) =>
-                          showCompletedController.state = value,
+                      level: metrics.level,
+                      progress: metrics.xpProgress,
+                      xpInLevel: metrics.xpInLevel,
+                      xpPerLevel: _ProfileMetrics.xpPerLevel,
                       gradient: panelGradient,
                     ),
-                ],
-              ),
-            );
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (Object _, StackTrace __) =>
-              Center(child: Text(l10n.profileLoadFailed)),
+                    const SizedBox(height: AppSpacing.md),
+                    _ProfileTabSelector(
+                      selectedTab: selectedTab,
+                      onChanged: (ProfileTabSection tab) =>
+                          tabController.state = tab,
+                      gradient: panelGradient,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    if (selectedTab == ProfileTabSection.statistics)
+                      _StatisticsSection(
+                        profile: profile,
+                        metrics: metrics,
+                        recentGames: recentGames,
+                        gradient: panelGradient,
+                      )
+                    else if (selectedTab == ProfileTabSection.leaderboards)
+                      _LeaderboardsSection(
+                        leaderboardAsync: leaderboardAsync,
+                        selectedScope: selectedScope,
+                        onScopeChanged: (LeaderboardScope scope) {
+                          scopeController.state = scope;
+                        },
+                        gradient: panelGradient,
+                      )
+                    else
+                      _AchievementsSection(
+                        achievements: achievements,
+                        showCompleted: showCompletedAchievements,
+                        onShowCompletedChanged: (bool value) =>
+                            showCompletedController.state = value,
+                        gradient: panelGradient,
+                      ),
+                  ],
+                ),
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (Object _, StackTrace __) =>
+                Center(child: Text(l10n.profileLoadFailed)),
+          ),
         ),
       ),
     );

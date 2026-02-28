@@ -467,13 +467,13 @@ abstract class AppLocalizations {
   /// No description provided for @profileUnlockedCount.
   ///
   /// In en, this message translates to:
-  /// **'{unlocked}/{total} unlocked'**
+  /// **'{unlocked} / {total} unlocked'**
   String profileUnlockedCount(int unlocked, int total);
 
   /// No description provided for @profileProgressValue.
   ///
   /// In en, this message translates to:
-  /// **'{progress}/{target}'**
+  /// **'{progress} / {target}'**
   String profileProgressValue(int progress, int target);
 
   /// No description provided for @profileRewardXp.
@@ -691,6 +691,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Start scripted match'**
   String get gameStartScriptedMatch;
+
+  /// No description provided for @gameLeaveDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave match?'**
+  String get gameLeaveDialogTitle;
+
+  /// No description provided for @gameLeaveDialogBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You can reconnect to this match later.'**
+  String get gameLeaveDialogBody;
+
+  /// No description provided for @gameLeaveStay.
+  ///
+  /// In en, this message translates to:
+  /// **'Stay'**
+  String get gameLeaveStay;
+
+  /// No description provided for @gameLeaveLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave'**
+  String get gameLeaveLeave;
+
+  /// No description provided for @gameScoreDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set score: {playerName}'**
+  String gameScoreDialogTitle(String playerName);
+
+  /// No description provided for @gameScoreFieldLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Score'**
+  String get gameScoreFieldLabel;
+
+  /// No description provided for @gameScoreFieldHint.
+  ///
+  /// In en, this message translates to:
+  /// **'0'**
+  String get gameScoreFieldHint;
+
+  /// No description provided for @gameScoreDialogCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get gameScoreDialogCancel;
+
+  /// No description provided for @gameScoreDialogSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get gameScoreDialogSave;
+
+  /// No description provided for @gameHostStartCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get gameHostStartCta;
+
+  /// No description provided for @gameHostPauseCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get gameHostPauseCta;
+
+  /// No description provided for @gameHostUnpauseCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpause'**
+  String get gameHostUnpauseCta;
+
+  /// No description provided for @gameCopyLinkCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Link'**
+  String get gameCopyLinkCta;
+
+  /// No description provided for @gameConnectLinkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect link copied'**
+  String get gameConnectLinkCopied;
+
+  /// No description provided for @gameHostAcceptCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get gameHostAcceptCta;
+
+  /// No description provided for @gameHostRejectCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get gameHostRejectCta;
+
+  /// No description provided for @gamePassCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Pass'**
+  String get gamePassCta;
 
   /// No description provided for @gamePointsLabel.
   ///

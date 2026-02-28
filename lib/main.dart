@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:guesstogether/app_router.dart';
+import 'package:guesstogether/core/debug/debug_control_panel.dart';
+import 'package:guesstogether/core/debug/loading_debug_gate.dart';
 import 'package:guesstogether/core/l10n/app_locale.dart';
 import 'package:guesstogether/core/l10n/generated/app_localizations.dart';
 import 'package:guesstogether/core/theme/app_theme.dart';
@@ -38,7 +40,15 @@ class GuessTogetherApp extends ConsumerWidget {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       routerConfig: router,
       builder: (context, child) {
-        return MobileShell(child: child ?? const SizedBox.shrink());
+        return LoadingDebugOverlay(
+          child: Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              MobileShell(child: child ?? const SizedBox.shrink()),
+              const DebugControlPanel(),
+            ],
+          ),
+        );
       },
       debugShowCheckedModeBanner: false,
     );

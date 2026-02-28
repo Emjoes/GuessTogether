@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -17,7 +18,8 @@ void main() {
     );
 
     expect(find.text(AppStrings.settingsTheme), findsOneWidget);
-    expect(find.text(AppStrings.settingsThemeSystem), findsNWidgets(2));
+    expect(find.text(AppStrings.settingsThemeSystem), findsNothing);
+    expect(find.text('System'), findsNothing);
     expect(find.text(AppStrings.settingsThemeLight), findsOneWidget);
     expect(find.text(AppStrings.settingsThemeDark), findsOneWidget);
     expect(find.text('GB'), findsNothing);
@@ -33,6 +35,12 @@ void main() {
   });
 
   testWidgets('SettingsScreen updates theme mode on tap', (tester) async {
+    tester.binding.platformDispatcher.platformBrightnessTestValue =
+        Brightness.dark;
+    addTearDown(
+      tester.binding.platformDispatcher.clearPlatformBrightnessTestValue,
+    );
+
     final ProviderContainer container = ProviderContainer();
     addTearDown(container.dispose);
 
@@ -46,20 +54,23 @@ void main() {
       ),
     );
 
-    expect(container.read(themeModeProvider), ThemeMode.system);
+    expect(container.read(themeModeProvider), ThemeMode.dark);
 
     await tester.tap(find.text(AppStrings.settingsThemeLight));
     await tester.pumpAndSettle();
 
     expect(container.read(themeModeProvider), ThemeMode.light);
 
-    await tester.tap(find.text(AppStrings.settingsThemeSystem).first);
+    await tester.tap(find.text(AppStrings.settingsThemeDark));
     await tester.pumpAndSettle();
 
-    expect(container.read(themeModeProvider), ThemeMode.system);
+    expect(container.read(themeModeProvider), ThemeMode.dark);
   });
 
   testWidgets('SettingsScreen updates language on tap', (tester) async {
+    tester.binding.platformDispatcher.localeTestValue = const Locale('ru');
+    addTearDown(tester.binding.platformDispatcher.clearLocaleTestValue);
+
     final ProviderContainer container = ProviderContainer();
     addTearDown(container.dispose);
 
@@ -72,11 +83,6 @@ void main() {
         ),
       ),
     );
-
-    expect(container.read(appLanguageProvider), AppLanguage.system);
-
-    await tester.tap(find.text('Русский'));
-    await tester.pumpAndSettle();
 
     expect(container.read(appLanguageProvider), AppLanguage.russian);
 
@@ -84,6 +90,82 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(container.read(appLanguageProvider), AppLanguage.english);
+
+    final Finder russianFlag = find.byWidgetPredicate(
+      (widget) => widget.runtimeType.toString() == '_RuFlag',
+    );
+    await tester.tap(
+      find.ancestor(of: russianFlag, matching: find.byType(InkWell)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(container.read(appLanguageProvider), AppLanguage.russian);
+  });
+
+  testWidgets('Unsupported system locale falls back to English',
+      (tester) async {
+    tester.binding.platformDispatcher.localeTestValue = const Locale('es');
+    addTearDown(tester.binding.platformDispatcher.clearLocaleTestValue);
+
+    final ProviderContainer container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: buildTestMaterialApp(
+          home: const SettingsScreen(),
+          locale: const Locale('en'),
+        ),
+      ),
+    );
+
+    expect(container.read(appLanguageProvider), AppLanguage.english);
+  });
+
+  testWidgets('Escape triggers back action when app bar shows back arrow',
+      (tester) async {
+    final ProviderContainer container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: buildTestMaterialApp(
+          locale: const Locale('en'),
+          home: Builder(
+            builder: (BuildContext context) {
+              return Scaffold(
+                body: Center(
+                  child: FilledButton(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const SettingsScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text('Open settings'),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open settings'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(BackButton), findsOneWidget);
+    expect(find.text(AppStrings.settingsTitle), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Open settings'), findsOneWidget);
+    expect(find.text(AppStrings.settingsTitle), findsNothing);
   });
 }
 

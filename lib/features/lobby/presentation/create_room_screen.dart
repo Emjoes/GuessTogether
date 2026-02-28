@@ -8,6 +8,7 @@ import 'package:guesstogether/core/theme/app_spacing.dart';
 import 'package:guesstogether/features/game/presentation/game_screen.dart';
 import 'package:guesstogether/features/lobby/providers/create_room_provider.dart';
 import 'package:guesstogether/widgets/app_panel.dart';
+import 'package:guesstogether/widgets/back_shortcut_scope.dart';
 
 class CreateRoomScreen extends ConsumerWidget {
   const CreateRoomScreen({super.key});
@@ -71,100 +72,102 @@ class CreateRoomScreen extends ConsumerWidget {
       }
     }
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.createRoomTitle)),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.sm,
-            AppSpacing.lg,
-            AppSpacing.xl,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              AppPanel(
-                gradient: setupGradient,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    Text(
-                      l10n.createRoomDetailsLabel,
-                      style: text.titleSmall,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    TextField(
-                      decoration: InputDecoration(
-                        labelText: l10n.createRoomNameLabel,
-                        hintText: l10n.createRoomNameHint,
+    return BackShortcutScope(
+      child: Scaffold(
+        appBar: AppBar(title: Text(l10n.createRoomTitle)),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.sm,
+              AppSpacing.lg,
+              AppSpacing.xl,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                AppPanel(
+                  gradient: setupGradient,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      Text(
+                        l10n.createRoomDetailsLabel,
+                        style: text.titleSmall,
                       ),
-                      onChanged: controller.setName,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    TextField(
-                      decoration: InputDecoration(
-                        labelText: l10n.createRoomPasswordLabel,
-                        hintText: l10n.createRoomPasswordHint,
+                      const SizedBox(height: AppSpacing.sm),
+                      TextField(
+                        decoration: InputDecoration(
+                          labelText: l10n.createRoomNameLabel,
+                          hintText: l10n.createRoomNameHint,
+                        ),
+                        onChanged: controller.setName,
                       ),
-                      keyboardType: TextInputType.number,
-                      onChanged: controller.setPassword,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      l10n.createRoomModeLabel,
-                      style: text.titleSmall,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Column(
-                      children: <Widget>[
-                        _ModeButton(
-                          selected: state.mode == RoomMode.multiplayer,
-                          iconBuilder: (Color color) => Icon(
-                            Icons.diversity_3_rounded,
-                            size: 20,
-                            color: color,
+                      const SizedBox(height: AppSpacing.md),
+                      TextField(
+                        decoration: InputDecoration(
+                          labelText: l10n.createRoomPasswordLabel,
+                          hintText: l10n.createRoomPasswordHint,
+                        ),
+                        keyboardType: TextInputType.number,
+                        onChanged: controller.setPassword,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      Text(
+                        l10n.createRoomModeLabel,
+                        style: text.titleSmall,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Column(
+                        children: <Widget>[
+                          _ModeButton(
+                            selected: state.mode == RoomMode.multiplayer,
+                            iconBuilder: (Color color) => Icon(
+                              Icons.diversity_3_rounded,
+                              size: 20,
+                              color: color,
+                            ),
+                            label: l10n.createRoomModeMultiplayer,
+                            onPressed: () =>
+                                controller.setMode(RoomMode.multiplayer),
                           ),
-                          label: l10n.createRoomModeMultiplayer,
-                          onPressed: () =>
-                              controller.setMode(RoomMode.multiplayer),
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        _ModeButton(
-                          selected: state.mode == RoomMode.duel,
-                          iconBuilder: (Color color) =>
-                              _CrossedSwordsIcon(size: 20, color: color),
-                          label: l10n.createRoomModeDuel,
-                          onPressed: () => controller.setMode(RoomMode.duel),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      l10n.createRoomPackageLabel,
-                      style: text.titleSmall,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    _PackagePickerField(
-                      fileName: state.packageFileName,
-                      onPick: pickPackageFile,
-                    ),
-                  ],
+                          const SizedBox(height: AppSpacing.sm),
+                          _ModeButton(
+                            selected: state.mode == RoomMode.duel,
+                            iconBuilder: (Color color) =>
+                                _CrossedSwordsIcon(size: 20, color: color),
+                            label: l10n.createRoomModeDuel,
+                            onPressed: () => controller.setMode(RoomMode.duel),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      Text(
+                        l10n.createRoomPackageLabel,
+                        style: text.titleSmall,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      _PackagePickerField(
+                        fileName: state.packageFileName,
+                        onPick: pickPackageFile,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              _CreateButton(
-                isLoading: state.isLoading,
-                onPressed: state.isLoading
-                    ? null
-                    : () async {
-                        await controller.createRoom();
-                        if (context.mounted) {
-                          context.push(GameScreen.routePath);
-                        }
-                      },
-              ),
-            ],
+                const SizedBox(height: AppSpacing.lg),
+                _CreateButton(
+                  isLoading: state.isLoading,
+                  onPressed: state.isLoading
+                      ? null
+                      : () async {
+                          await controller.createRoom();
+                          if (context.mounted) {
+                            context.push(GameScreen.routePath);
+                          }
+                        },
+                ),
+              ],
+            ),
           ),
         ),
       ),

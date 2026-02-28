@@ -7,6 +7,7 @@ import 'package:guesstogether/core/theme/app_spacing.dart';
 import 'package:guesstogether/features/game/presentation/game_screen.dart';
 import 'package:guesstogether/features/lobby/providers/join_room_provider.dart';
 import 'package:guesstogether/widgets/app_panel.dart';
+import 'package:guesstogether/widgets/back_shortcut_scope.dart';
 
 class JoinRoomScreen extends ConsumerStatefulWidget {
   const JoinRoomScreen({super.key});
@@ -44,7 +45,15 @@ class _JoinRoomScreenState extends ConsumerState<JoinRoomScreen> {
             },
           ),
           actions: <Widget>[
-            TextButton(
+            FilledButton.tonal(
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(
+                  dialogContext,
+                ).colorScheme.surfaceContainerHighest,
+                foregroundColor: Theme.of(
+                  dialogContext,
+                ).colorScheme.onSurfaceVariant,
+              ),
               onPressed: () => Navigator.of(dialogContext).pop(),
               child: Text(
                 MaterialLocalizations.of(dialogContext).cancelButtonLabel,
@@ -131,84 +140,88 @@ class _JoinRoomScreenState extends ConsumerState<JoinRoomScreen> {
       ],
     );
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.joinRoomTitle)),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.sm,
-            AppSpacing.lg,
-            AppSpacing.xl,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              AppPanel(
-                gradient: setupGradient,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    TextField(
-                      decoration: InputDecoration(
-                        labelText: l10n.joinRoomSearchHint,
-                        hintText: l10n.joinRoomSearchHintText,
-                        prefixIcon: const Icon(Icons.search_rounded),
-                      ),
-                      onChanged: (String value) {
-                        setState(() => _searchQuery = value);
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              AppPanel(
-                gradient: setupGradient,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    Text(
-                      l10n.joinRoomActiveLobbies,
-                      style: text.titleSmall,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    if (rooms.isEmpty)
-                      Padding(
-                        padding:
-                            const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                        child: Text(
-                          l10n.joinRoomNoLobbies,
-                          textAlign: TextAlign.center,
-                          style: text.bodySmall?.copyWith(
-                            color:
-                                scheme.onSurfaceVariant.withValues(alpha: 0.92),
-                          ),
+    return BackShortcutScope(
+      child: Scaffold(
+        appBar: AppBar(title: Text(l10n.joinRoomTitle)),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.sm,
+              AppSpacing.lg,
+              AppSpacing.xl,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                AppPanel(
+                  gradient: setupGradient,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      TextField(
+                        decoration: InputDecoration(
+                          labelText: l10n.joinRoomSearchHint,
+                          hintText: l10n.joinRoomSearchHintText,
+                          prefixIcon: const Icon(Icons.search_rounded),
                         ),
-                      )
-                    else
-                      Column(
-                        children:
-                            List<Widget>.generate(rooms.length, (int index) {
-                          final LobbyRoom room = rooms[index];
-                          return Padding(
-                            padding: EdgeInsets.only(
-                              bottom:
-                                  index == rooms.length - 1 ? 0 : AppSpacing.sm,
-                            ),
-                            child: _LobbyRow(
-                              room: room,
-                              isLoading: state.isLoading &&
-                                  state.joiningRoomId == room.id,
-                              onTap: () => _handleJoin(room),
-                            ),
-                          );
-                        }),
+                        onChanged: (String value) {
+                          setState(() => _searchQuery = value);
+                        },
                       ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: AppSpacing.md),
+                AppPanel(
+                  gradient: setupGradient,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      Text(
+                        l10n.joinRoomActiveLobbies,
+                        style: text.titleSmall,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      if (rooms.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppSpacing.md,
+                          ),
+                          child: Text(
+                            l10n.joinRoomNoLobbies,
+                            textAlign: TextAlign.center,
+                            style: text.bodySmall?.copyWith(
+                              color: scheme.onSurfaceVariant
+                                  .withValues(alpha: 0.92),
+                            ),
+                          ),
+                        )
+                      else
+                        Column(
+                          children:
+                              List<Widget>.generate(rooms.length, (int index) {
+                            final LobbyRoom room = rooms[index];
+                            return Padding(
+                              padding: EdgeInsets.only(
+                                bottom: index == rooms.length - 1
+                                    ? 0
+                                    : AppSpacing.sm,
+                              ),
+                              child: _LobbyRow(
+                                room: room,
+                                isLoading: state.isLoading &&
+                                    state.joiningRoomId == room.id,
+                                onTap: () => _handleJoin(room),
+                              ),
+                            );
+                          }),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

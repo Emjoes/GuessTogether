@@ -372,6 +372,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gamePassCta => 'Pass';
 
   @override
+  String get gameHostShouldStartMatch => 'Host should start the match.';
+
+  @override
+  String get gameMatchFinishedBody => 'Match finished.';
+
+  @override
+  String get gameNoActiveClueBody => 'No active clue.';
+
+  @override
+  String get gameCorrectAnswerLabel => 'Correct answer';
+
+  @override
   String gamePointsLabel(int points) {
     return '$points pts';
   }

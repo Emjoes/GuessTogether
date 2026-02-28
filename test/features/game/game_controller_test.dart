@@ -212,4 +212,26 @@ void main() {
       containsAll(const <String>['p1', 'p2', 'p3', 'p4']),
     );
   });
+
+  test('finishMatchNow immediately ends match and sets winner', () async {
+    final GameController controller = GameController();
+    addTearDown(controller.dispose);
+
+    await controller.startMatch();
+
+    controller.state = controller.state.copyWith(
+      players: const <Player>[
+        Player(id: 'p1', name: 'A', score: 100),
+        Player(id: 'p2', name: 'B', score: 300),
+        Player(id: 'p3', name: 'C', score: 200),
+      ],
+    );
+
+    controller.finishMatchNow();
+
+    expect(controller.state.isMatchEnded, true);
+    expect(controller.state.phase, GamePhase.finished);
+    expect(controller.state.winnerId, 'p2');
+    expect(controller.state.currentQuestion, isNull);
+  });
 }

@@ -85,4 +85,26 @@ void main() {
 
     expect(container.read(localPlayerIdProvider), 'p3');
   });
+
+  testWidgets('Debug finish match button ends current match', (tester) async {
+    final ProviderContainer container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    final ProviderSubscription subscription = container.listen(
+      gameControllerProvider,
+      (_, __) {},
+      fireImmediately: true,
+    );
+    addTearDown(subscription.close);
+
+    await _pumpPanel(tester, container);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Finish Match'));
+    await tester.pumpAndSettle();
+
+    final state = container.read(gameControllerProvider);
+    expect(state.isMatchEnded, true);
+    expect(state.phase.name, 'finished');
+  });
 }

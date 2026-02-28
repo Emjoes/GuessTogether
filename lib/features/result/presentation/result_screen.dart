@@ -51,102 +51,107 @@ class ResultScreen extends ConsumerWidget {
         isLight ? scheme.onSurfaceVariant : Colors.white70;
 
     return BackShortcutScope(
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(l10n.resultsTitle),
-        ),
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              AppSpacing.sm,
-              AppSpacing.lg,
-              AppSpacing.xl,
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (bool didPop, Object? result) {
+          if (!didPop) {
+            context.go(HomeScreen.routePath);
+          }
+        },
+        child: Scaffold(
+          appBar: AppBar(
+            leading: BackButton(
+              onPressed: () => context.go(HomeScreen.routePath),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                if (players.isNotEmpty)
-                  AppPanel(
-                    gradient: winnerGradient,
-                    child: Row(
-                      children: <Widget>[
-                        const Icon(
-                          Icons.emoji_events_rounded,
-                          color: AppColors.accentSun,
-                          size: 36,
-                        ),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+            title: Text(l10n.resultsTitle),
+          ),
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.sm,
+                AppSpacing.lg,
+                AppSpacing.xl,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  if (players.isNotEmpty)
+                    AppPanel(
+                      gradient: winnerGradient,
+                      child: Row(
+                        children: <Widget>[
+                          const Icon(
+                            Icons.emoji_events_rounded,
+                            color: AppColors.accentSun,
+                            size: 36,
+                          ),
+                          const SizedBox(width: AppSpacing.md),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Text(
+                                  l10n.resultWinner,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(color: winnerSecondaryText),
+                                ),
+                                Text(
+                                  players.first.name,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleLarge
+                                      ?.copyWith(color: winnerPrimaryText),
+                                ),
+                                Text(
+                                  l10n.resultPointsLabel(players.first.score),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(color: winnerSecondaryText),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  const SizedBox(height: AppSpacing.md),
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: players.length,
+                      separatorBuilder: (_, __) =>
+                          const SizedBox(height: AppSpacing.sm),
+                      itemBuilder: (BuildContext context, int index) {
+                        final p = players[index];
+                        return AppPanel(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                            vertical: AppSpacing.sm,
+                          ),
+                          radius: 18,
+                          child: Row(
                             children: <Widget>[
-                              Text(
-                                l10n.resultWinner,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(color: winnerSecondaryText),
+                              CircleAvatar(
+                                radius: 16,
+                                child: Text('${index + 1}'),
                               ),
+                              const SizedBox(width: AppSpacing.md),
+                              Expanded(child: Text(p.name)),
                               Text(
-                                players.first.name,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleLarge
-                                    ?.copyWith(color: winnerPrimaryText),
-                              ),
-                              Text(
-                                l10n.resultPointsLabel(players.first.score),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(color: winnerSecondaryText),
+                                '${p.score}',
+                                style: Theme.of(context).textTheme.titleMedium,
                               ),
                             ],
                           ),
-                        ),
-                      ],
+                        );
+                      },
                     ),
                   ),
-                const SizedBox(height: AppSpacing.md),
-                Expanded(
-                  child: ListView.separated(
-                    itemCount: players.length,
-                    separatorBuilder: (_, __) =>
-                        const SizedBox(height: AppSpacing.sm),
-                    itemBuilder: (BuildContext context, int index) {
-                      final p = players[index];
-                      return AppPanel(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md,
-                          vertical: AppSpacing.sm,
-                        ),
-                        radius: 18,
-                        child: Row(
-                          children: <Widget>[
-                            CircleAvatar(
-                              radius: 16,
-                              child: Text('${index + 1}'),
-                            ),
-                            const SizedBox(width: AppSpacing.md),
-                            Expanded(child: Text(p.name)),
-                            Text(
-                              '${p.score}',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                FilledButton.icon(
-                  onPressed: () => context.go(HomeScreen.routePath),
-                  icon: const Icon(Icons.replay_rounded),
-                  label: Text(l10n.resultsPlayAgain),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

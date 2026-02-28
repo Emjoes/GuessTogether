@@ -794,6 +794,30 @@ abstract class AppLocalizations {
   /// **'Pass'**
   String get gamePassCta;
 
+  /// No description provided for @gameHostShouldStartMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Host should start the match.'**
+  String get gameHostShouldStartMatch;
+
+  /// No description provided for @gameMatchFinishedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Match finished.'**
+  String get gameMatchFinishedBody;
+
+  /// No description provided for @gameNoActiveClueBody.
+  ///
+  /// In en, this message translates to:
+  /// **'No active clue.'**
+  String get gameNoActiveClueBody;
+
+  /// No description provided for @gameCorrectAnswerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct answer'**
+  String get gameCorrectAnswerLabel;
+
   /// No description provided for @gamePointsLabel.
   ///
   /// In en, this message translates to:

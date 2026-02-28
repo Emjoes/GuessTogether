@@ -295,6 +295,33 @@ class DebugControlPanel extends ConsumerWidget {
                           ),
                         ),
                       ],
+                      const Padding(
+                        padding: EdgeInsets.only(top: 10, bottom: 10),
+                        child: Divider(height: 1),
+                      ),
+                      SizedBox(
+                        height: 40,
+                        child: FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFFA93E3E),
+                            foregroundColor: const Color(0xFFFFEBEB),
+                            disabledBackgroundColor: const Color(0xFFA93E3E)
+                                .withValues(alpha: isLight ? 0.3 : 0.34),
+                            disabledForegroundColor:
+                                const Color(0xFFFFEBEB).withValues(alpha: 0.62),
+                          ),
+                          onPressed: () {
+                            final game = ref.read(gameControllerProvider);
+                            if (game.isMatchEnded) {
+                              return;
+                            }
+                            ref
+                                .read(gameControllerProvider.notifier)
+                                .finishMatchNow();
+                          },
+                          child: const Text('Finish Match'),
+                        ),
+                      ),
                     ],
                   ),
                 ),

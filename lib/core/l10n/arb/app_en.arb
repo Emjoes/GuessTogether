@@ -177,6 +177,10 @@
   "gameHostAcceptCta": "Accept",
   "gameHostRejectCta": "Reject",
   "gamePassCta": "Pass",
+  "gameHostShouldStartMatch": "Host should start the match.",
+  "gameMatchFinishedBody": "Match finished.",
+  "gameNoActiveClueBody": "No active clue.",
+  "gameCorrectAnswerLabel": "Correct answer",
   "gamePointsLabel": "{points} pts",
   "@gamePointsLabel": {
     "placeholders": {

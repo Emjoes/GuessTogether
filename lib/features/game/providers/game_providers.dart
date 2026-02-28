@@ -26,8 +26,13 @@ class GameController extends StateNotifier<GameState> {
   Timer? _ticker;
   Timer? _phaseTimeoutTimer;
 
-  void _restartTickerAligned() {
+  void _stopTimers() {
     _ticker?.cancel();
+    _phaseTimeoutTimer?.cancel();
+  }
+
+  void _restartTickerAligned() {
+    _stopTimers();
     _ticker = Timer.periodic(const Duration(seconds: 1), _onTick);
   }
 
@@ -408,6 +413,31 @@ class GameController extends StateNotifier<GameState> {
     );
   }
 
+  void finishMatchNow() {
+    if (state.isMatchEnded) {
+      return;
+    }
+    _stopTimers();
+    final List<Player> sorted = List<Player>.from(state.players)
+      ..sort((Player a, Player b) => b.score.compareTo(a.score));
+    state = state.copyWith(
+      phase: GamePhase.finished,
+      isMatchEnded: true,
+      winnerId: sorted.isEmpty ? null : sorted.first.id,
+      clearCurrentQuestion: true,
+      phaseSecondsLeft: 0,
+      phaseSecondsTotal: 0,
+      pendingAnswerSecondsLeft: 0,
+      pendingAnswerSecondsTotal: 0,
+      pendingAnswerPlayerId: null,
+      passedPlayerIds: const <String>[],
+      wrongAnswerPlayerIds: const <String>[],
+      lastCorrectAnswerPlayerId: null,
+      isPaused: false,
+      lastEvent: 'Match was finished from debug panel.',
+    );
+  }
+
   void _startAnswerReveal({
     required String lastEvent,
   }) {
@@ -426,6 +456,7 @@ class GameController extends StateNotifier<GameState> {
 
   void _returnToBoardOrFinish() {
     if (!state.hasBoardQuestionsLeft) {
+      _stopTimers();
       final List<Player> sorted = List<Player>.from(state.players)
         ..sort((Player a, Player b) => b.score.compareTo(a.score));
       state = state.copyWith(
@@ -519,8 +550,7 @@ class GameController extends StateNotifier<GameState> {
 
   @override
   void dispose() {
-    _ticker?.cancel();
-    _phaseTimeoutTimer?.cancel();
+    _stopTimers();
     super.dispose();
   }
 }

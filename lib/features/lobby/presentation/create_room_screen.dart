@@ -456,7 +456,7 @@ class _ModeButtonState extends State<_ModeButton> {
   }
 }
 
-class _CreateButton extends StatefulWidget {
+class _CreateButton extends StatelessWidget {
   const _CreateButton({
     required this.onPressed,
     required this.isLoading,
@@ -466,137 +466,31 @@ class _CreateButton extends StatefulWidget {
   final bool isLoading;
 
   @override
-  State<_CreateButton> createState() => _CreateButtonState();
-}
-
-class _CreateButtonState extends State<_CreateButton> {
-  bool _hovered = false;
-  bool _pressed = false;
-
-  void _setHovered(bool value) {
-    if (_hovered == value) {
-      return;
-    }
-    setState(() => _hovered = value);
-  }
-
-  void _setPressed(bool value) {
-    if (_pressed == value) {
-      return;
-    }
-    setState(() => _pressed = value);
-  }
-
-  @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final ThemeData theme = Theme.of(context);
-    final ColorScheme scheme = theme.colorScheme;
-    final bool isLight = theme.brightness == Brightness.light;
-    final bool enabled = widget.onPressed != null;
-    final double interaction =
-        enabled ? (_pressed ? 0.16 : (_hovered ? 0.1 : 0.04)) : 0;
-    final Color startBase = enabled
-        ? scheme.primary
-        : scheme.surfaceContainerHighest
-            .withValues(alpha: isLight ? 0.5 : 0.38);
-    final Color endBase = enabled
-        ? Color.alphaBlend(
-            scheme.secondary.withValues(alpha: isLight ? 0.22 : 0.16),
-            scheme.primary.withValues(alpha: isLight ? 0.95 : 0.9),
-          )
-        : scheme.surfaceContainerHighest
-            .withValues(alpha: isLight ? 0.42 : 0.32);
-    final Color topColor = Color.alphaBlend(
-      Colors.white.withValues(alpha: isLight ? 0.14 : 0.07),
-      startBase,
-    );
-    final Color bottomColor = Color.alphaBlend(
-      scheme.tertiary.withValues(alpha: interaction),
-      endBase,
-    );
-    final Color borderColor = enabled
-        ? scheme.primary.withValues(alpha: _hovered ? 0.82 : 0.66)
-        : scheme.outline.withValues(alpha: 0.26);
-    final Color contentColor = enabled
-        ? scheme.onPrimary
-        : scheme.onSurfaceVariant.withValues(alpha: 0.58);
+    final bool enabled = onPressed != null;
+    final Color iconColor = enabled
+        ? theme.colorScheme.onPrimary
+        : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.66);
 
-    return MouseRegion(
-      cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
-      child: AnimatedScale(
-        duration: const Duration(milliseconds: 130),
-        curve: Curves.easeOutCubic,
-        scale: enabled ? (_pressed ? 0.988 : (_hovered ? 1.006 : 1)) : 1,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 170),
-          curve: Curves.easeOutCubic,
-          height: AppSpacing.tapTargetMin + 4,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: borderColor),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: <Color>[topColor, bottomColor],
-            ),
-            boxShadow: enabled
-                ? <BoxShadow>[
-                    BoxShadow(
-                      color: scheme.primary
-                          .withValues(alpha: isLight ? 0.24 : 0.3),
-                      blurRadius: _hovered ? 22 : 14,
-                      offset: Offset(0, _hovered ? 11 : 8),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: widget.onPressed,
-              onHover: enabled ? _setHovered : null,
-              onHighlightChanged: enabled ? _setPressed : null,
-              borderRadius: BorderRadius.circular(16),
-              overlayColor: WidgetStateProperty.resolveWith((states) {
-                if (states.contains(WidgetState.pressed)) {
-                  return Colors.black.withValues(alpha: isLight ? 0.12 : 0.2);
-                }
-                if (states.contains(WidgetState.hovered)) {
-                  return Colors.white.withValues(alpha: isLight ? 0.08 : 0.06);
-                }
-                return Colors.transparent;
-              }),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    if (widget.isLoading)
-                      SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(contentColor),
-                        ),
-                      )
-                    else
-                      Icon(Icons.rocket_launch_rounded, color: contentColor),
-                    const SizedBox(width: AppSpacing.sm),
-                    Text(
-                      l10n.createRoomCreateCta,
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: contentColor,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
+    return SizedBox(
+      height: AppSpacing.tapTargetMin + 4,
+      child: FilledButton.icon(
+        onPressed: onPressed,
+        icon: isLoading
+            ? SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.2,
+                  valueColor: AlwaysStoppedAnimation<Color>(iconColor),
                 ),
-              ),
-            ),
-          ),
+              )
+            : const Icon(Icons.rocket_launch_rounded),
+        label: Text(
+          l10n.createRoomCreateCta,
+          style: const TextStyle(fontWeight: FontWeight.w700),
         ),
       ),
     );

@@ -374,6 +374,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get gamePassCta => 'Пас';
 
   @override
+  String get gameHostShouldStartMatch => 'Ведущий должен начать матч.';
+
+  @override
+  String get gameMatchFinishedBody => 'Матч завершён.';
+
+  @override
+  String get gameNoActiveClueBody => 'Нет активного вопроса.';
+
+  @override
+  String get gameCorrectAnswerLabel => 'Правильный ответ';
+
+  @override
   String gamePointsLabel(int points) {
     return '$points очков';
   }

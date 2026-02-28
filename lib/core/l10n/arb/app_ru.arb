@@ -177,6 +177,10 @@
   "gameHostAcceptCta": "Принять",
   "gameHostRejectCta": "Отклонить",
   "gamePassCta": "Пас",
+  "gameHostShouldStartMatch": "Ведущий должен начать матч.",
+  "gameMatchFinishedBody": "Матч завершён.",
+  "gameNoActiveClueBody": "Нет активного вопроса.",
+  "gameCorrectAnswerLabel": "Правильный ответ",
   "gamePointsLabel": "{points} очков",
   "@gamePointsLabel": {
     "placeholders": {

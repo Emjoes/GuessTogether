@@ -180,7 +180,9 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                   _CompactPlayersStrip(
                     players: game.players,
                     game: game,
-                    localPlayerId: effectiveLocalPlayerId,
+                    localPlayerId: effectiveRole == GameViewRole.player
+                        ? effectiveLocalPlayerId
+                        : null,
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Expanded(
@@ -272,7 +274,7 @@ class _CompactPlayersStrip extends StatelessWidget {
 
   final List<Player> players;
   final GameState game;
-  final String localPlayerId;
+  final String? localPlayerId;
 
   @override
   Widget build(BuildContext context) {
@@ -470,14 +472,15 @@ class _MatchStageBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     if (game.phase == GamePhase.waitingForHost) {
-      return const Center(
-        child: Text('Host should start the match.'),
+      return Center(
+        child: Text(l10n.gameHostShouldStartMatch),
       );
     }
     if (game.phase == GamePhase.finished) {
-      return const Center(
-        child: Text('Match finished.'),
+      return Center(
+        child: Text(l10n.gameMatchFinishedBody),
       );
     }
 
@@ -683,12 +686,13 @@ class _QuestionView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
     final bool isLight = theme.brightness == Brightness.light;
     final Question? question = game.currentQuestion;
     if (question == null) {
-      return const Center(child: Text('No active clue.'));
+      return Center(child: Text(l10n.gameNoActiveClueBody));
     }
 
     final bool revealAnswer = game.phase == GamePhase.answerReveal;
@@ -697,7 +701,7 @@ class _QuestionView extends StatelessWidget {
         game.pendingAnswerPlayerId == null;
     final bool showHostAnswer = role == GameViewRole.host && !revealAnswer;
     final String infoText = revealAnswer
-        ? 'Correct answer'
+        ? l10n.gameCorrectAnswerLabel
         : '${question.category} - ${question.value}';
 
     return Container(

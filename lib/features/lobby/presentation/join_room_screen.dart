@@ -345,11 +345,14 @@ class _LobbyRowState extends State<_LobbyRow> {
                     ),
                     Expanded(
                       flex: 2,
-                      child: _IconLabelCell(
-                        icon: Icons.groups_rounded,
-                        label: l10n.joinRoomPlayersCount(
-                          widget.room.currentPlayers,
-                          widget.room.maxPlayers,
+                      child: Center(
+                        child: Text(
+                          l10n.joinRoomPlayersCount(
+                            widget.room.currentPlayers,
+                            widget.room.maxPlayers,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall,
                         ),
                       ),
                     ),
@@ -408,38 +411,6 @@ class _LobbyRowState extends State<_LobbyRow> {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _IconLabelCell extends StatelessWidget {
-  const _IconLabelCell({
-    required this.icon,
-    required this.label,
-  });
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme scheme = theme.colorScheme;
-    return Center(
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Icon(icon, size: 16, color: scheme.primary.withValues(alpha: 0.92)),
-          const SizedBox(width: 4),
-          Flexible(
-            child: Text(
-              label,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodySmall,
-            ),
-          ),
-        ],
       ),
     );
   }

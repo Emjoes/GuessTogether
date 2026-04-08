@@ -548,6 +548,10 @@ class GameController extends StateNotifier<GameState> {
 
   Future<void> leaveMatch() async {}
 
+  Future<void> resyncAfterResume({required bool isHost}) async {}
+
+  Future<void> handleAppDetached({required bool isHost}) async {}
+
   void _startAnswerReveal({
     required String lastEvent,
   }) {
@@ -734,6 +738,7 @@ class OnlineGameController extends GameController {
   StreamSubscription<RoomRealtimeMessage>? _subscription;
   RoomRealtimeConnection? _connection;
   bool _isDisposed = false;
+  bool _isResyncing = false;
 
   void _setActiveRoom(RoomDetails? room) {
     if (_isDisposed) {
@@ -790,6 +795,10 @@ class OnlineGameController extends GameController {
   }
 
   Future<void> _connect() async {
+    await _disconnectRealtime();
+    if (_isDisposed) {
+      return;
+    }
     _connection = _api.connectToRoom(roomId);
     _subscription = _connection!.messages.listen(
       (RoomRealtimeMessage message) {
@@ -916,6 +925,58 @@ class OnlineGameController extends GameController {
       _setMatchRoomClosed(false);
       await _disconnectRealtime();
     }
+  }
+
+  @override
+  Future<void> resyncAfterResume({required bool isHost}) async {
+    if (_isDisposed || _isResyncing) {
+      return;
+    }
+    _isResyncing = true;
+    try {
+      final RoomDetails room = await _api.loadRoom(roomId);
+      if (_isDisposed) {
+        return;
+      }
+      _setActiveRoom(room);
+      _setMatchRoomClosed(false);
+      _setMatchRoomClosedReason(null);
+      final GameState? nextState = room.gameState;
+      if (nextState != null) {
+        state = nextState;
+      }
+      if (nextState?.isMatchEnded == true) {
+        await _disconnectRealtime();
+        return;
+      }
+      await _connect();
+    } on BackendException catch (error) {
+      if (_isDisposed) {
+        return;
+      }
+      if (error.statusCode == 404 || error.statusCode == 403) {
+        _setActiveRoom(null);
+        _setMatchRoomClosedReason(
+          isHost
+              ? MatchRoomClosedReason.connectionLost
+              : MatchRoomClosedReason.hostLeft,
+        );
+        _setMatchRoomClosed(true);
+      }
+    } catch (_) {
+      // Keep the last known state and retry on the next foreground resume.
+    } finally {
+      _isResyncing = false;
+    }
+  }
+
+  @override
+  Future<void> handleAppDetached({required bool isHost}) async {
+    if (isHost) {
+      await leaveMatch();
+      return;
+    }
+    await _disconnectRealtime();
   }
 
   @override

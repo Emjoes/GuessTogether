@@ -19,6 +19,7 @@ if [[ ! -x "$CURRENT_LINK/bin/server" ]]; then
 fi
 
 mkdir -p "$SHARED_DIR/logs"
+cd "$CURRENT_LINK"
 
 if [[ -f "$PID_FILE" ]]; then
   OLD_PID="$(cat "$PID_FILE" 2>/dev/null || true)"

@@ -11,9 +11,11 @@ import 'package:go_router/go_router.dart';
 import 'package:guesstogether/core/l10n/l10n.dart';
 import 'package:guesstogether/core/theme/app_colors.dart';
 import 'package:guesstogether/core/theme/app_spacing.dart';
+import 'package:guesstogether/data/api/game_api.dart';
 import 'package:guesstogether/features/game/domain/game_models.dart';
 import 'package:guesstogether/features/game/providers/game_providers.dart';
 import 'package:guesstogether/features/home/presentation/home_screen.dart';
+import 'package:guesstogether/features/lobby/providers/room_session_provider.dart';
 import 'package:guesstogether/features/result/presentation/result_screen.dart';
 import 'package:guesstogether/widgets/app_panel.dart';
 import 'package:guesstogether/widgets/back_shortcut_scope.dart';
@@ -39,6 +41,9 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   bool _exitDialogOpen = false;
   final FocusNode _keyboardFocusNode = FocusNode();
   Timer? _spaceShortcutTimer;
+  late final AppLifecycleListener _appLifecycleListener;
+
+  bool get _isHost => ref.read(gameViewRoleProvider) == GameViewRole.host;
 
   Future<bool> _confirmExitMatch() async {
     final l10n = context.l10n;
@@ -98,6 +103,22 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       return;
     }
     _keyboardFocusNode.requestFocus();
+  }
+
+  void _handleAppResume() {
+    unawaited(
+      ref.read(gameControllerProvider.notifier).resyncAfterResume(
+            isHost: _isHost,
+          ),
+    );
+  }
+
+  void _handleAppDetach() {
+    unawaited(
+      ref.read(gameControllerProvider.notifier).handleAppDetached(
+            isHost: _isHost,
+          ),
+    );
   }
 
   void _runSingleSpaceShortcut() {
@@ -256,8 +277,18 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _appLifecycleListener = AppLifecycleListener(
+      onResume: _handleAppResume,
+      onDetach: _handleAppDetach,
+    );
+  }
+
+  @override
   void dispose() {
     _spaceShortcutTimer?.cancel();
+    _appLifecycleListener.dispose();
     _keyboardFocusNode.dispose();
     super.dispose();
   }
@@ -274,7 +305,13 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         ? const Color(0xFF563600)
         : _timedFrameActiveStripeColor(scheme);
     final GameViewRole role = ref.watch(gameViewRoleProvider);
+    final RoomDetails? activeRoom = ref.watch(activeRoomProvider);
     final String selectedLocalPlayerId = ref.watch(localPlayerIdProvider);
+    final Map<String, bool> playerConnectionById = <String, bool>{
+      for (final RoomParticipant participant
+          in activeRoom?.playerParticipants ?? const <RoomParticipant>[])
+        participant.id: participant.isConnected,
+    };
     final GameViewRole effectiveRole = role;
     final String effectiveLocalPlayerId = game.players.any(
       (Player p) => p.id == selectedLocalPlayerId,
@@ -357,6 +394,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                       localPlayerId: effectiveRole == GameViewRole.player
                           ? effectiveLocalPlayerId
                           : null,
+                      playerConnectionById: playerConnectionById,
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     Expanded(
@@ -445,11 +483,13 @@ class _CompactPlayersStrip extends StatelessWidget {
     required this.players,
     required this.game,
     required this.localPlayerId,
+    required this.playerConnectionById,
   });
 
   final List<Player> players;
   final GameState game;
   final String? localPlayerId;
+  final Map<String, bool> playerConnectionById;
 
   @override
   Widget build(BuildContext context) {
@@ -464,6 +504,7 @@ class _CompactPlayersStrip extends StatelessWidget {
               player: player,
               isLocal: isLocal,
               game: game,
+              isConnected: playerConnectionById[player.id] ?? true,
             ),
           ),
         );
@@ -477,11 +518,13 @@ class _CompactPlayerTile extends StatelessWidget {
     required this.player,
     required this.isLocal,
     required this.game,
+    required this.isConnected,
   });
 
   final Player player;
   final bool isLocal;
   final GameState game;
+  final bool isConnected;
 
   bool _isAnswerPhaseForPlayer() {
     return game.phase == GamePhase.answerWindow &&
@@ -586,47 +629,72 @@ class _CompactPlayerTile extends StatelessWidget {
       secondsLeft: frameSecondsLeft,
       secondsTotal: frameSecondsTotal,
       borderRadius: 12,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: null,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOut,
-          constraints: const BoxConstraints(minHeight: 58),
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          decoration: BoxDecoration(
+      child: Stack(
+        children: <Widget>[
+          InkWell(
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: tileBorderColor),
-            color: tileColor,
-            gradient: tileGradient,
-            boxShadow: tileShadows,
+            onTap: null,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOut,
+              constraints: const BoxConstraints(minHeight: 58),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: tileBorderColor),
+                color: tileColor,
+                gradient: tileGradient,
+                boxShadow: tileShadows,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Text(
+                    player.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: localNameColor,
+                      fontWeight: isLocal ? FontWeight.w800 : FontWeight.w700,
+                      letterSpacing: isLocal ? 0.2 : 0,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${player.score}',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: scoreColor,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Text(
-                player.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: localNameColor,
-                  fontWeight: isLocal ? FontWeight.w800 : FontWeight.w700,
-                  letterSpacing: isLocal ? 0.2 : 0,
+          if (!isConnected)
+            Positioned(
+              top: 4,
+              right: 4,
+              child: Container(
+                width: 18,
+                height: 18,
+                decoration: BoxDecoration(
+                  color: scheme.errorContainer.withValues(alpha: 0.96),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: scheme.error.withValues(alpha: 0.88),
+                  ),
+                ),
+                child: Icon(
+                  Icons.link_off_rounded,
+                  size: 11,
+                  color: scheme.error,
                 ),
               ),
-              const SizedBox(height: 2),
-              Text(
-                '${player.score}',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  color: scoreColor,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-        ),
+            ),
+        ],
       ),
     );
   }

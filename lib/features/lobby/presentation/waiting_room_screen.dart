@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -32,6 +34,7 @@ class WaitingRoomScreen extends ConsumerStatefulWidget {
 
 class _WaitingRoomScreenState extends ConsumerState<WaitingRoomScreen> {
   bool _exitDialogOpen = false;
+  late final AppLifecycleListener _appLifecycleListener;
 
   bool get _isRussian =>
       Localizations.localeOf(context).languageCode.toLowerCase() == 'ru';
@@ -64,9 +67,38 @@ class _WaitingRoomScreenState extends ConsumerState<WaitingRoomScreen> {
   String get _startFailedText =>
       _isRussian ? 'Не удалось запустить матч.' : 'Failed to start the match.';
 
+  bool get _isCurrentUserHost {
+    final String? playerId = ref
+        .read(appSessionControllerProvider)
+        .valueOrNull
+        ?.session
+        ?.playerId;
+    final RoomDetails? room =
+        ref.read(waitingRoomControllerProvider(widget.roomId)).room;
+    return room != null && playerId != null && room.hostPlayerId == playerId;
+  }
+
+  void _handleAppResume() {
+    unawaited(
+      ref.read(waitingRoomControllerProvider(widget.roomId).notifier)
+          .resyncAfterResume(),
+    );
+  }
+
+  void _handleAppDetach() {
+    unawaited(
+      ref.read(waitingRoomControllerProvider(widget.roomId).notifier)
+          .handleAppDetached(isHost: _isCurrentUserHost),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
+    _appLifecycleListener = AppLifecycleListener(
+      onResume: _handleAppResume,
+      onDetach: _handleAppDetach,
+    );
     ref.listenManual<WaitingRoomState>(
       waitingRoomControllerProvider(widget.roomId),
       (WaitingRoomState? previous, WaitingRoomState next) {
@@ -130,6 +162,12 @@ class _WaitingRoomScreenState extends ConsumerState<WaitingRoomScreen> {
         context.go(GameScreen.routePath);
       },
     );
+  }
+
+  @override
+  void dispose() {
+    _appLifecycleListener.dispose();
+    super.dispose();
   }
 
   Future<bool> _confirmHostLeaveRoom() async {

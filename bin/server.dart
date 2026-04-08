@@ -38,6 +38,19 @@ const String _firstWinAchievementId = 'first_win';
 const String _clutchAnswerAchievementId = 'clutch_answer';
 const int _recentMatchesLimit = 8;
 
+bool shouldApplyMatchProfileUpdates({
+  required GameState? previousState,
+  required GameState nextState,
+  required StoredMatchProgress matchProgress,
+}) {
+  final bool matchJustEnded =
+      !(previousState?.isMatchEnded ?? false) && nextState.isMatchEnded;
+  if (!matchJustEnded || matchProgress.profileApplied) {
+    return false;
+  }
+  return !matchProgress.endedByAbandonment;
+}
+
 String _databaseUrlFromEnvironment() {
   final String explicitUrl = Platform.environment['DATABASE_URL']?.trim() ?? '';
   if (explicitUrl.isNotEmpty) {
@@ -71,7 +84,7 @@ int _serverPortFromEnvironment() {
 }
 
 class AppServer {
-  static const Duration _hostlessRoomGracePeriod = Duration(seconds: 5);
+  static const Duration _hostlessRoomGracePeriod = Duration(seconds: 45);
   static const String _defaultPackageFileName = 'general_quiz_pack.json';
 
   AppServer.fromEnvironment()
@@ -645,9 +658,11 @@ class AppServer {
     required GameState? previousState,
     required GameState nextState,
   }) {
-    final bool matchJustEnded =
-        !(previousState?.isMatchEnded ?? false) && nextState.isMatchEnded;
-    if (!matchJustEnded || room.matchProgress.profileApplied) {
+    if (!shouldApplyMatchProfileUpdates(
+      previousState: previousState,
+      nextState: nextState,
+      matchProgress: room.matchProgress,
+    )) {
       return;
     }
 
@@ -1075,10 +1090,12 @@ class AppServer {
 
       if (room.gameState != null &&
           room.status != RoomLifecycleStatus.finished) {
-        _setRoomGameState(
-          room,
-          _removePlayerFromGameState(room.gameState!, user.id),
-        );
+        final GameState nextState =
+            _removePlayerFromGameState(room.gameState!, user.id);
+        if (!(room.gameState?.isMatchEnded ?? false) && nextState.isMatchEnded) {
+          room.matchProgress.endedByAbandonment = true;
+        }
+        _setRoomGameState(room, nextState);
       }
 
       await _store.save();
@@ -1609,7 +1626,8 @@ class _PostgresDatabase {
       '''
       CREATE TABLE IF NOT EXISTS room_match_progress (
         room_id TEXT PRIMARY KEY REFERENCES rooms(id) ON DELETE CASCADE,
-        profile_applied BOOLEAN NOT NULL DEFAULT FALSE
+        profile_applied BOOLEAN NOT NULL DEFAULT FALSE,
+        ended_by_abandonment BOOLEAN NOT NULL DEFAULT FALSE
       )
       ''',
       '''
@@ -1672,6 +1690,12 @@ class _PostgresDatabase {
         },
       );
     }
+    await connection.execute(
+      '''
+      ALTER TABLE room_match_progress
+      ADD COLUMN IF NOT EXISTS ended_by_abandonment BOOLEAN NOT NULL DEFAULT FALSE
+      ''',
+    );
   }
 
   Future<bool> _needsSchemaReset(Connection connection) async {
@@ -2014,7 +2038,7 @@ class _PostgresDatabase {
 
     final Result matchProgressRows = await connection.execute(
       '''
-      SELECT room_id, profile_applied
+      SELECT room_id, profile_applied, ended_by_abandonment
       FROM room_match_progress
       ''',
     );
@@ -2026,6 +2050,7 @@ class _PostgresDatabase {
       }
       room.matchProgress = StoredMatchProgress(
         profileApplied: _boolValue(columns['profile_applied']),
+        endedByAbandonment: _boolValue(columns['ended_by_abandonment']),
       );
     }
 
@@ -2403,16 +2428,19 @@ class _PostgresDatabase {
             '''
             INSERT INTO room_match_progress (
               room_id,
-              profile_applied
+              profile_applied,
+              ended_by_abandonment
             ) VALUES (
               @roomId,
-              @profileApplied
+              @profileApplied,
+              @endedByAbandonment
             )
             ''',
           ),
           parameters: <String, Object?>{
             'roomId': room.id,
             'profileApplied': room.matchProgress.profileApplied,
+            'endedByAbandonment': room.matchProgress.endedByAbandonment,
           },
         );
 
@@ -2884,6 +2912,7 @@ class StoredMatchProgress {
     Map<String, int>? correctAnswersByPlayerId,
     Map<String, int>? clutchAnswersByPlayerId,
     this.profileApplied = false,
+    this.endedByAbandonment = false,
   })  : correctAnswersByPlayerId = correctAnswersByPlayerId ?? <String, int>{},
         clutchAnswersByPlayerId = clutchAnswersByPlayerId ?? <String, int>{};
 
@@ -2900,17 +2929,20 @@ class StoredMatchProgress {
               .map((String key, dynamic value) =>
                   MapEntry(key, (value as num).toInt())),
       profileApplied: json['profileApplied'] as bool? ?? false,
+      endedByAbandonment: json['endedByAbandonment'] as bool? ?? false,
     );
   }
 
   final Map<String, int> correctAnswersByPlayerId;
   final Map<String, int> clutchAnswersByPlayerId;
   bool profileApplied;
+  bool endedByAbandonment;
 
   Map<String, dynamic> toJson() => <String, dynamic>{
         'correctAnswersByPlayerId': correctAnswersByPlayerId,
         'clutchAnswersByPlayerId': clutchAnswersByPlayerId,
         'profileApplied': profileApplied,
+        'endedByAbandonment': endedByAbandonment,
       };
 }
 

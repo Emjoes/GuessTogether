@@ -17,10 +17,12 @@ class _FakeRealtimeApi implements AppBackendApi {
     required this.messages,
   });
 
-  final RoomDetails room;
+  RoomDetails room;
   final StreamController<RoomRealtimeMessage> messages;
+  int loadRoomCalls = 0;
   int connectCalls = 0;
   int closeCalls = 0;
+  int leaveRoomCalls = 0;
 
   @override
   RoomRealtimeConnection connectToRoom(String roomId) {
@@ -34,7 +36,10 @@ class _FakeRealtimeApi implements AppBackendApi {
   }
 
   @override
-  Future<RoomDetails> loadRoom(String roomId) async => room;
+  Future<RoomDetails> loadRoom(String roomId) async {
+    loadRoomCalls += 1;
+    return room;
+  }
 
   @override
   Future<void> acceptAnswer(String roomId) async {}
@@ -48,7 +53,9 @@ class _FakeRealtimeApi implements AppBackendApi {
   }
 
   @override
-  Future<void> leaveRoom(String roomId) async {}
+  Future<void> leaveRoom(String roomId) async {
+    leaveRoomCalls += 1;
+  }
 
   @override
   Future<List<LeaderboardEntry>> loadLeaderboard(LeaderboardScope scope) {
@@ -169,6 +176,15 @@ Future<void> _flushAsync() async {
   await Future<void>.delayed(Duration.zero);
 }
 
+GameState _initialGameState() {
+  return GameState.initial(
+    players: const <Player>[
+      Player(id: 'p1', name: 'Alice', score: 0),
+      Player(id: 'p2', name: 'Bob', score: 0),
+    ],
+  );
+}
+
 void main() {
   test('game controller is not recreated when active room changes', () async {
     final StreamController<RoomRealtimeMessage> messages =
@@ -268,12 +284,7 @@ void main() {
       () async {
     final StreamController<RoomRealtimeMessage> messages =
         StreamController<RoomRealtimeMessage>.broadcast();
-    final GameState initialState = GameState.initial(
-      players: const <Player>[
-        Player(id: 'p1', name: 'Alice', score: 0),
-        Player(id: 'p2', name: 'Bob', score: 0),
-      ],
-    );
+    final GameState initialState = _initialGameState();
     final RoomDetails room = _buildRoom(gameState: initialState);
     final _FakeRealtimeApi api =
         _FakeRealtimeApi(room: room, messages: messages);
@@ -340,5 +351,136 @@ void main() {
 
     expect(container.read(gameControllerProvider), finishedState);
     expect(api.closeCalls, 1);
+  });
+
+  test('resume reloads latest room state and reconnects realtime', () async {
+    final StreamController<RoomRealtimeMessage> messages =
+        StreamController<RoomRealtimeMessage>.broadcast();
+    final _FakeRealtimeApi api = _FakeRealtimeApi(
+      room: _buildRoom(gameState: _initialGameState()),
+      messages: messages,
+    );
+    final ProviderContainer container = ProviderContainer(
+      overrides: <Override>[
+        appBackendApiProvider.overrideWithValue(api),
+      ],
+    );
+    addTearDown(() async {
+      container.dispose();
+      await messages.close();
+    });
+
+    container.read(activeRoomProvider.notifier).state = api.room;
+    final ProviderSubscription<GameState> subscription = container.listen(
+      gameControllerProvider,
+      (_, __) {},
+      fireImmediately: true,
+    );
+    addTearDown(subscription.close);
+
+    await _flushAsync();
+    expect(api.loadRoomCalls, 1);
+    expect(api.connectCalls, 1);
+
+    final GameState resumedState = _initialGameState().copyWith(
+      players: const <Player>[
+        Player(id: 'p1', name: 'Alice', score: 300),
+        Player(id: 'p2', name: 'Bob', score: 100),
+      ],
+      phase: GamePhase.answerReveal,
+      phaseSecondsLeft: 2,
+      phaseSecondsTotal: 3,
+      winnerId: 'p1',
+    );
+    api.room = _buildRoom(gameState: resumedState);
+
+    final OnlineGameController controller =
+        container.read(gameControllerProvider.notifier) as OnlineGameController;
+    await controller.resyncAfterResume(isHost: false);
+    await _flushAsync();
+
+    expect(api.loadRoomCalls, 2);
+    expect(api.connectCalls, 2);
+    expect(api.closeCalls, 1);
+    expect(container.read(activeRoomProvider), api.room);
+    expect(container.read(gameControllerProvider), resumedState);
+    expect(container.read(matchRoomClosedProvider), isFalse);
+    expect(container.read(matchRoomClosedReasonProvider), isNull);
+  });
+
+  test('host detach leaves match and clears active room', () async {
+    final StreamController<RoomRealtimeMessage> messages =
+        StreamController<RoomRealtimeMessage>.broadcast();
+    final _FakeRealtimeApi api = _FakeRealtimeApi(
+      room: _buildRoom(gameState: _initialGameState()),
+      messages: messages,
+    );
+    final ProviderContainer container = ProviderContainer(
+      overrides: <Override>[
+        appBackendApiProvider.overrideWithValue(api),
+      ],
+    );
+    addTearDown(() async {
+      container.dispose();
+      await messages.close();
+    });
+
+    container.read(activeRoomProvider.notifier).state = api.room;
+    final ProviderSubscription<GameState> subscription = container.listen(
+      gameControllerProvider,
+      (_, __) {},
+      fireImmediately: true,
+    );
+    addTearDown(subscription.close);
+
+    await _flushAsync();
+
+    final OnlineGameController controller =
+        container.read(gameControllerProvider.notifier) as OnlineGameController;
+    await controller.handleAppDetached(isHost: true);
+    await _flushAsync();
+
+    expect(api.leaveRoomCalls, 1);
+    expect(api.closeCalls, 1);
+    expect(container.read(activeRoomProvider), isNull);
+    expect(container.read(matchRoomClosedProvider), isFalse);
+  });
+
+  test('player detach only disconnects realtime without leaving match',
+      () async {
+    final StreamController<RoomRealtimeMessage> messages =
+        StreamController<RoomRealtimeMessage>.broadcast();
+    final _FakeRealtimeApi api = _FakeRealtimeApi(
+      room: _buildRoom(gameState: _initialGameState()),
+      messages: messages,
+    );
+    final ProviderContainer container = ProviderContainer(
+      overrides: <Override>[
+        appBackendApiProvider.overrideWithValue(api),
+      ],
+    );
+    addTearDown(() async {
+      container.dispose();
+      await messages.close();
+    });
+
+    container.read(activeRoomProvider.notifier).state = api.room;
+    final ProviderSubscription<GameState> subscription = container.listen(
+      gameControllerProvider,
+      (_, __) {},
+      fireImmediately: true,
+    );
+    addTearDown(subscription.close);
+
+    await _flushAsync();
+
+    final OnlineGameController controller =
+        container.read(gameControllerProvider.notifier) as OnlineGameController;
+    await controller.handleAppDetached(isHost: false);
+    await _flushAsync();
+
+    expect(api.leaveRoomCalls, 0);
+    expect(api.closeCalls, 1);
+    expect(container.read(activeRoomProvider), isNotNull);
   });
 }

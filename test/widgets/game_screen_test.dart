@@ -4,10 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:guesstogether/data/api/game_api.dart';
 import 'package:guesstogether/features/game/domain/game_models.dart';
 import 'package:guesstogether/features/game/presentation/game_screen.dart';
 import 'package:guesstogether/features/game/providers/game_providers.dart';
 import 'package:guesstogether/features/home/presentation/home_screen.dart';
+import 'package:guesstogether/features/lobby/providers/room_session_provider.dart';
 import 'package:guesstogether/features/result/presentation/result_screen.dart';
 import '../test_app.dart';
 
@@ -138,6 +140,47 @@ Future<void> _pumpUi(WidgetTester tester) async {
   await tester.pump(const Duration(milliseconds: 300));
 }
 
+RoomDetails _buildActiveRoom({required bool secondPlayerConnected}) {
+  return RoomDetails(
+    summary: const RoomSummary(
+      id: 'room-1',
+      code: '1234',
+      name: 'Arena',
+      topic: 'General',
+      rounds: 3,
+      mode: 'multiplayer',
+      currentPlayers: 2,
+      maxPlayers: 4,
+      requiresPassword: false,
+      lifecycleStatus: RoomLifecycleStatus.inGame,
+      isHost: false,
+    ),
+    hostPlayerId: 'host-1',
+    roomPassword: '',
+    packageFileName: 'general_quiz_pack.json',
+    participants: <RoomParticipant>[
+      const RoomParticipant(
+        id: 'host-1',
+        displayName: 'Host',
+        isHost: true,
+        isConnected: true,
+      ),
+      const RoomParticipant(
+        id: 'p1',
+        displayName: 'You',
+        isHost: false,
+        isConnected: true,
+      ),
+      RoomParticipant(
+        id: 'p2',
+        displayName: 'Bot',
+        isHost: false,
+        isConnected: secondPlayerConnected,
+      ),
+    ],
+  );
+}
+
 void main() {
   testWidgets('GameScreen shows player row', (tester) async {
     await tester.pumpWidget(
@@ -156,6 +199,34 @@ void main() {
 
     expect(find.text('You'), findsOneWidget);
     expect(find.text('Bot'), findsOneWidget);
+  });
+
+  testWidgets('GameScreen shows disconnected badge for offline player',
+      (tester) async {
+    final ProviderContainer container = ProviderContainer(
+      overrides: <Override>[
+        gameControllerProvider.overrideWith(
+          (ref) => _FakeGameController(),
+        ),
+        activeRoomProvider.overrideWith(
+          (ref) => _buildActiveRoom(secondPlayerConnected: false),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: buildTestMaterialApp(
+          home: const GameScreen(),
+          locale: const Locale('en'),
+        ),
+      ),
+    );
+    await _pumpUi(tester);
+
+    expect(find.byIcon(Icons.link_off_rounded), findsOneWidget);
   });
 
   testWidgets('GameScreen keeps board visible during question reveal',

@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:guesstogether/data/api/game_api.dart';
 import 'package:guesstogether/features/game/domain/game_models.dart';
 
 import '../../bin/server.dart';
@@ -20,6 +21,31 @@ GameState _buildFinishedMatch() {
 }
 
 void main() {
+  test('player leave during active match keeps participant in room', () {
+    final bool shouldKeep = shouldKeepLeavingParticipantInRoom(
+      isHost: false,
+      roomStatus: RoomLifecycleStatus.inGame,
+      gameState: GameState.initial(
+        players: const <Player>[
+          Player(id: 'p1', name: 'Alice', score: 0),
+          Player(id: 'p2', name: 'Bob', score: 0),
+        ],
+      ),
+    );
+
+    expect(shouldKeep, isTrue);
+  });
+
+  test('host leave never keeps room participant attached', () {
+    final bool shouldKeep = shouldKeepLeavingParticipantInRoom(
+      isHost: true,
+      roomStatus: RoomLifecycleStatus.inGame,
+      gameState: _buildFinishedMatch(),
+    );
+
+    expect(shouldKeep, isFalse);
+  });
+
   test('profile updates apply only for natural match finish', () {
     final GameState previousState = GameState.initial(
       players: const <Player>[

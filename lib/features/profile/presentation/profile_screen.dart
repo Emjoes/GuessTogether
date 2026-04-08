@@ -192,8 +192,9 @@ class _ProfileMetrics {
     final int totalXp = profile.totalXp > 0
         ? profile.totalXp
         : (profile.gamesPlayed * 140) + (wins * 70) + (profile.bestScore ~/ 7);
-    final int level = (totalXp ~/ xpPerLevel) + 1;
-    final int xpInLevel = totalXp % xpPerLevel;
+    final int level =
+        totalXp <= 0 ? 0 : (((totalXp - 1) ~/ xpPerLevel) + 1);
+    final int xpInLevel = totalXp <= 0 ? 0 : (totalXp % xpPerLevel);
 
     return _ProfileMetrics(
       wins: wins,

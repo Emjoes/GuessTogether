@@ -630,46 +630,51 @@ class _CompactPlayerTile extends StatelessWidget {
       secondsTotal: frameSecondsTotal,
       borderRadius: 12,
       child: Stack(
+        alignment: Alignment.center,
         children: <Widget>[
-          InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: null,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOut,
-              constraints: const BoxConstraints(minHeight: 58),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: tileBorderColor),
-                color: tileColor,
-                gradient: tileGradient,
-                boxShadow: tileShadows,
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Text(
-                    player.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: localNameColor,
-                      fontWeight: isLocal ? FontWeight.w800 : FontWeight.w700,
-                      letterSpacing: isLocal ? 0.2 : 0,
+          SizedBox(
+            width: double.infinity,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: null,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOut,
+                constraints: const BoxConstraints(minHeight: 58),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: tileBorderColor),
+                  color: tileColor,
+                  gradient: tileGradient,
+                  boxShadow: tileShadows,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Text(
+                      player.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: localNameColor,
+                        fontWeight: isLocal ? FontWeight.w800 : FontWeight.w700,
+                        letterSpacing: isLocal ? 0.2 : 0,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${player.score}',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      color: scoreColor,
-                      fontWeight: FontWeight.w800,
+                    const SizedBox(height: 2),
+                    Text(
+                      '${player.score}',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: scoreColor,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

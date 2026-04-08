@@ -51,6 +51,19 @@ bool shouldApplyMatchProfileUpdates({
   return !matchProgress.endedByAbandonment;
 }
 
+bool shouldKeepLeavingParticipantInRoom({
+  required bool isHost,
+  required RoomLifecycleStatus roomStatus,
+  required GameState? gameState,
+}) {
+  if (isHost) {
+    return false;
+  }
+  return roomStatus == RoomLifecycleStatus.inGame &&
+      gameState != null &&
+      !gameState.isMatchEnded;
+}
+
 String _databaseUrlFromEnvironment() {
   final String explicitUrl = Platform.environment['DATABASE_URL']?.trim() ?? '';
   if (explicitUrl.isNotEmpty) {
@@ -746,56 +759,6 @@ class AppServer {
     );
   }
 
-  GameState _removePlayerFromGameState(GameState state, String playerId) {
-    final List<Player> remainingPlayers = state.players
-        .where((Player player) => player.id != playerId)
-        .toList(growable: false);
-    final String? nextChooserId = remainingPlayers
-            .any((Player player) => player.id == state.currentChooserId)
-        ? state.currentChooserId
-        : (remainingPlayers.isEmpty ? null : remainingPlayers.first.id);
-    final String nextQuestionOwnerId = remainingPlayers.any(
-      (Player player) => player.id == state.questionOwnerId,
-    )
-        ? state.questionOwnerId
-        : (nextChooserId ?? '');
-    final GameState next = state.copyWith(
-      players: remainingPlayers,
-      currentChooserId: nextChooserId ?? '',
-      questionOwnerId: nextQuestionOwnerId,
-      pendingAnswerPlayerId: state.pendingAnswerPlayerId == playerId
-          ? null
-          : state.pendingAnswerPlayerId,
-      passedPlayerIds: state.passedPlayerIds
-          .where((String id) => id != playerId)
-          .toList(growable: false),
-      wrongAnswerPlayerIds: state.wrongAnswerPlayerIds
-          .where((String id) => id != playerId)
-          .toList(growable: false),
-      lastCorrectAnswerPlayerId: state.lastCorrectAnswerPlayerId == playerId
-          ? null
-          : state.lastCorrectAnswerPlayerId,
-      winnerId: state.winnerId == playerId ? null : state.winnerId,
-    );
-    if (remainingPlayers.length <= 1) {
-      return next.copyWith(
-        phase: GamePhase.finished,
-        isMatchEnded: true,
-        winnerId: remainingPlayers.isEmpty ? null : remainingPlayers.first.id,
-        clearCurrentQuestion: true,
-        phaseSecondsLeft: 0,
-        phaseSecondsTotal: 0,
-        pendingAnswerSecondsLeft: 0,
-        pendingAnswerSecondsTotal: 0,
-        pendingAnswerPlayerId: null,
-        lastEvent: remainingPlayers.isEmpty
-            ? 'Match ended because all players left.'
-            : '${remainingPlayers.first.name} wins because other players left.',
-      );
-    }
-    return next;
-  }
-
   Future<Response> _guarded(
     FutureOr<Response> Function() action,
   ) async {
@@ -1076,26 +1039,43 @@ class AppServer {
       _requireRoomMember(room, user);
 
       final bool wasHost = room.hostUserId == user.id;
-
-      room.participants.removeWhere(
-        (StoredRoomParticipant participant) => participant.userId == user.id,
+      final bool keepParticipantInRoom = shouldKeepLeavingParticipantInRoom(
+        isHost: wasHost,
+        roomStatus: room.status,
+        gameState: room.gameState,
       );
-      _roomSockets[room.id]?.remove(user.id);
+      final StoredRoomParticipant? participant = _findParticipant(room, user.id);
+      final WebSocketChannel? socket = _roomSockets[room.id]?.remove(user.id);
+      if (_roomSockets[room.id]?.isEmpty ?? false) {
+        _roomSockets.remove(room.id);
+      }
+      try {
+        await socket?.sink.close();
+      } catch (_) {
+        // Ignore socket shutdown errors during explicit leave.
+      }
 
-      if (wasHost || room.participants.isEmpty) {
+      if (wasHost) {
         await _deleteRoom(room, notifyClients: true);
         await _store.save();
         return _json(<String, dynamic>{'ok': true});
       }
 
-      if (room.gameState != null &&
-          room.status != RoomLifecycleStatus.finished) {
-        final GameState nextState =
-            _removePlayerFromGameState(room.gameState!, user.id);
-        if (!(room.gameState?.isMatchEnded ?? false) && nextState.isMatchEnded) {
-          room.matchProgress.endedByAbandonment = true;
-        }
-        _setRoomGameState(room, nextState);
+      if (keepParticipantInRoom && participant != null) {
+        participant.isConnected = false;
+        await _store.save();
+        await _broadcastRoom(room, eventType: 'room_state');
+        return _json(<String, dynamic>{'ok': true});
+      }
+
+      room.participants.removeWhere(
+        (StoredRoomParticipant participant) => participant.userId == user.id,
+      );
+
+      if (room.participants.isEmpty) {
+        await _deleteRoom(room, notifyClients: true);
+        await _store.save();
+        return _json(<String, dynamic>{'ok': true});
       }
 
       await _store.save();

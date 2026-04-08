@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:guesstogether/core/theme/app_colors.dart';
 import 'package:guesstogether/core/theme/app_typography.dart';
 
-ThemeMode _defaultThemeModeFromSystem() {
+ThemeMode defaultThemeModeFromSystem() {
   final Brightness systemBrightness =
       WidgetsBinding.instance.platformDispatcher.platformBrightness;
   if (systemBrightness == Brightness.dark) {
@@ -13,10 +12,6 @@ ThemeMode _defaultThemeModeFromSystem() {
   // Fallback for unknown/unsupported values.
   return ThemeMode.light;
 }
-
-final themeModeProvider = StateProvider<ThemeMode>(
-  (ref) => _defaultThemeModeFromSystem(),
-);
 
 ThemeData buildLightTheme() => _buildTheme(brightness: Brightness.light);
 

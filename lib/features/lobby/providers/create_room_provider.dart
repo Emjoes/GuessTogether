@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:guesstogether/data/api/game_api.dart';
-import 'package:guesstogether/data/api/mock_http_adapter.dart';
+import 'package:guesstogether/features/session/app_session_controller.dart';
 
 enum RoomMode { multiplayer, duel }
+
+const String defaultRoomPackageFileName = 'general_quiz_pack.json';
 
 extension RoomModeLabel on RoomMode {
   String get label {
@@ -16,17 +18,12 @@ extension RoomModeLabel on RoomMode {
   }
 }
 
-final gameApiProvider = Provider<GameApi>((ref) {
-  // Swap this for a real HTTP/Firebase adapter later.
-  return MockHttpAdapter();
-});
-
 class CreateRoomState {
   CreateRoomState({
     this.name = '',
     this.password = '',
     this.mode = RoomMode.multiplayer,
-    this.packageFileName = '',
+    this.packageFileName = defaultRoomPackageFileName,
     this.players = 4,
     this.isLoading = false,
   });
@@ -80,17 +77,20 @@ class CreateRoomController extends StateNotifier<CreateRoomState> {
     state = state.copyWith(players: safe);
   }
 
-  Future<void> createRoom() async {
+  Future<RoomSummary> createRoom() async {
     state = state.copyWith(isLoading: true);
     try {
       final request = CreateRoomRequest(
         name: state.name,
+        password: state.password,
         mode: state.mode.name,
         topic: state.mode == RoomMode.duel ? 'Duel' : 'Multiplayer',
         rounds: 3,
         finalWagerEnabled: false,
+        maxPlayers: state.mode == RoomMode.duel ? 2 : state.players,
+        packageFileName: state.packageFileName,
       );
-      await _api.createRoom(request);
+      return await _api.createRoom(request);
     } finally {
       state = state.copyWith(isLoading: false);
     }

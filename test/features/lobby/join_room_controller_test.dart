@@ -9,10 +9,16 @@ class _FakeJoinApi implements GameApi {
   bool shouldFailJoin;
 
   @override
-  Future<RoomSummary> joinRoom(String code,
-      {required String playerName}) async {
+  Future<RoomSummary> joinRoom(
+    String code, {
+    required String playerName,
+    String? password,
+  }) async {
     if (shouldFailJoin) {
       throw Exception('join failed');
+    }
+    if (code == '1001' && (password ?? '') != '4321') {
+      throw Exception('wrong password');
     }
     return RoomSummary(
       id: 'room-$code',
@@ -20,6 +26,12 @@ class _FakeJoinApi implements GameApi {
       name: 'Room $code',
       topic: 'General',
       rounds: 3,
+      mode: 'multiplayer',
+      currentPlayers: 2,
+      maxPlayers: 4,
+      requiresPassword: false,
+      lifecycleStatus: RoomLifecycleStatus.waiting,
+      isHost: false,
     );
   }
 
@@ -31,6 +43,12 @@ class _FakeJoinApi implements GameApi {
         name: 'Room',
         topic: 'Topic',
         rounds: 3,
+        mode: 'multiplayer',
+        currentPlayers: 1,
+        maxPlayers: 4,
+        requiresPassword: false,
+        lifecycleStatus: RoomLifecycleStatus.waiting,
+        isHost: true,
       );
 
   @override
@@ -43,49 +61,116 @@ class _FakeJoinApi implements GameApi {
 
   @override
   Future<List<LeaderboardEntry>> loadLeaderboard(
-          LeaderboardScope scope) async =>
+    LeaderboardScope scope,
+  ) async =>
       <LeaderboardEntry>[];
+
+  @override
+  Future<List<RoomSummary>> loadRooms() async => const <RoomSummary>[
+        RoomSummary(
+          id: 'room-1001',
+          code: '1001',
+          name: 'Friday Trivia Crew',
+          topic: 'General',
+          rounds: 3,
+          mode: 'multiplayer',
+          currentPlayers: 3,
+          maxPlayers: 4,
+          requiresPassword: true,
+          lifecycleStatus: RoomLifecycleStatus.waiting,
+          isHost: false,
+        ),
+        RoomSummary(
+          id: 'room-8890',
+          code: '8890',
+          name: 'Movie Legends',
+          topic: 'Movies',
+          rounds: 3,
+          mode: 'multiplayer',
+          currentPlayers: 2,
+          maxPlayers: 4,
+          requiresPassword: false,
+          lifecycleStatus: RoomLifecycleStatus.waiting,
+          isHost: false,
+        ),
+      ];
+
+  @override
+  Future<RoomDetails> loadRoom(String roomId) async => const RoomDetails(
+        summary: RoomSummary(
+          id: 'room-1001',
+          code: '1001',
+          name: 'Friday Trivia Crew',
+          topic: 'General',
+          rounds: 3,
+          mode: 'multiplayer',
+          currentPlayers: 3,
+          maxPlayers: 4,
+          requiresPassword: true,
+          lifecycleStatus: RoomLifecycleStatus.waiting,
+          isHost: false,
+        ),
+        hostPlayerId: 'host',
+        roomPassword: '4321',
+        packageFileName: '',
+        participants: <RoomParticipant>[],
+      );
+
+  @override
+  Future<void> leaveRoom(String roomId) async {}
+
+  @override
+  Future<void> startRoom(String roomId) async {}
 }
 
 void main() {
-  test('JoinRoomController returns invalidPassword for protected lobby',
+  test(
+      'JoinRoomController returns wrong_password when backend rejects password',
       () async {
-    final controller = JoinRoomController(_FakeJoinApi());
-    final LobbyRoom protectedRoom = controller.state.rooms
-        .firstWhere((LobbyRoom room) => room.requiresPassword);
+    final JoinRoomController controller = JoinRoomController(_FakeJoinApi());
+    await controller.refreshRooms();
+    final RoomSummary protectedRoom = controller.state.rooms
+        .firstWhere((RoomSummary room) => room.requiresPassword);
 
-    final JoinLobbyResult result = await controller.joinLobby(
-      protectedRoom,
-      password: 'bad',
+    await expectLater(
+      () => controller.joinLobby(
+        protectedRoom,
+        password: 'bad',
+      ),
+      throwsException,
     );
 
-    expect(result, JoinLobbyResult.invalidPassword);
-    expect(controller.state.errorText, 'wrong_password');
+    expect(controller.state.joinErrorText, 'wrong_password');
     expect(controller.state.isLoading, false);
   });
 
   test('JoinRoomController joins open lobby without password', () async {
-    final controller = JoinRoomController(_FakeJoinApi());
-    final LobbyRoom openRoom = controller.state.rooms
-        .firstWhere((LobbyRoom room) => !room.requiresPassword);
+    final JoinRoomController controller = JoinRoomController(_FakeJoinApi());
+    await controller.refreshRooms();
+    final RoomSummary openRoom = controller.state.rooms
+        .firstWhere((RoomSummary room) => !room.requiresPassword);
 
-    final JoinLobbyResult result = await controller.joinLobby(openRoom);
+    final RoomSummary result = await controller.joinLobby(openRoom);
 
-    expect(result, JoinLobbyResult.success);
-    expect(controller.state.errorText, isNull);
+    expect(result.code, openRoom.code);
+    expect(controller.state.joinErrorText, isNull);
     expect(controller.state.isLoading, false);
     expect(controller.state.joiningRoomId, isNull);
   });
 
-  test('JoinRoomController returns failed when api throws', () async {
-    final controller = JoinRoomController(_FakeJoinApi(shouldFailJoin: true));
-    final LobbyRoom openRoom = controller.state.rooms
-        .firstWhere((LobbyRoom room) => !room.requiresPassword);
+  test('JoinRoomController stores invalid error when api throws', () async {
+    final JoinRoomController controller =
+        JoinRoomController(_FakeJoinApi(shouldFailJoin: true));
+    await controller.refreshRooms();
+    final RoomSummary openRoom = controller.state.rooms
+        .firstWhere((RoomSummary room) => !room.requiresPassword);
 
-    final JoinLobbyResult result = await controller.joinLobby(openRoom);
+    await expectLater(
+      () => controller.joinLobby(openRoom),
+      throwsException,
+    );
 
-    expect(result, JoinLobbyResult.failed);
-    expect(controller.state.errorText, 'invalid');
+    expect(controller.state.joinErrorText, 'invalid');
     expect(controller.state.isLoading, false);
   });
 }

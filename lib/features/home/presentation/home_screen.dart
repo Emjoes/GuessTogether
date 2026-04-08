@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:guesstogether/core/app_version.dart';
 import 'package:guesstogether/core/l10n/l10n.dart';
 import 'package:guesstogether/core/theme/app_colors.dart';
 import 'package:guesstogether/core/theme/app_spacing.dart';
@@ -99,8 +100,33 @@ class HomeScreen extends ConsumerWidget {
                   },
                 ),
               ),
+              const SizedBox(height: AppSpacing.md),
+              const _VersionBadge(),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _VersionBadge extends StatelessWidget {
+  const _VersionBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final bool isLight = theme.brightness == Brightness.light;
+    return Align(
+      alignment: Alignment.center,
+      child: Text(
+        'v${AppVersion.display}',
+        style: theme.textTheme.labelLarge?.copyWith(
+          color: isLight
+              ? const Color(0xFF5F6F93)
+              : Colors.white.withValues(alpha: 0.72),
+          letterSpacing: 0.4,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );

@@ -2,16 +2,15 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import 'package:guesstogether/core/l10n/generated/app_localizations.dart';
 import 'package:guesstogether/core/l10n/l10n.dart';
 import 'package:guesstogether/core/theme/app_spacing.dart';
 import 'package:guesstogether/data/api/game_api.dart';
-import 'package:guesstogether/data/api/mock_http_adapter.dart';
+import 'package:guesstogether/features/session/app_session_controller.dart';
 import 'package:guesstogether/widgets/app_panel.dart';
 import 'package:guesstogether/widgets/back_shortcut_scope.dart';
-
-final gameApiProvider = Provider<GameApi>((ref) => MockHttpAdapter());
 
 final profileProvider = FutureProvider.autoDispose<ProfileSummary>((ref) async {
   final GameApi api = ref.watch(gameApiProvider);
@@ -81,14 +80,14 @@ class ProfileScreen extends ConsumerWidget {
               final _ProfileMetrics metrics =
                   _ProfileMetrics.fromProfile(profile);
               final List<_RecentGame> recentGames = _buildRecentGames(
-                  l10n: l10n, averageScore: metrics.averageScore);
+                context: context,
+                l10n: l10n,
+                recentGames: profile.recentGames,
+              );
               final List<_AchievementItem> achievements = _buildAchievements(
                 l10n: l10n,
                 wins: metrics.wins,
-                gamesPlayed: profile.gamesPlayed,
-                level: metrics.level,
-                totalXp: metrics.totalXp,
-                streak: metrics.winStreak,
+                clutchCorrectAnswers: profile.clutchCorrectAnswers,
               );
 
               final AsyncValue<List<LeaderboardEntry>> leaderboardAsync =
@@ -105,6 +104,13 @@ class ProfileScreen extends ConsumerWidget {
                   ref.watch(showCompletedAchievementsProvider);
               final StateController<bool> showCompletedController =
                   ref.read(showCompletedAchievementsProvider.notifier);
+
+              void handleTabChanged(ProfileTabSection tab) {
+                if (tab == ProfileTabSection.leaderboards) {
+                  ref.invalidate(leaderboardProvider);
+                }
+                tabController.state = tab;
+              }
 
               return SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(
@@ -127,8 +133,7 @@ class ProfileScreen extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.md),
                     _ProfileTabSelector(
                       selectedTab: selectedTab,
-                      onChanged: (ProfileTabSection tab) =>
-                          tabController.state = tab,
+                      onChanged: handleTabChanged,
                       gradient: panelGradient,
                     ),
                     const SizedBox(height: AppSpacing.sm),
@@ -174,47 +179,36 @@ class _ProfileMetrics {
   const _ProfileMetrics({
     required this.wins,
     required this.losses,
-    required this.averageScore,
     required this.totalXp,
     required this.level,
     required this.xpInLevel,
-    required this.winStreak,
   });
 
   static const int xpPerLevel = 1200;
 
   factory _ProfileMetrics.fromProfile(ProfileSummary profile) {
-    final int wins = math.min(
-      profile.gamesPlayed,
-      math.max(0, (profile.gamesPlayed * profile.winRate).round()),
-    );
-    final int losses = math.max(0, profile.gamesPlayed - wins);
-    final int totalXp =
-        (profile.gamesPlayed * 140) + (wins * 70) + (profile.bestScore ~/ 7);
+    final int wins = math.max(0, profile.wins);
+    final int losses = math.max(0, profile.losses);
+    final int totalXp = profile.totalXp > 0
+        ? profile.totalXp
+        : (profile.gamesPlayed * 140) + (wins * 70) + (profile.bestScore ~/ 7);
     final int level = (totalXp ~/ xpPerLevel) + 1;
     final int xpInLevel = totalXp % xpPerLevel;
-    final int averageScore =
-        math.max(1000, ((profile.bestScore * 0.67) + wins * 22).round());
-    final int winStreak = math.max(1, (profile.winRate * 9).round());
 
     return _ProfileMetrics(
       wins: wins,
       losses: losses,
-      averageScore: averageScore,
       totalXp: totalXp,
       level: level,
       xpInLevel: xpInLevel,
-      winStreak: winStreak,
     );
   }
 
   final int wins;
   final int losses;
-  final int averageScore;
   final int totalXp;
   final int level;
   final int xpInLevel;
-  final int winStreak;
 
   double get xpProgress => xpInLevel / xpPerLevel;
 }
@@ -498,17 +492,24 @@ class _StatisticsSection extends StatelessWidget {
             style: theme.textTheme.titleSmall,
           ),
           const SizedBox(height: AppSpacing.sm),
-          Column(
-            children: List<Widget>.generate(recentGames.length, (int index) {
-              final _RecentGame game = recentGames[index];
-              return Padding(
-                padding: EdgeInsets.only(
-                  bottom: index == recentGames.length - 1 ? 0 : AppSpacing.sm,
-                ),
-                child: _RecentGameRow(game: game),
-              );
-            }),
-          ),
+          if (recentGames.isEmpty)
+            Text(
+              l10n.profileNoRecentGames,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall,
+            )
+          else
+            Column(
+              children: List<Widget>.generate(recentGames.length, (int index) {
+                final _RecentGame game = recentGames[index];
+                return Padding(
+                  padding: EdgeInsets.only(
+                    bottom: index == recentGames.length - 1 ? 0 : AppSpacing.sm,
+                  ),
+                  child: _RecentGameRow(game: game),
+                );
+              }),
+            ),
         ],
       ),
     );
@@ -704,21 +705,21 @@ class _LeaderboardsSection extends StatelessWidget {
                       const SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: _GradientToggleButton(
-                          selected: selectedScope == LeaderboardScope.friends,
-                          icon: Icons.group_rounded,
-                          label: l10n.profileLeaderboardFriends,
+                          selected: selectedScope == LeaderboardScope.monthly,
+                          icon: Icons.calendar_month_rounded,
+                          label: l10n.profileLeaderboardMonth,
                           onPressed: () =>
-                              onScopeChanged(LeaderboardScope.friends),
+                              onScopeChanged(LeaderboardScope.monthly),
                         ),
                       ),
                       const SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: _GradientToggleButton(
-                          selected: selectedScope == LeaderboardScope.weekly,
-                          icon: Icons.calendar_view_week_rounded,
-                          label: l10n.profileLeaderboardWeekly,
+                          selected: selectedScope == LeaderboardScope.daily,
+                          icon: Icons.today_rounded,
+                          label: l10n.profileLeaderboardDay,
                           onPressed: () =>
-                              onScopeChanged(LeaderboardScope.weekly),
+                              onScopeChanged(LeaderboardScope.daily),
                         ),
                       ),
                     ],
@@ -1056,9 +1057,11 @@ class _RecentGameRow extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
     final bool isLight = theme.brightness == Brightness.light;
-    final Color resultColor = game.won
-        ? scheme.secondary.withValues(alpha: 0.95)
-        : scheme.error.withValues(alpha: 0.9);
+    final Color resultColor = game.wasHost
+        ? scheme.onSurfaceVariant.withValues(alpha: 0.82)
+        : game.won
+            ? scheme.secondary.withValues(alpha: 0.95)
+            : scheme.error.withValues(alpha: 0.9);
     final Widget modeIcon = game.mode == _RecentGameMode.duel
         ? _CrossedSwordsIcon(
             size: 17,
@@ -1115,14 +1118,16 @@ class _RecentGameRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
-          Text(
-            '${game.score}',
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: scheme.primary.withValues(alpha: 0.96),
-              fontWeight: FontWeight.w700,
+          if (game.score != null) ...<Widget>[
+            Text(
+              '${game.score}',
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: scheme.primary.withValues(alpha: 0.96),
+                fontWeight: FontWeight.w700,
+              ),
             ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
+            const SizedBox(width: AppSpacing.sm),
+          ],
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
             decoration: BoxDecoration(
@@ -1131,7 +1136,11 @@ class _RecentGameRow extends StatelessWidget {
               border: Border.all(color: resultColor.withValues(alpha: 0.5)),
             ),
             child: Icon(
-              game.won ? Icons.check_rounded : Icons.close_rounded,
+              game.wasHost
+                  ? Icons.person_rounded
+                  : game.won
+                      ? Icons.check_rounded
+                      : Icons.close_rounded,
               size: 14,
               color: resultColor,
             ),
@@ -1269,6 +1278,8 @@ class _AchievementItem {
   final int rewardXp;
 
   bool get unlocked => progress >= target;
+
+  int get displayProgress => math.min(progress, target);
 }
 
 extension on _AchievementTier {
@@ -1368,12 +1379,6 @@ class _AchievementCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                if (item.unlocked)
-                  Icon(
-                    Icons.check_rounded,
-                    size: 18,
-                    color: scheme.secondary.withValues(alpha: 0.95),
-                  ),
               ],
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -1387,7 +1392,7 @@ class _AchievementCard extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(999),
               child: LinearProgressIndicator(
-                value: (item.progress / item.target).clamp(0, 1),
+                value: (item.displayProgress / item.target).clamp(0, 1),
                 minHeight: 6,
                 color: tierStart.withValues(alpha: 0.9),
                 backgroundColor: tierStart.withValues(alpha: 0.2),
@@ -1397,7 +1402,7 @@ class _AchievementCard extends StatelessWidget {
             Row(
               children: <Widget>[
                 Text(
-                  l10n.profileProgressValue(item.progress, item.target),
+                  l10n.profileProgressValue(item.displayProgress, item.target),
                   style: bottomValueStyle,
                 ),
                 const Spacer(),
@@ -1417,13 +1422,11 @@ class _AchievementCard extends StatelessWidget {
 class _LeaderboardRowData {
   const _LeaderboardRowData({
     required this.playerName,
-    required this.level,
-    required this.xp,
+    required this.wins,
   });
 
   final String playerName;
-  final int level;
-  final int xp;
+  final int wins;
 }
 
 class _LeaderboardRow extends StatelessWidget {
@@ -1502,7 +1505,7 @@ class _LeaderboardRow extends StatelessWidget {
           ),
           const SizedBox(width: AppSpacing.sm),
           Text(
-            '${row.level}',
+            '${row.wins}',
             style: theme.textTheme.labelLarge?.copyWith(
               color: scheme.primary.withValues(alpha: 0.95),
             ),
@@ -1516,143 +1519,74 @@ class _LeaderboardRow extends StatelessWidget {
 class _RecentGame {
   const _RecentGame({
     required this.title,
-    required this.score,
     required this.won,
     required this.whenLabel,
     required this.modeLabel,
     required this.mode,
+    this.score,
+    this.wasHost = false,
   });
 
   final String title;
-  final int score;
+  final int? score;
   final bool won;
   final String whenLabel;
   final String modeLabel;
   final _RecentGameMode mode;
+  final bool wasHost;
 }
 
 enum _RecentGameMode { multiplayer, duel }
 
 List<_RecentGame> _buildRecentGames({
+  required BuildContext context,
   required AppLocalizations l10n,
-  required int averageScore,
+  required List<ProfileRecentGame> recentGames,
 }) {
-  return <_RecentGame>[
-    _RecentGame(
-      title: l10n.profileRecentGameFridayTriviaCrew,
-      score: averageScore + 780,
-      won: true,
-      whenLabel: l10n.profileGameTimeJustNow,
-      modeLabel: l10n.createRoomModeMultiplayer,
-      mode: _RecentGameMode.multiplayer,
-    ),
-    _RecentGame(
-      title: l10n.profileRecentGameMovieLegends,
-      score: averageScore - 230,
-      won: false,
-      whenLabel: l10n.profileGameTimeToday,
-      modeLabel: l10n.createRoomModeDuel,
-      mode: _RecentGameMode.duel,
-    ),
-    _RecentGame(
-      title: l10n.profileRecentGameNightBlitz,
-      score: averageScore + 420,
-      won: true,
-      whenLabel: l10n.profileGameTimeYesterday,
-      modeLabel: l10n.createRoomModeMultiplayer,
-      mode: _RecentGameMode.multiplayer,
-    ),
-    _RecentGame(
-      title: l10n.profileRecentGameQuickSparks,
-      score: averageScore - 110,
-      won: true,
-      whenLabel: l10n.profileGameTimeTwoDaysAgo,
-      modeLabel: l10n.createRoomModeDuel,
-      mode: _RecentGameMode.duel,
-    ),
-  ];
+  return recentGames.map((ProfileRecentGame game) {
+    final _RecentGameMode mode = game.mode == 'duel'
+        ? _RecentGameMode.duel
+        : _RecentGameMode.multiplayer;
+    return _RecentGame(
+      title: game.roomName,
+      score: game.score,
+      won: game.won,
+      whenLabel: _recentGameWhenLabel(
+        context: context,
+        playedAtEpochMs: game.playedAtEpochMs,
+      ),
+      modeLabel: mode == _RecentGameMode.duel
+          ? l10n.createRoomModeDuel
+          : l10n.createRoomModeMultiplayer,
+      mode: mode,
+      wasHost: game.wasHost,
+    );
+  }).toList(growable: false);
 }
 
 List<_AchievementItem> _buildAchievements({
   required AppLocalizations l10n,
   required int wins,
-  required int gamesPlayed,
-  required int level,
-  required int totalXp,
-  required int streak,
+  required int clutchCorrectAnswers,
 }) {
   return <_AchievementItem>[
     _AchievementItem(
-      title: l10n.achievementPerfectRoundTitle,
-      requirement: l10n.achievementPerfectRoundRequirement,
-      icon: Icons.bolt_rounded,
-      tier: _AchievementTier.epic,
-      progress: math.min(1, wins ~/ 15),
-      target: 1,
-      rewardXp: 260,
-    ),
-    _AchievementItem(
-      title: l10n.achievementConsistentWinnerTitle,
-      requirement: l10n.achievementConsistentWinnerRequirement,
+      title: l10n.achievementFirstWinTitle,
+      requirement: l10n.achievementFirstWinRequirement,
       icon: Icons.emoji_events_rounded,
-      tier: _AchievementTier.rare,
+      tier: _AchievementTier.epic,
       progress: wins,
-      target: 20,
-      rewardXp: 180,
+      target: 1,
+      rewardXp: 500,
     ),
     _AchievementItem(
-      title: l10n.achievementXpCollectorTitle,
-      requirement: l10n.achievementXpCollectorRequirement,
-      icon: Icons.auto_awesome_rounded,
+      title: l10n.achievementClutchAnswerTitle,
+      requirement: l10n.achievementClutchAnswerRequirement,
+      icon: Icons.psychology_alt_rounded,
       tier: _AchievementTier.epic,
-      progress: totalXp,
-      target: 10000,
-      rewardXp: 320,
-    ),
-    _AchievementItem(
-      title: l10n.achievementDailyChallengerTitle,
-      requirement: l10n.achievementDailyChallengerRequirement,
-      icon: Icons.calendar_month_rounded,
-      tier: _AchievementTier.common,
-      progress: gamesPlayed,
-      target: 30,
-      rewardXp: 120,
-    ),
-    _AchievementItem(
-      title: l10n.achievementStreakRunnerTitle,
-      requirement: l10n.achievementStreakRunnerRequirement,
-      icon: Icons.local_fire_department_rounded,
-      tier: _AchievementTier.rare,
-      progress: streak,
-      target: 5,
-      rewardXp: 160,
-    ),
-    _AchievementItem(
-      title: l10n.achievementVeteranMindTitle,
-      requirement: l10n.achievementVeteranMindRequirement,
-      icon: Icons.psychology_rounded,
-      tier: _AchievementTier.common,
-      progress: level,
-      target: 8,
-      rewardXp: 150,
-    ),
-    _AchievementItem(
-      title: l10n.achievementArenaMasterTitle,
-      requirement: l10n.achievementArenaMasterRequirement,
-      icon: Icons.shield_rounded,
-      tier: _AchievementTier.epic,
-      progress: level,
-      target: 12,
-      rewardXp: 400,
-    ),
-    _AchievementItem(
-      title: l10n.achievementMarathonPlayerTitle,
-      requirement: l10n.achievementMarathonPlayerRequirement,
-      icon: Icons.timer_rounded,
-      tier: _AchievementTier.rare,
-      progress: gamesPlayed,
-      target: 60,
-      rewardXp: 220,
+      progress: clutchCorrectAnswers,
+      target: 1,
+      rewardXp: 750,
     ),
   ];
 }
@@ -1663,23 +1597,32 @@ List<_LeaderboardRowData> _buildLeaderboardRows(
       .map(
         (LeaderboardEntry entry) => _LeaderboardRowData(
           playerName: entry.playerName,
-          level: _levelFromScore(entry.score),
-          xp: entry.score,
+          wins: entry.score,
         ),
       )
       .toList();
 
   rows.sort((_LeaderboardRowData a, _LeaderboardRowData b) {
-    final int byLevel = b.level.compareTo(a.level);
-    if (byLevel != 0) {
-      return byLevel;
+    final int byWins = b.wins.compareTo(a.wins);
+    if (byWins != 0) {
+      return byWins;
     }
-    return b.xp.compareTo(a.xp);
+    return a.playerName.compareTo(b.playerName);
   });
 
   return rows;
 }
 
-int _levelFromScore(int score) {
-  return (score ~/ _ProfileMetrics.xpPerLevel) + 1;
+String _recentGameWhenLabel({
+  required BuildContext context,
+  required int playedAtEpochMs,
+}) {
+  if (playedAtEpochMs <= 0) {
+    return '--.--.--';
+  }
+
+  final DateTime playedAt =
+      DateTime.fromMillisecondsSinceEpoch(playedAtEpochMs);
+  final String localeName = Localizations.localeOf(context).toLanguageTag();
+  return DateFormat('dd.MM.yy', localeName).format(playedAt);
 }

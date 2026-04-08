@@ -32,6 +32,7 @@ void main() {
     );
 
     expect(find.text('Create Room'), findsOneWidget);
+    expect(find.text('v1.00'), findsOneWidget);
     await tester.tap(find.text('Create Room'));
     await tester.pumpAndSettle();
 

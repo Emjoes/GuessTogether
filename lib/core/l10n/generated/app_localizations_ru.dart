@@ -57,6 +57,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get createRoomPackageLabel => 'Пакет вопросов';
 
   @override
+  String get createRoomPackageSoon => 'Скоро';
+
+  @override
   String get createRoomPackagePick => 'Выбрать файл';
 
   @override
@@ -134,6 +137,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get profileRecentGames => 'Недавние игры';
 
   @override
+  String get profileNoRecentGames => 'Пока нет сыгранных матчей';
+
+  @override
   String get profileAchievements => 'Достижения';
 
   @override
@@ -155,10 +161,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get profileLeaderboardGlobal => 'Общий';
 
   @override
-  String get profileLeaderboardFriends => 'Друзья';
+  String get profileLeaderboardMonth => 'Месяц';
 
   @override
-  String get profileLeaderboardWeekly => 'Неделя';
+  String get profileLeaderboardDay => 'День';
 
   @override
   String get profileShowCompleted => 'Показывать выполненные';
@@ -225,54 +231,17 @@ class AppLocalizationsRu extends AppLocalizations {
   String get profileRecentGameQuickSparks => 'Быстрые искры';
 
   @override
-  String get achievementPerfectRoundTitle => 'Идеальный раунд';
+  String get achievementFirstWinTitle => 'Первая победа';
 
   @override
-  String get achievementPerfectRoundRequirement =>
-      'Ответьте правильно на все вопросы в одном раунде';
+  String get achievementFirstWinRequirement => 'Выиграйте любой матч';
 
   @override
-  String get achievementConsistentWinnerTitle => 'Стабильный победитель';
+  String get achievementClutchAnswerTitle => 'Решающий ответ';
 
   @override
-  String get achievementConsistentWinnerRequirement => 'Выиграйте 20 игр';
-
-  @override
-  String get achievementXpCollectorTitle => 'Коллекционер XP';
-
-  @override
-  String get achievementXpCollectorRequirement => 'Наберите 10 000 XP';
-
-  @override
-  String get achievementDailyChallengerTitle => 'Ежедневный соперник';
-
-  @override
-  String get achievementDailyChallengerRequirement => 'Сыграйте 30 игр';
-
-  @override
-  String get achievementStreakRunnerTitle => 'Серия побед';
-
-  @override
-  String get achievementStreakRunnerRequirement =>
-      'Удерживайте серию из 5 побед';
-
-  @override
-  String get achievementVeteranMindTitle => 'Ветеран ума';
-
-  @override
-  String get achievementVeteranMindRequirement => 'Достигните 8 уровня';
-
-  @override
-  String get achievementArenaMasterTitle => 'Мастер арены';
-
-  @override
-  String get achievementArenaMasterRequirement => 'Достигните 12 уровня';
-
-  @override
-  String get achievementMarathonPlayerTitle => 'Игрок-марафонец';
-
-  @override
-  String get achievementMarathonPlayerRequirement => 'Сыграйте 60 игр';
+  String get achievementClutchAnswerRequirement =>
+      'Дайте правильный ответ после того, как все остальные игроки ответили неверно';
 
   @override
   String get settingsTitle => 'Настройки';
@@ -327,6 +296,14 @@ class AppLocalizationsRu extends AppLocalizations {
       'Вы сможете подключиться к этому матчу позже.';
 
   @override
+  String get gameLeaveDialogBodyHost =>
+      'Если ведущий выйдет, комната будет уничтожена для всех игроков.';
+
+  @override
+  String get gameHostLeftMatchMessage =>
+      'Ведущий покинул игру - матч был завершен';
+
+  @override
   String get gameLeaveStay => 'Остаться';
 
   @override
@@ -350,6 +327,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get gameScoreDialogSave => 'Сохранить';
 
   @override
+  String get gameScoresDialogTitle => 'Очки';
+
+  @override
   String get gameHostStartCta => 'Старт';
 
   @override
@@ -357,6 +337,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get gameHostUnpauseCta => 'Продолжить';
+
+  @override
+  String get gameHostScoresCta => 'Очки';
 
   @override
   String get gameCopyLinkCta => 'Ссылка';
@@ -426,8 +409,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get waitingRoomTitle => 'Комната ожидания';
 
   @override
-  String get waitingRoomHostPreparing =>
-      'Ведущий готовит поле. Оставайтесь на этом экране.';
+  String get waitingRoomHostPreparing => 'Ведущий должен запустить матч';
+
+  @override
+  String get waitingRoomNeedPlayers => 'Для старта нужно минимум 2 игрока';
 
   @override
   String get waitingRoomSyncingPlayers => 'Синхронизация игроков...';

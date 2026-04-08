@@ -4,8 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import 'package:guesstogether/core/l10n/l10n.dart';
 import 'package:guesstogether/core/theme/app_spacing.dart';
-import 'package:guesstogether/features/game/presentation/game_screen.dart';
+import 'package:guesstogether/data/api/game_api.dart';
 import 'package:guesstogether/features/lobby/providers/join_room_provider.dart';
+import 'package:guesstogether/features/lobby/presentation/waiting_room_screen.dart';
 import 'package:guesstogether/widgets/app_panel.dart';
 import 'package:guesstogether/widgets/back_shortcut_scope.dart';
 
@@ -70,7 +71,7 @@ class _JoinRoomScreenState extends ConsumerState<JoinRoomScreen> {
     return result;
   }
 
-  Future<void> _handleJoin(LobbyRoom room) async {
+  Future<void> _handleJoin(RoomSummary room) async {
     final JoinRoomController controller =
         ref.read(joinRoomControllerProvider.notifier);
     controller.clearError();
@@ -82,24 +83,30 @@ class _JoinRoomScreenState extends ConsumerState<JoinRoomScreen> {
       }
     }
 
-    final JoinLobbyResult result = await controller.joinLobby(
-      room,
-      password: password,
-    );
-    if (!mounted) {
-      return;
-    }
-    switch (result) {
-      case JoinLobbyResult.success:
-        context.push(GameScreen.routePath);
-      case JoinLobbyResult.invalidPassword:
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.joinRoomErrorWrongPassword)),
-        );
-      case JoinLobbyResult.failed:
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.joinRoomErrorInvalid)),
-        );
+    try {
+      final RoomSummary joined = await controller.joinLobby(
+        room,
+        password: password,
+      );
+      if (!mounted) {
+        return;
+      }
+      context.push(WaitingRoomScreen.routeLocation(joined.id));
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      final String? errorText =
+          ref.read(joinRoomControllerProvider).joinErrorText;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            errorText == 'wrong_password'
+                ? context.l10n.joinRoomErrorWrongPassword
+                : context.l10n.joinRoomErrorInvalid,
+          ),
+        ),
+      );
     }
   }
 
@@ -107,16 +114,27 @@ class _JoinRoomScreenState extends ConsumerState<JoinRoomScreen> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final JoinRoomState state = ref.watch(joinRoomControllerProvider);
+    final JoinRoomController controller =
+        ref.read(joinRoomControllerProvider.notifier);
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
     final TextTheme text = theme.textTheme;
     final bool isLight = theme.brightness == Brightness.light;
+    final bool isRussian =
+        Localizations.localeOf(context).languageCode.toLowerCase() == 'ru';
+    final String searchLabel = l10n.joinRoomSearchHint;
+    final String searchHintText = l10n.joinRoomSearchHintText;
+    final String loadFailedText = isRussian
+        ? 'Не удалось загрузить список комнат.'
+        : 'Failed to load the rooms list.';
+    final String refreshLabel = isRussian ? 'Обновить' : 'Refresh';
     final String normalizedQuery = _searchQuery.trim().toLowerCase();
-    final List<LobbyRoom> rooms = normalizedQuery.isEmpty
+    final List<RoomSummary> rooms = normalizedQuery.isEmpty
         ? state.rooms
         : state.rooms
-            .where((LobbyRoom room) =>
-                room.name.toLowerCase().contains(normalizedQuery))
+            .where((RoomSummary room) =>
+                room.name.toLowerCase().contains(normalizedQuery) ||
+                room.code.toLowerCase().contains(normalizedQuery))
             .toList();
 
     final Color panelBase =
@@ -142,7 +160,23 @@ class _JoinRoomScreenState extends ConsumerState<JoinRoomScreen> {
 
     return BackShortcutScope(
       child: Scaffold(
-        appBar: AppBar(title: Text(l10n.joinRoomTitle)),
+        appBar: AppBar(
+          title: Text(l10n.joinRoomTitle),
+          actionsPadding: const EdgeInsetsDirectional.only(end: 8),
+          actions: <Widget>[
+            IconButton(
+              onPressed: state.isRefreshing ? null : controller.refreshRooms,
+              icon: state.isRefreshing
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2.2),
+                    )
+                  : const Icon(Icons.refresh_rounded),
+              tooltip: refreshLabel,
+            ),
+          ],
+        ),
         body: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(
@@ -161,8 +195,8 @@ class _JoinRoomScreenState extends ConsumerState<JoinRoomScreen> {
                     children: <Widget>[
                       TextField(
                         decoration: InputDecoration(
-                          labelText: l10n.joinRoomSearchHint,
-                          hintText: l10n.joinRoomSearchHintText,
+                          labelText: searchLabel,
+                          hintText: searchHintText,
                           prefixIcon: const Icon(Icons.search_rounded),
                         ),
                         onChanged: (String value) {
@@ -183,7 +217,33 @@ class _JoinRoomScreenState extends ConsumerState<JoinRoomScreen> {
                         style: text.titleSmall,
                       ),
                       const SizedBox(height: AppSpacing.sm),
-                      if (rooms.isEmpty)
+                      if (state.loadErrorText != null && state.rooms.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppSpacing.md,
+                          ),
+                          child: Column(
+                            children: <Widget>[
+                              Text(
+                                loadFailedText,
+                                textAlign: TextAlign.center,
+                                style: text.bodySmall?.copyWith(
+                                  color: scheme.error,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.sm),
+                              OutlinedButton.icon(
+                                onPressed: state.isRefreshing
+                                    ? null
+                                    : controller.refreshRooms,
+                                icon: const Icon(Icons.refresh_rounded),
+                                label: Text(refreshLabel),
+                              ),
+                            ],
+                          ),
+                        )
+                      else if (rooms.isEmpty)
                         Padding(
                           padding: const EdgeInsets.symmetric(
                             vertical: AppSpacing.md,
@@ -201,7 +261,7 @@ class _JoinRoomScreenState extends ConsumerState<JoinRoomScreen> {
                         Column(
                           children:
                               List<Widget>.generate(rooms.length, (int index) {
-                            final LobbyRoom room = rooms[index];
+                            final RoomSummary room = rooms[index];
                             return Padding(
                               padding: EdgeInsets.only(
                                 bottom: index == rooms.length - 1
@@ -236,7 +296,7 @@ class _LobbyRow extends StatefulWidget {
     required this.onTap,
   });
 
-  final LobbyRoom room;
+  final RoomSummary room;
   final bool isLoading;
   final VoidCallback onTap;
 
@@ -337,10 +397,28 @@ class _LobbyRowState extends State<_LobbyRow> {
                   children: <Widget>[
                     Expanded(
                       flex: 5,
-                      child: Text(
-                        widget.room.name,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.labelLarge,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Text(
+                            widget.room.name,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.labelLarge,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '#${widget.room.code}',
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: scheme.onSurfaceVariant
+                                  .withValues(alpha: 0.88),
+                              fontFeatures: const <FontFeature>[
+                                FontFeature.tabularFigures(),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     Expanded(
@@ -359,7 +437,7 @@ class _LobbyRowState extends State<_LobbyRow> {
                     Expanded(
                       flex: 2,
                       child: Center(
-                        child: widget.room.type == LobbyType.duel
+                        child: widget.room.mode == 'duel'
                             ? _CrossedSwordsIcon(
                                 size: 17,
                                 color: scheme.primary.withValues(alpha: 0.95),

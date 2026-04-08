@@ -32,6 +32,20 @@ class Player extends Equatable {
     );
   }
 
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'id': id,
+        'name': name,
+        'score': score,
+      };
+
+  factory Player.fromJson(Map<String, dynamic> json) {
+    return Player(
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      score: (json['score'] as num?)?.toInt() ?? 0,
+    );
+  }
+
   @override
   List<Object?> get props => <Object?>[id, name, score];
 }
@@ -44,6 +58,7 @@ class Question extends Equatable {
     required this.category,
     required this.value,
     required this.used,
+    this.round = 1,
   });
 
   final String id;
@@ -52,6 +67,7 @@ class Question extends Equatable {
   final String category;
   final int value;
   final bool used;
+  final int round;
 
   Question copyWith({
     String? text,
@@ -59,6 +75,7 @@ class Question extends Equatable {
     String? category,
     int? value,
     bool? used,
+    int? round,
   }) {
     return Question(
       id: id,
@@ -67,11 +84,42 @@ class Question extends Equatable {
       category: category ?? this.category,
       value: value ?? this.value,
       used: used ?? this.used,
+      round: round ?? this.round,
+    );
+  }
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'id': id,
+        'text': text,
+        'answer': answer,
+        'category': category,
+        'value': value,
+        'used': used,
+        'round': round,
+      };
+
+  factory Question.fromJson(Map<String, dynamic> json) {
+    return Question(
+      id: json['id'] as String? ?? '',
+      text: json['text'] as String? ?? '',
+      answer: json['answer'] as String? ?? '',
+      category: json['category'] as String? ?? '',
+      value: (json['value'] as num?)?.toInt() ?? 0,
+      used: json['used'] as bool? ?? false,
+      round: (json['round'] as num?)?.toInt() ?? 1,
     );
   }
 
   @override
-  List<Object?> get props => <Object?>[id, text, answer, category, value, used];
+  List<Object?> get props => <Object?>[
+        id,
+        text,
+        answer,
+        category,
+        value,
+        used,
+        round,
+      ];
 }
 
 class GameState extends Equatable {
@@ -97,22 +145,27 @@ class GameState extends Equatable {
     required this.lastEvent,
   });
 
-  factory GameState.initial() {
-    const List<Player> players = <Player>[
-      Player(id: 'p1', name: 'Serge', score: 0),
-      Player(id: 'p2', name: 'Ivy', score: 0),
-      Player(id: 'p3', name: 'Max', score: 0),
-      Player(id: 'p4', name: 'Nova', score: 0),
-    ];
+  factory GameState.initial({
+    List<Player>? players,
+    List<Question>? boardQuestions,
+  }) {
+    final List<Player> safePlayers = (players == null || players.isEmpty)
+        ? const <Player>[
+            Player(id: 'p1', name: 'Serge', score: 0),
+            Player(id: 'p2', name: 'Ivy', score: 0),
+            Player(id: 'p3', name: 'Max', score: 0),
+            Player(id: 'p4', name: 'Nova', score: 0),
+          ]
+        : players;
     return GameState(
-      players: players,
-      boardQuestions: _buildRoundBoard(),
+      players: safePlayers,
+      boardQuestions: boardQuestions ?? _buildRoundBoard(),
       currentQuestion: null,
       phase: GamePhase.waitingForHost,
       isPaused: false,
       round: 1,
-      currentChooserId: players.first.id,
-      questionOwnerId: players.first.id,
+      currentChooserId: safePlayers.first.id,
+      questionOwnerId: safePlayers.first.id,
       phaseSecondsLeft: 0,
       phaseSecondsTotal: 0,
       pendingAnswerSecondsLeft: 0,
@@ -149,7 +202,19 @@ class GameState extends Equatable {
 
   int get remainingSeconds => phaseSecondsLeft;
   bool get isAnswering => phase == GamePhase.answerWindow;
-  bool get hasBoardQuestionsLeft => boardQuestions.any((Question q) => !q.used);
+  Iterable<Question> get roundBoardQuestions =>
+      boardQuestions.where((Question question) => question.round == round);
+  bool get hasBoardQuestionsLeft =>
+      roundBoardQuestions.any((Question question) => !question.used);
+  int? get nextRoundNumber {
+    final List<int> rounds = boardQuestions
+        .map((Question question) => question.round)
+        .where((int questionRound) => questionRound > round)
+        .toSet()
+        .toList()
+      ..sort();
+    return rounds.isEmpty ? null : rounds.first;
+  }
   String? get currentAnswerTurnPlayerId {
     if (phase != GamePhase.answerWindow) {
       return null;
@@ -239,6 +304,75 @@ class GameState extends Equatable {
     );
   }
 
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'players': players.map((Player player) => player.toJson()).toList(),
+        'boardQuestions': boardQuestions
+            .map((Question question) => question.toJson())
+            .toList(),
+        'currentQuestion': currentQuestion?.toJson(),
+        'phase': phase.name,
+        'isPaused': isPaused,
+        'round': round,
+        'currentChooserId': currentChooserId,
+        'questionOwnerId': questionOwnerId,
+        'phaseSecondsLeft': phaseSecondsLeft,
+        'phaseSecondsTotal': phaseSecondsTotal,
+        'pendingAnswerSecondsLeft': pendingAnswerSecondsLeft,
+        'pendingAnswerSecondsTotal': pendingAnswerSecondsTotal,
+        'pendingAnswerPlayerId': pendingAnswerPlayerId,
+        'passedPlayerIds': passedPlayerIds,
+        'wrongAnswerPlayerIds': wrongAnswerPlayerIds,
+        'lastCorrectAnswerPlayerId': lastCorrectAnswerPlayerId,
+        'isMatchEnded': isMatchEnded,
+        'winnerId': winnerId,
+        'lastEvent': lastEvent,
+      };
+
+  factory GameState.fromJson(Map<String, dynamic> json) {
+    return GameState(
+      players: ((json['players'] as List<dynamic>? ?? <dynamic>[]))
+          .map((dynamic item) => Player.fromJson(item as Map<String, dynamic>))
+          .toList(),
+      boardQuestions:
+          ((json['boardQuestions'] as List<dynamic>? ?? <dynamic>[]))
+              .map(
+                (dynamic item) =>
+                    Question.fromJson(item as Map<String, dynamic>),
+              )
+              .toList(),
+      currentQuestion: json['currentQuestion'] is Map<String, dynamic>
+          ? Question.fromJson(json['currentQuestion'] as Map<String, dynamic>)
+          : null,
+      phase: GamePhase.values.firstWhere(
+        (GamePhase value) => value.name == (json['phase'] as String? ?? ''),
+        orElse: () => GamePhase.waitingForHost,
+      ),
+      isPaused: json['isPaused'] as bool? ?? false,
+      round: (json['round'] as num?)?.toInt() ?? 1,
+      currentChooserId: json['currentChooserId'] as String? ?? '',
+      questionOwnerId: json['questionOwnerId'] as String? ?? '',
+      phaseSecondsLeft: (json['phaseSecondsLeft'] as num?)?.toInt() ?? 0,
+      phaseSecondsTotal: (json['phaseSecondsTotal'] as num?)?.toInt() ?? 0,
+      pendingAnswerSecondsLeft:
+          (json['pendingAnswerSecondsLeft'] as num?)?.toInt() ?? 0,
+      pendingAnswerSecondsTotal:
+          (json['pendingAnswerSecondsTotal'] as num?)?.toInt() ?? 0,
+      pendingAnswerPlayerId: json['pendingAnswerPlayerId'] as String?,
+      passedPlayerIds:
+          ((json['passedPlayerIds'] as List<dynamic>? ?? <dynamic>[]))
+              .map((dynamic item) => item as String)
+              .toList(),
+      wrongAnswerPlayerIds:
+          ((json['wrongAnswerPlayerIds'] as List<dynamic>? ?? <dynamic>[]))
+              .map((dynamic item) => item as String)
+              .toList(),
+      lastCorrectAnswerPlayerId: json['lastCorrectAnswerPlayerId'] as String?,
+      isMatchEnded: json['isMatchEnded'] as bool? ?? false,
+      winnerId: json['winnerId'] as String?,
+      lastEvent: json['lastEvent'] as String? ?? '',
+    );
+  }
+
   @override
   List<Object?> get props => <Object?>[
         players,
@@ -266,31 +400,22 @@ class GameState extends Equatable {
 const Object _unset = Object();
 
 List<Question> _buildRoundBoard() {
-  const List<String> categories = <String>[
-    'History',
-    'Science',
-    'Geography',
-    'Movies',
-    'Sports',
-  ];
-  const List<int> values = <int>[100, 200, 300, 400, 500];
+  const String category = 'Quick Test';
+  const List<int> values = <int>[100, 200];
 
   final List<Question> items = <Question>[];
-  for (final String category in categories) {
-    for (final int value in values) {
-      final String id = '${category.toLowerCase().replaceAll(' ', '_')}-$value';
-      items.add(
-        Question(
-          id: id,
-          category: category,
-          value: value,
-          text:
-              '[$category for $value] Name one key fact related to this topic.',
-          answer: 'Sample answer for $category $value',
-          used: false,
-        ),
-      );
-    }
+  for (final int value in values) {
+    final String id = '${category.toLowerCase().replaceAll(' ', '_')}-$value';
+    items.add(
+      Question(
+        id: id,
+        category: category,
+        value: value,
+        text: '[$category for $value] Name one key fact related to this topic.',
+        answer: 'Sample answer for $category $value',
+        used: false,
+      ),
+    );
   }
   return items;
 }

@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:file_picker/file_picker.dart';
 
 import 'package:guesstogether/core/l10n/l10n.dart';
 import 'package:guesstogether/core/theme/app_spacing.dart';
-import 'package:guesstogether/features/game/presentation/game_screen.dart';
+import 'package:guesstogether/data/api/app_backend_api.dart';
+import 'package:guesstogether/data/api/game_api.dart';
 import 'package:guesstogether/features/lobby/providers/create_room_provider.dart';
+import 'package:guesstogether/features/lobby/presentation/waiting_room_screen.dart';
 import 'package:guesstogether/widgets/app_panel.dart';
 import 'package:guesstogether/widgets/back_shortcut_scope.dart';
 
@@ -26,6 +27,11 @@ class CreateRoomScreen extends ConsumerWidget {
     final ColorScheme scheme = theme.colorScheme;
     final TextTheme text = theme.textTheme;
     final bool isLight = theme.brightness == Brightness.light;
+    final bool isRussian =
+        Localizations.localeOf(context).languageCode.toLowerCase() == 'ru';
+    final String createRoomErrorText = isRussian
+        ? 'Не удалось создать комнату.'
+        : 'Failed to create the room.';
     final Color panelBase =
         scheme.surfaceContainerHighest.withValues(alpha: isLight ? 0.76 : 0.58);
     final Gradient setupGradient = LinearGradient(
@@ -46,31 +52,6 @@ class CreateRoomScreen extends ConsumerWidget {
         ),
       ],
     );
-    Future<void> pickPackageFile() async {
-      try {
-        final FilePickerResult? result = await FilePicker.platform.pickFiles(
-          type: FileType.custom,
-          allowedExtensions: <String>[
-            'json',
-            'csv',
-            'txt',
-            'zip',
-            'xlsx',
-          ],
-        );
-        if (result == null || result.files.isEmpty) {
-          return;
-        }
-        final PlatformFile file = result.files.first;
-        controller.setPackageFileName(file.name);
-      } on Exception {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.createRoomFilePickerError)),
-          );
-        }
-      }
-    }
 
     return BackShortcutScope(
       child: Scaffold(
@@ -112,7 +93,15 @@ class CreateRoomScreen extends ConsumerWidget {
                         keyboardType: TextInputType.number,
                         onChanged: controller.setPassword,
                       ),
-                      const SizedBox(height: AppSpacing.md),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                AppPanel(
+                  gradient: setupGradient,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
                       Text(
                         l10n.createRoomModeLabel,
                         style: text.titleSmall,
@@ -141,15 +130,24 @@ class CreateRoomScreen extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: AppSpacing.md),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                AppPanel(
+                  gradient: setupGradient,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
                       Text(
-                        l10n.createRoomPackageLabel,
+                        '${l10n.createRoomPackageLabel} (${l10n.createRoomPackageSoon})',
                         style: text.titleSmall,
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       _PackagePickerField(
                         fileName: state.packageFileName,
-                        onPick: pickPackageFile,
+                        onPick: () {},
+                        enabled: false,
                       ),
                     ],
                   ),
@@ -160,9 +158,34 @@ class CreateRoomScreen extends ConsumerWidget {
                   onPressed: state.isLoading
                       ? null
                       : () async {
-                          await controller.createRoom();
-                          if (context.mounted) {
-                            context.push(GameScreen.routePath);
+                          try {
+                            final RoomSummary room =
+                                await controller.createRoom();
+                            if (context.mounted) {
+                              context.push(
+                                WaitingRoomScreen.routeLocation(room.id),
+                              );
+                            }
+                          } on BackendException catch (error) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    error.message.isEmpty
+                                        ? createRoomErrorText
+                                        : error.message,
+                                  ),
+                                ),
+                              );
+                            }
+                          } on Exception {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(createRoomErrorText),
+                                ),
+                              );
+                            }
                           }
                         },
                 ),
@@ -179,10 +202,12 @@ class _PackagePickerField extends StatefulWidget {
   const _PackagePickerField({
     required this.fileName,
     required this.onPick,
+    required this.enabled,
   });
 
   final String fileName;
   final VoidCallback onPick;
+  final bool enabled;
 
   @override
   State<_PackagePickerField> createState() => _PackagePickerFieldState();
@@ -212,27 +237,31 @@ class _PackagePickerFieldState extends State<_PackagePickerField> {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
     final bool isLight = theme.brightness == Brightness.light;
-    final bool hasFile = widget.fileName.isNotEmpty;
-    final double interaction = _pressed ? 0.2 : (_hovered ? 0.12 : 0.06);
+    final bool isInteractive = widget.enabled;
+    final double interaction =
+        !isInteractive ? 0 : (_pressed ? 0.2 : (_hovered ? 0.12 : 0.06));
     final Color base =
         scheme.surfaceContainerHighest.withValues(alpha: isLight ? 0.66 : 0.44);
     final Color topColor = Color.alphaBlend(
-      Colors.white.withValues(alpha: isLight ? 0.16 : 0.08),
+      Colors.white
+          .withValues(alpha: isInteractive ? (isLight ? 0.16 : 0.08) : 0.04),
       base,
     );
     final Color bottomColor = Color.alphaBlend(
-      scheme.primary.withValues(alpha: interaction),
+      scheme.primary.withValues(alpha: isInteractive ? interaction : 0.02),
       base,
     );
-    final Color borderColor =
-        scheme.outline.withValues(alpha: _hovered ? 0.56 : 0.42);
+    final Color borderColor = scheme.outline.withValues(
+      alpha: isInteractive ? (_hovered ? 0.56 : 0.42) : 0.28,
+    );
 
     return MouseRegion(
-      cursor: SystemMouseCursors.click,
+      cursor:
+          isInteractive ? SystemMouseCursors.click : SystemMouseCursors.basic,
       child: AnimatedScale(
         duration: const Duration(milliseconds: 130),
         curve: Curves.easeOutCubic,
-        scale: _pressed ? 0.99 : (_hovered ? 1.01 : 1),
+        scale: !isInteractive ? 1 : (_pressed ? 0.99 : (_hovered ? 1.01 : 1)),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 170),
           curve: Curves.easeOutCubic,
@@ -259,10 +288,13 @@ class _PackagePickerFieldState extends State<_PackagePickerField> {
             color: Colors.transparent,
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
-              onTap: widget.onPick,
-              onHover: _setHovered,
-              onHighlightChanged: _setPressed,
+              onTap: isInteractive ? widget.onPick : null,
+              onHover: isInteractive ? _setHovered : null,
+              onHighlightChanged: isInteractive ? _setPressed : null,
               overlayColor: WidgetStateProperty.resolveWith((states) {
+                if (!isInteractive) {
+                  return Colors.transparent;
+                }
                 if (states.contains(WidgetState.pressed)) {
                   return scheme.primary.withValues(alpha: isLight ? 0.14 : 0.2);
                 }
@@ -282,17 +314,19 @@ class _PackagePickerFieldState extends State<_PackagePickerField> {
                     Icon(
                       Icons.file_present_rounded,
                       size: 20,
-                      color: scheme.primary.withValues(alpha: 0.92),
+                      color: isInteractive
+                          ? scheme.primary.withValues(alpha: 0.92)
+                          : scheme.onSurfaceVariant.withValues(alpha: 0.72),
                     ),
                     const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
-                        hasFile ? widget.fileName : l10n.createRoomPackagePick,
+                        l10n.createRoomPackagePick,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: hasFile
-                              ? scheme.onSurface
-                              : scheme.onSurfaceVariant.withValues(alpha: 0.88),
+                          color: scheme.onSurfaceVariant.withValues(
+                            alpha: isInteractive ? 0.88 : 0.68,
+                          ),
                         ),
                       ),
                     ),

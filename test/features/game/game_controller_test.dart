@@ -3,6 +3,21 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:guesstogether/features/game/domain/game_models.dart';
 import 'package:guesstogether/features/game/providers/game_providers.dart';
 
+Future<Question> _openFirstQuestion(GameController controller) async {
+  await controller.startMatch();
+  final Question clue = controller.state.boardQuestions.first;
+  controller.chooseQuestion(clue.id, hostOverride: true);
+  controller.state = controller.state.copyWith(
+    phase: GamePhase.answerWindow,
+    phaseSecondsLeft: 12,
+    phaseSecondsTotal: 12,
+    pendingAnswerSecondsLeft: 0,
+    pendingAnswerSecondsTotal: 0,
+    pendingAnswerPlayerId: null,
+  );
+  return clue;
+}
+
 void main() {
   test('GameController starts match and opens board selection', () async {
     final GameController controller = GameController();
@@ -56,9 +71,7 @@ void main() {
     final GameController controller = GameController();
     addTearDown(controller.dispose);
 
-    await controller.startMatch();
-    final Question clue = controller.state.boardQuestions.first;
-    controller.chooseQuestion(clue.id, hostOverride: true);
+    await _openFirstQuestion(controller);
 
     controller.requestAnswer('p3');
 
@@ -70,9 +83,7 @@ void main() {
     final GameController controller = GameController();
     addTearDown(controller.dispose);
 
-    await controller.startMatch();
-    final Question clue = controller.state.boardQuestions.first;
-    controller.chooseQuestion(clue.id, hostOverride: true);
+    final Question clue = await _openFirstQuestion(controller);
 
     controller.requestAnswer('p3');
     controller.hostAcceptAnswer();
@@ -89,9 +100,7 @@ void main() {
     final GameController controller = GameController();
     addTearDown(controller.dispose);
 
-    await controller.startMatch();
-    final Question clue = controller.state.boardQuestions.first;
-    controller.chooseQuestion(clue.id, hostOverride: true);
+    await _openFirstQuestion(controller);
 
     controller.state = controller.state.copyWith(
       passedPlayerIds: const <String>['p2'],
@@ -122,9 +131,7 @@ void main() {
     final GameController controller = GameController();
     addTearDown(controller.dispose);
 
-    await controller.startMatch();
-    final Question clue = controller.state.boardQuestions.first;
-    controller.chooseQuestion(clue.id, hostOverride: true);
+    await _openFirstQuestion(controller);
 
     controller.state = controller.state.copyWith(
       phaseSecondsLeft: 4,
@@ -143,9 +150,7 @@ void main() {
     final GameController controller = GameController();
     addTearDown(controller.dispose);
 
-    await controller.startMatch();
-    final Question clue = controller.state.boardQuestions.first;
-    controller.chooseQuestion(clue.id, hostOverride: true);
+    await _openFirstQuestion(controller);
 
     controller.state = controller.state.copyWith(
       phaseSecondsLeft: 7,
@@ -162,9 +167,7 @@ void main() {
     final GameController controller = GameController();
     addTearDown(controller.dispose);
 
-    await controller.startMatch();
-    final Question clue = controller.state.boardQuestions.first;
-    controller.chooseQuestion(clue.id, hostOverride: true);
+    final Question clue = await _openFirstQuestion(controller);
 
     controller.state = controller.state.copyWith(
       pendingAnswerPlayerId: 'p2',

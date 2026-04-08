@@ -194,6 +194,12 @@ abstract class AppLocalizations {
   /// **'Package'**
   String get createRoomPackageLabel;
 
+  /// No description provided for @createRoomPackageSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Soon'**
+  String get createRoomPackageSoon;
+
   /// No description provided for @createRoomPackagePick.
   ///
   /// In en, this message translates to:
@@ -344,6 +350,12 @@ abstract class AppLocalizations {
   /// **'Recent games'**
   String get profileRecentGames;
 
+  /// No description provided for @profileNoRecentGames.
+  ///
+  /// In en, this message translates to:
+  /// **'No recent games yet'**
+  String get profileNoRecentGames;
+
   /// No description provided for @profileAchievements.
   ///
   /// In en, this message translates to:
@@ -386,17 +398,17 @@ abstract class AppLocalizations {
   /// **'Global'**
   String get profileLeaderboardGlobal;
 
-  /// No description provided for @profileLeaderboardFriends.
+  /// No description provided for @profileLeaderboardMonth.
   ///
   /// In en, this message translates to:
-  /// **'Friends'**
-  String get profileLeaderboardFriends;
+  /// **'Month'**
+  String get profileLeaderboardMonth;
 
-  /// No description provided for @profileLeaderboardWeekly.
+  /// No description provided for @profileLeaderboardDay.
   ///
   /// In en, this message translates to:
-  /// **'Weekly'**
-  String get profileLeaderboardWeekly;
+  /// **'Day'**
+  String get profileLeaderboardDay;
 
   /// No description provided for @profileShowCompleted.
   ///
@@ -506,101 +518,29 @@ abstract class AppLocalizations {
   /// **'Quick Sparks'**
   String get profileRecentGameQuickSparks;
 
-  /// No description provided for @achievementPerfectRoundTitle.
+  /// No description provided for @achievementFirstWinTitle.
   ///
   /// In en, this message translates to:
-  /// **'Perfect Round'**
-  String get achievementPerfectRoundTitle;
+  /// **'First Win'**
+  String get achievementFirstWinTitle;
 
-  /// No description provided for @achievementPerfectRoundRequirement.
+  /// No description provided for @achievementFirstWinRequirement.
   ///
   /// In en, this message translates to:
-  /// **'Answer every question correctly in one round'**
-  String get achievementPerfectRoundRequirement;
+  /// **'Win any match'**
+  String get achievementFirstWinRequirement;
 
-  /// No description provided for @achievementConsistentWinnerTitle.
+  /// No description provided for @achievementClutchAnswerTitle.
   ///
   /// In en, this message translates to:
-  /// **'Consistent Winner'**
-  String get achievementConsistentWinnerTitle;
+  /// **'Clutch Answer'**
+  String get achievementClutchAnswerTitle;
 
-  /// No description provided for @achievementConsistentWinnerRequirement.
+  /// No description provided for @achievementClutchAnswerRequirement.
   ///
   /// In en, this message translates to:
-  /// **'Win 20 games'**
-  String get achievementConsistentWinnerRequirement;
-
-  /// No description provided for @achievementXpCollectorTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'XP Collector'**
-  String get achievementXpCollectorTitle;
-
-  /// No description provided for @achievementXpCollectorRequirement.
-  ///
-  /// In en, this message translates to:
-  /// **'Reach 10,000 total XP'**
-  String get achievementXpCollectorRequirement;
-
-  /// No description provided for @achievementDailyChallengerTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Daily Challenger'**
-  String get achievementDailyChallengerTitle;
-
-  /// No description provided for @achievementDailyChallengerRequirement.
-  ///
-  /// In en, this message translates to:
-  /// **'Play 30 games'**
-  String get achievementDailyChallengerRequirement;
-
-  /// No description provided for @achievementStreakRunnerTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Streak Runner'**
-  String get achievementStreakRunnerTitle;
-
-  /// No description provided for @achievementStreakRunnerRequirement.
-  ///
-  /// In en, this message translates to:
-  /// **'Maintain 5-win streak'**
-  String get achievementStreakRunnerRequirement;
-
-  /// No description provided for @achievementVeteranMindTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Veteran Mind'**
-  String get achievementVeteranMindTitle;
-
-  /// No description provided for @achievementVeteranMindRequirement.
-  ///
-  /// In en, this message translates to:
-  /// **'Reach level 8'**
-  String get achievementVeteranMindRequirement;
-
-  /// No description provided for @achievementArenaMasterTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Arena Master'**
-  String get achievementArenaMasterTitle;
-
-  /// No description provided for @achievementArenaMasterRequirement.
-  ///
-  /// In en, this message translates to:
-  /// **'Reach level 12'**
-  String get achievementArenaMasterRequirement;
-
-  /// No description provided for @achievementMarathonPlayerTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Marathon Player'**
-  String get achievementMarathonPlayerTitle;
-
-  /// No description provided for @achievementMarathonPlayerRequirement.
-  ///
-  /// In en, this message translates to:
-  /// **'Play 60 games'**
-  String get achievementMarathonPlayerRequirement;
+  /// **'Give a correct answer after all other players answered wrong'**
+  String get achievementClutchAnswerRequirement;
 
   /// No description provided for @settingsTitle.
   ///
@@ -704,6 +644,18 @@ abstract class AppLocalizations {
   /// **'You can reconnect to this match later.'**
   String get gameLeaveDialogBody;
 
+  /// No description provided for @gameLeaveDialogBodyHost.
+  ///
+  /// In en, this message translates to:
+  /// **'If the host leaves, the room will be destroyed for all players.'**
+  String get gameLeaveDialogBodyHost;
+
+  /// No description provided for @gameHostLeftMatchMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Host left the game - match was ended'**
+  String get gameHostLeftMatchMessage;
+
   /// No description provided for @gameLeaveStay.
   ///
   /// In en, this message translates to:
@@ -746,6 +698,12 @@ abstract class AppLocalizations {
   /// **'Save'**
   String get gameScoreDialogSave;
 
+  /// No description provided for @gameScoresDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scores'**
+  String get gameScoresDialogTitle;
+
   /// No description provided for @gameHostStartCta.
   ///
   /// In en, this message translates to:
@@ -763,6 +721,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unpause'**
   String get gameHostUnpauseCta;
+
+  /// No description provided for @gameHostScoresCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Scores'**
+  String get gameHostScoresCta;
 
   /// No description provided for @gameCopyLinkCta.
   ///
@@ -893,8 +857,14 @@ abstract class AppLocalizations {
   /// No description provided for @waitingRoomHostPreparing.
   ///
   /// In en, this message translates to:
-  /// **'Host is preparing the board. Stay on this screen.'**
+  /// **'Host must start the match'**
   String get waitingRoomHostPreparing;
+
+  /// No description provided for @waitingRoomNeedPlayers.
+  ///
+  /// In en, this message translates to:
+  /// **'At least 2 players are required to start'**
+  String get waitingRoomNeedPlayers;
 
   /// No description provided for @waitingRoomSyncingPlayers.
   ///

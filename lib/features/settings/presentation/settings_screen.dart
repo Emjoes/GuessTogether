@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import 'package:guesstogether/features/auth/presentation/auth_screen.dart';
 import 'package:guesstogether/core/l10n/app_locale.dart';
 import 'package:guesstogether/core/l10n/l10n.dart';
 import 'package:guesstogether/core/theme/app_spacing.dart';
-import 'package:guesstogether/core/theme/app_theme.dart';
+import 'package:guesstogether/features/session/app_session_controller.dart';
 import 'package:guesstogether/widgets/app_panel.dart';
 import 'package:guesstogether/widgets/back_shortcut_scope.dart';
 
@@ -18,11 +20,9 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final ThemeMode themeMode = ref.watch(themeModeProvider);
-    final StateController<ThemeMode> themeModeNotifier =
-        ref.read(themeModeProvider.notifier);
     final AppLanguage appLanguage = ref.watch(appLanguageProvider);
-    final StateController<AppLanguage> appLanguageNotifier =
-        ref.read(appLanguageProvider.notifier);
+    final AppSessionController sessionController =
+        ref.read(appSessionControllerProvider.notifier);
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
     final bool isLight = theme.brightness == Brightness.light;
@@ -46,6 +46,10 @@ class SettingsScreen extends ConsumerWidget {
         ),
       ],
     );
+    final bool isRussian =
+        Localizations.localeOf(context).languageCode.toLowerCase() == 'ru';
+    final String accountSectionTitle = isRussian ? 'Аккаунт' : 'Account';
+    final String logoutLabel = isRussian ? 'Выйти' : 'Log out';
 
     return BackShortcutScope(
       child: Scaffold(
@@ -76,7 +80,7 @@ class SettingsScreen extends ConsumerWidget {
                         icon: Icons.wb_sunny_rounded,
                         label: l10n.settingsThemeLight,
                         onPressed: () =>
-                            themeModeNotifier.state = ThemeMode.light,
+                            sessionController.updateThemeMode(ThemeMode.light),
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       _ThemeModeButton(
@@ -84,7 +88,7 @@ class SettingsScreen extends ConsumerWidget {
                         icon: Icons.nights_stay_rounded,
                         label: l10n.settingsThemeDark,
                         onPressed: () =>
-                            themeModeNotifier.state = ThemeMode.dark,
+                            sessionController.updateThemeMode(ThemeMode.dark),
                       ),
                     ],
                   ),
@@ -104,16 +108,49 @@ class SettingsScreen extends ConsumerWidget {
                         selected: appLanguage == AppLanguage.english,
                         leading: const _FlagBadge(child: _UkFlag()),
                         label: l10n.settingsLanguageEnglish,
-                        onPressed: () =>
-                            appLanguageNotifier.state = AppLanguage.english,
+                        onPressed: () => sessionController.updateLanguage(
+                          AppLanguage.english,
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       _ThemeModeButton(
                         selected: appLanguage == AppLanguage.russian,
                         leading: const _FlagBadge(child: _RuFlag()),
                         label: l10n.settingsLanguageRussian,
-                        onPressed: () =>
-                            appLanguageNotifier.state = AppLanguage.russian,
+                        onPressed: () => sessionController.updateLanguage(
+                          AppLanguage.russian,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                AppPanel(
+                  gradient: setupGradient,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      Text(
+                        accountSectionTitle,
+                        style: theme.textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      SizedBox(
+                        height: AppSpacing.tapTargetMin + 4,
+                        child: FilledButton.icon(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: scheme.error,
+                            foregroundColor: scheme.onError,
+                          ),
+                          onPressed: () async {
+                            await sessionController.logout();
+                            if (context.mounted) {
+                              context.go(AuthScreen.routePath);
+                            }
+                          },
+                          icon: const Icon(Icons.logout_rounded),
+                          label: Text(logoutLabel),
+                        ),
                       ),
                     ],
                   ),

@@ -26,6 +26,7 @@ class AppStrings {
   static const String createRoomModeMultiplayer = 'Multiplayer';
   static const String createRoomModeDuel = 'Duel';
   static const String createRoomPackageLabel = 'Package';
+  static const String createRoomPackageSoon = 'Soon';
   static const String createRoomPackagePick = 'Choose file';
   static const String createRoomPackageEmpty = 'No file selected';
   static const String createRoomPlayersLabel = 'Players';
@@ -80,8 +81,8 @@ class AppStrings {
   static const String profileYourRank = 'Your rank';
   static const String profileRating = 'Rating';
   static const String profileLeaderboardGlobal = 'Global';
-  static const String profileLeaderboardFriends = 'Friends';
-  static const String profileLeaderboardWeekly = 'Weekly';
+  static const String profileLeaderboardMonth = 'Month';
+  static const String profileLeaderboardDay = 'Day';
   static const String profilePlayersRankedByLevel =
       'Players are ranked by level';
   static const String profileYourPosition = 'Your position';

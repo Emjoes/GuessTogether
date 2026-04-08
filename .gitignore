@@ -25,11 +25,17 @@ migrate_working_dir/
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
+.flutter-plugins
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
 /build/
 /coverage/
+/android/.gradle/
+
+# Local backend/runtime state
+/backend_data/
+*.pid
 
 # Symbolication related
 app.*.symbols
@@ -62,3 +68,4 @@ app.*.map.json
 /dist/
 /release/
 /out/
+/launch/

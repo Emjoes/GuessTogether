@@ -2,14 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:guesstogether/core/l10n/app_strings.dart';
 import 'package:guesstogether/core/l10n/app_locale.dart';
-import 'package:guesstogether/core/theme/app_theme.dart';
+import 'package:guesstogether/features/auth/presentation/auth_screen.dart';
 import 'package:guesstogether/features/settings/presentation/settings_screen.dart';
+import 'package:guesstogether/features/session/app_session_controller.dart';
 import '../test_app.dart';
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+  });
+
   testWidgets('SettingsScreen shows all theme options', (tester) async {
     await tester.pumpWidget(
       const ProviderScope(
@@ -31,6 +38,22 @@ void main() {
             widget.runtimeType.toString() == '_RuFlag',
       ),
       findsNWidgets(2),
+    );
+  });
+
+  testWidgets('SettingsScreen shows logout account block', (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: _SettingsApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Account'), findsOneWidget);
+    expect(find.text('Log out'), findsOneWidget);
+    expect(
+      find.text('The current session will be cleared on this device.'),
+      findsNothing,
     );
   });
 
@@ -166,6 +189,37 @@ void main() {
 
     expect(find.text('Open settings'), findsOneWidget);
     expect(find.text(AppStrings.settingsTitle), findsNothing);
+  });
+
+  testWidgets('SettingsScreen logout navigates to auth', (tester) async {
+    final GoRouter router = GoRouter(
+      initialLocation: SettingsScreen.routePath,
+      routes: <RouteBase>[
+        GoRoute(
+          path: SettingsScreen.routePath,
+          builder: (context, state) => const SettingsScreen(),
+        ),
+        GoRoute(
+          path: AuthScreen.routePath,
+          builder: (context, state) => const AuthScreen(),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        child: buildTestMaterialAppRouter(
+          routerConfig: router,
+          locale: const Locale('en'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Log out'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AuthScreen), findsOneWidget);
   });
 }
 

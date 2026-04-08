@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:guesstogether/core/debug/loading_debug_gate.dart';
+import 'package:guesstogether/features/auth/presentation/auth_screen.dart';
 import 'package:guesstogether/features/game/presentation/game_screen.dart';
 import 'package:guesstogether/features/home/presentation/home_screen.dart';
 import 'package:guesstogether/features/lobby/presentation/create_room_screen.dart';
@@ -30,6 +31,16 @@ final appRouterProvider = Provider<GoRouter>(
           state: state,
           child: const SplashScreen(),
           showEntryLoader: true,
+        ),
+      ),
+      GoRoute(
+        path: AuthScreen.routePath,
+        name: AuthScreen.routeName,
+        pageBuilder: (BuildContext context, GoRouterState state) =>
+            _buildAppPage(
+          state: state,
+          child: const AuthScreen(),
+          showEntryLoader: false,
         ),
       ),
       GoRoute(
@@ -68,7 +79,9 @@ final appRouterProvider = Provider<GoRouter>(
         pageBuilder: (BuildContext context, GoRouterState state) =>
             _buildAppPage(
           state: state,
-          child: const WaitingRoomScreen(),
+          child: WaitingRoomScreen(
+            roomId: state.pathParameters['roomId'] ?? '',
+          ),
           showEntryLoader: true,
         ),
       ),
@@ -77,10 +90,10 @@ final appRouterProvider = Provider<GoRouter>(
         name: ProfileScreen.routeName,
         pageBuilder: (BuildContext context, GoRouterState state) =>
             _buildAppPage(
-              state: state,
-              child: const ProfileScreen(),
-              showEntryLoader: false,
-            ),
+          state: state,
+          child: const ProfileScreen(),
+          showEntryLoader: false,
+        ),
       ),
       GoRoute(
         path: SettingsScreen.routePath,

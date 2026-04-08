@@ -1,5 +1,4 @@
 import 'package:flutter/widgets.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum AppLanguage {
   english,
@@ -17,7 +16,7 @@ extension AppLanguageLocale on AppLanguage {
   }
 }
 
-AppLanguage _defaultAppLanguageFromSystem() {
+AppLanguage defaultAppLanguageFromSystem() {
   final String code = WidgetsBinding
       .instance.platformDispatcher.locale.languageCode
       .toLowerCase();
@@ -31,7 +30,3 @@ AppLanguage _defaultAppLanguageFromSystem() {
       return AppLanguage.english;
   }
 }
-
-final appLanguageProvider = StateProvider<AppLanguage>(
-  (ref) => _defaultAppLanguageFromSystem(),
-);

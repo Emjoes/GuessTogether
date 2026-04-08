@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:guesstogether/core/l10n/l10n.dart';
 import 'package:guesstogether/core/theme/app_colors.dart';
 import 'package:guesstogether/core/theme/app_spacing.dart';
+import 'package:guesstogether/features/game/domain/game_models.dart';
 import 'package:guesstogether/features/game/providers/game_providers.dart';
 import 'package:guesstogether/features/home/presentation/home_screen.dart';
 import 'package:guesstogether/widgets/app_panel.dart';
@@ -16,10 +19,19 @@ class ResultScreen extends ConsumerWidget {
   static const String routePath = '/results';
   static const String routeName = 'results';
 
+  Future<void> _leaveMatch(BuildContext context, WidgetRef ref) async {
+    ref.read(matchResultSnapshotProvider.notifier).state = null;
+    await ref.read(gameControllerProvider.notifier).leaveMatch();
+    if (context.mounted) {
+      context.go(HomeScreen.routePath);
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
-    final game = ref.watch(gameControllerProvider);
+    final GameState game = ref.watch(matchResultSnapshotProvider) ??
+        ref.watch(gameControllerProvider);
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
     final bool isLight = theme.brightness == Brightness.light;
@@ -55,13 +67,13 @@ class ResultScreen extends ConsumerWidget {
         canPop: false,
         onPopInvokedWithResult: (bool didPop, Object? result) {
           if (!didPop) {
-            context.go(HomeScreen.routePath);
+            unawaited(_leaveMatch(context, ref));
           }
         },
         child: Scaffold(
           appBar: AppBar(
             leading: BackButton(
-              onPressed: () => context.go(HomeScreen.routePath),
+              onPressed: () => unawaited(_leaveMatch(context, ref)),
             ),
             title: Text(l10n.resultsTitle),
           ),

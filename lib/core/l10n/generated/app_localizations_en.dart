@@ -57,6 +57,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createRoomPackageLabel => 'Package';
 
   @override
+  String get createRoomPackageSoon => 'Soon';
+
+  @override
   String get createRoomPackagePick => 'Choose file';
 
   @override
@@ -134,6 +137,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileRecentGames => 'Recent games';
 
   @override
+  String get profileNoRecentGames => 'No recent games yet';
+
+  @override
   String get profileAchievements => 'Achievements';
 
   @override
@@ -155,10 +161,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileLeaderboardGlobal => 'Global';
 
   @override
-  String get profileLeaderboardFriends => 'Friends';
+  String get profileLeaderboardMonth => 'Month';
 
   @override
-  String get profileLeaderboardWeekly => 'Weekly';
+  String get profileLeaderboardDay => 'Day';
 
   @override
   String get profileShowCompleted => 'Show completed';
@@ -225,53 +231,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileRecentGameQuickSparks => 'Quick Sparks';
 
   @override
-  String get achievementPerfectRoundTitle => 'Perfect Round';
+  String get achievementFirstWinTitle => 'First Win';
 
   @override
-  String get achievementPerfectRoundRequirement =>
-      'Answer every question correctly in one round';
+  String get achievementFirstWinRequirement => 'Win any match';
 
   @override
-  String get achievementConsistentWinnerTitle => 'Consistent Winner';
+  String get achievementClutchAnswerTitle => 'Clutch Answer';
 
   @override
-  String get achievementConsistentWinnerRequirement => 'Win 20 games';
-
-  @override
-  String get achievementXpCollectorTitle => 'XP Collector';
-
-  @override
-  String get achievementXpCollectorRequirement => 'Reach 10,000 total XP';
-
-  @override
-  String get achievementDailyChallengerTitle => 'Daily Challenger';
-
-  @override
-  String get achievementDailyChallengerRequirement => 'Play 30 games';
-
-  @override
-  String get achievementStreakRunnerTitle => 'Streak Runner';
-
-  @override
-  String get achievementStreakRunnerRequirement => 'Maintain 5-win streak';
-
-  @override
-  String get achievementVeteranMindTitle => 'Veteran Mind';
-
-  @override
-  String get achievementVeteranMindRequirement => 'Reach level 8';
-
-  @override
-  String get achievementArenaMasterTitle => 'Arena Master';
-
-  @override
-  String get achievementArenaMasterRequirement => 'Reach level 12';
-
-  @override
-  String get achievementMarathonPlayerTitle => 'Marathon Player';
-
-  @override
-  String get achievementMarathonPlayerRequirement => 'Play 60 games';
+  String get achievementClutchAnswerRequirement =>
+      'Give a correct answer after all other players answered wrong';
 
   @override
   String get settingsTitle => 'Settings';
@@ -325,6 +295,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameLeaveDialogBody => 'You can reconnect to this match later.';
 
   @override
+  String get gameLeaveDialogBodyHost =>
+      'If the host leaves, the room will be destroyed for all players.';
+
+  @override
+  String get gameHostLeftMatchMessage => 'Host left the game - match was ended';
+
+  @override
   String get gameLeaveStay => 'Stay';
 
   @override
@@ -348,6 +325,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameScoreDialogSave => 'Save';
 
   @override
+  String get gameScoresDialogTitle => 'Scores';
+
+  @override
   String get gameHostStartCta => 'Start';
 
   @override
@@ -355,6 +335,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gameHostUnpauseCta => 'Unpause';
+
+  @override
+  String get gameHostScoresCta => 'Scores';
 
   @override
   String get gameCopyLinkCta => 'Link';
@@ -424,8 +407,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get waitingRoomTitle => 'Waiting Room';
 
   @override
-  String get waitingRoomHostPreparing =>
-      'Host is preparing the board. Stay on this screen.';
+  String get waitingRoomHostPreparing => 'Host must start the match';
+
+  @override
+  String get waitingRoomNeedPlayers =>
+      'At least 2 players are required to start';
 
   @override
   String get waitingRoomSyncingPlayers => 'Syncing players...';

@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:guesstogether/core/l10n/app_strings.dart';
 import 'package:guesstogether/features/lobby/presentation/create_room_screen.dart';
 import 'package:guesstogether/features/lobby/providers/create_room_provider.dart';
+import 'package:guesstogether/widgets/app_panel.dart';
 import '../test_app.dart';
 
 void main() {
@@ -20,11 +21,18 @@ void main() {
     expect(find.text(AppStrings.createRoomDetailsLabel), findsOneWidget);
     expect(find.text(AppStrings.createRoomModeMultiplayer), findsOneWidget);
     expect(find.text(AppStrings.createRoomModeDuel), findsOneWidget);
-    expect(find.text(AppStrings.createRoomPackageLabel), findsOneWidget);
+    expect(
+      find.text(
+        '${AppStrings.createRoomPackageLabel} (${AppStrings.createRoomPackageSoon})',
+      ),
+      findsOneWidget,
+    );
     expect(find.text(AppStrings.createRoomPackageEmpty), findsNothing);
+    expect(find.text(defaultRoomPackageFileName), findsNothing);
     expect(find.text(AppStrings.createRoomPackagePick), findsOneWidget);
     expect(find.text(AppStrings.createRoomPlayersLabel), findsNothing);
     expect(find.text(AppStrings.createRoomDuelHint), findsNothing);
+    expect(find.byType(AppPanel), findsNWidgets(3));
   });
 
   testWidgets('CreateRoomScreen updates mode when tapping duel',

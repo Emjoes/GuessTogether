@@ -9,9 +9,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:guesstogether/core/l10n/l10n.dart';
+import 'package:guesstogether/core/theme/app_colors.dart';
 import 'package:guesstogether/core/theme/app_spacing.dart';
 import 'package:guesstogether/features/game/domain/game_models.dart';
 import 'package:guesstogether/features/game/providers/game_providers.dart';
+import 'package:guesstogether/features/home/presentation/home_screen.dart';
 import 'package:guesstogether/features/result/presentation/result_screen.dart';
 import 'package:guesstogether/widgets/app_panel.dart';
 import 'package:guesstogether/widgets/back_shortcut_scope.dart';
@@ -35,15 +37,20 @@ class GameScreen extends ConsumerStatefulWidget {
 
 class _GameScreenState extends ConsumerState<GameScreen> {
   bool _exitDialogOpen = false;
+  final FocusNode _keyboardFocusNode = FocusNode();
+  Timer? _spaceShortcutTimer;
 
   Future<bool> _confirmExitMatch() async {
     final l10n = context.l10n;
+    final bool isHost = ref.read(gameViewRoleProvider) == GameViewRole.host;
     final bool? shouldLeave = await showDialog<bool>(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: Text(l10n.gameLeaveDialogTitle),
-          content: Text(l10n.gameLeaveDialogBody),
+          content: Text(
+            isHost ? l10n.gameLeaveDialogBodyHost : l10n.gameLeaveDialogBody,
+          ),
           actions: <Widget>[
             FilledButton.tonal(
               style: FilledButton.styleFrom(
@@ -76,26 +83,157 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     try {
       final bool shouldLeave = await _confirmExitMatch();
       if (shouldLeave && mounted) {
-        Navigator.of(context).pop();
+        await ref.read(gameControllerProvider.notifier).leaveMatch();
+        if (mounted) {
+          context.go(HomeScreen.routePath);
+        }
       }
     } finally {
       _exitDialogOpen = false;
     }
   }
 
-  Future<void> _copyReconnectLink() async {
-    final l10n = context.l10n;
-    const String reconnectLink = 'guesstogether://match/reconnect';
-    await Clipboard.setData(const ClipboardData(text: reconnectLink));
+  void _restoreKeyboardFocus() {
     if (!mounted) {
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        duration: const Duration(milliseconds: 1200),
-        content: Text(l10n.gameConnectLinkCopied),
-      ),
+    _keyboardFocusNode.requestFocus();
+  }
+
+  void _runSingleSpaceShortcut() {
+    if (!mounted || ref.read(gameViewRoleProvider) != GameViewRole.host) {
+      return;
+    }
+    final GameState game = ref.read(gameControllerProvider);
+    final GameController controller = ref.read(gameControllerProvider.notifier);
+    if (game.phase == GamePhase.boardSelection) {
+      controller.pickRandomQuestion(hostOverride: true);
+      return;
+    }
+    if (game.phase == GamePhase.questionReveal ||
+        game.phase == GamePhase.answerWindow ||
+        game.phase == GamePhase.answerReveal) {
+      controller.skipCurrentQuestion();
+    }
+  }
+
+  KeyEventResult _handleGameKeyEvent(FocusNode node, KeyEvent event) {
+    if (event.logicalKey != LogicalKeyboardKey.space) {
+      return KeyEventResult.ignored;
+    }
+    if (ref.read(gameViewRoleProvider) != GameViewRole.host) {
+      return KeyEventResult.handled;
+    }
+    if (event is KeyRepeatEvent) {
+      return KeyEventResult.handled;
+    }
+    if (event is! KeyDownEvent) {
+      return KeyEventResult.handled;
+    }
+    if (_spaceShortcutTimer != null) {
+      _spaceShortcutTimer!.cancel();
+      _spaceShortcutTimer = null;
+      ref.read(gameControllerProvider.notifier).skipRound();
+      return KeyEventResult.handled;
+    }
+    _spaceShortcutTimer = Timer(const Duration(milliseconds: 260), () {
+      _spaceShortcutTimer = null;
+      _runSingleSpaceShortcut();
+    });
+    return KeyEventResult.handled;
+  }
+
+  Future<void> _showScoreDialogForPlayer(Player player) async {
+    final l10n = context.l10n;
+    final TextEditingController scoreController = TextEditingController(
+      text: player.score.toString(),
     );
+    final int? nextScore = await showDialog<int>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text(l10n.gameScoreDialogTitle(player.name)),
+          content: TextField(
+            controller: scoreController,
+            autofocus: true,
+            keyboardType: const TextInputType.numberWithOptions(signed: true),
+            inputFormatters: <TextInputFormatter>[
+              FilteringTextInputFormatter.allow(RegExp(r'-?\d*')),
+            ],
+            decoration: InputDecoration(
+              labelText: l10n.gameScoreFieldLabel,
+              hintText: l10n.gameScoreFieldHint,
+            ),
+          ),
+          actions: <Widget>[
+            FilledButton.tonal(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(l10n.gameScoreDialogCancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(
+                int.tryParse(scoreController.text.trim()) ?? player.score,
+              ),
+              child: Text(l10n.gameScoreDialogSave),
+            ),
+          ],
+        );
+      },
+    );
+    scoreController.dispose();
+    if (nextScore != null) {
+      ref.read(gameControllerProvider.notifier).setPlayerScore(
+            playerId: player.id,
+            score: nextScore,
+          );
+    }
+    _restoreKeyboardFocus();
+  }
+
+  Future<void> _showEditScoresDialog() async {
+    final l10n = context.l10n;
+    final GameState game = ref.read(gameControllerProvider);
+    final Player? selectedPlayer = await showDialog<Player>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text(l10n.gameScoresDialogTitle),
+          content: SizedBox(
+            width: 360,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: game.players
+                  .map(
+                    (Player player) => ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(player.name),
+                      trailing: Text(
+                        '${player.score}',
+                        style: Theme.of(dialogContext)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      onTap: () => Navigator.of(dialogContext).pop(player),
+                    ),
+                  )
+                  .toList(growable: false),
+            ),
+          ),
+          actions: <Widget>[
+            FilledButton.tonal(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(l10n.gameScoreDialogCancel),
+            ),
+          ],
+        );
+      },
+    );
+    if (selectedPlayer != null && mounted) {
+      await _showScoreDialogForPlayer(selectedPlayer);
+      return;
+    }
+    _restoreKeyboardFocus();
   }
 
   bool _panelTimerActive(GameState game) {
@@ -118,7 +256,15 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   }
 
   @override
+  void dispose() {
+    _spaceShortcutTimer?.cancel();
+    _keyboardFocusNode.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final GameState game = ref.watch(gameControllerProvider);
     final GameController controller = ref.read(gameControllerProvider.notifier);
     final ThemeData theme = Theme.of(context);
@@ -151,93 +297,122 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         if (previous?.isMatchEnded == false &&
             next.isMatchEnded &&
             context.mounted) {
+          ref.read(matchResultSnapshotProvider.notifier).state = next;
           context.push(ResultScreen.routePath);
         }
       },
     );
+    ref.listen<bool>(
+      matchRoomClosedProvider,
+      (bool? previous, bool next) {
+        if (previous == true || !next || !context.mounted) {
+          return;
+        }
+        if (ref.read(matchResultSnapshotProvider) != null ||
+            ModalRoute.of(context)?.isCurrent != true) {
+          return;
+        }
+        final MatchRoomClosedReason? closedReason =
+            ref.read(matchRoomClosedReasonProvider);
+        if (effectiveRole == GameViewRole.player &&
+            closedReason == MatchRoomClosedReason.hostLeft) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l10n.gameHostLeftMatchMessage),
+            ),
+          );
+        }
+        context.go(HomeScreen.routePath);
+      },
+    );
 
     return BackShortcutScope(
-      child: PopScope<void>(
-        canPop: false,
-        onPopInvokedWithResult: (bool didPop, void _) async {
-          if (didPop) {
-            return;
-          }
-          await _attemptLeaveMatch();
-        },
-        child: Scaffold(
-          body: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
-                AppSpacing.md,
-                AppSpacing.lg,
-                AppSpacing.md,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  _CompactPlayersStrip(
-                    players: game.players,
-                    game: game,
-                    localPlayerId: effectiveRole == GameViewRole.player
-                        ? effectiveLocalPlayerId
-                        : null,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Expanded(
-                    child: _TimedFrame(
-                      strokeScale: isLight ? 1.22 : 1,
-                      activeColorOverride: questionStripeColor,
-                      progress: _panelTimerProgress(game),
-                      active: _panelTimerActive(game),
-                      paused: _panelTimerPaused(game),
-                      secondsLeft: game.phaseSecondsLeft,
-                      secondsTotal: game.phaseSecondsTotal,
-                      borderRadius: 22,
-                      child: Stack(
-                        children: <Widget>[
-                          AppPanel(
-                            padding: const EdgeInsets.all(AppSpacing.sm),
-                            child: _MatchStageBody(
-                              game: game,
-                              role: effectiveRole,
-                              localPlayerId: effectiveLocalPlayerId,
-                              onPickQuestion: (String questionId) {
-                                controller.chooseQuestion(
-                                  questionId,
-                                  hostOverride:
-                                      effectiveRole == GameViewRole.host,
-                                );
-                              },
+      child: Focus(
+        focusNode: _keyboardFocusNode,
+        autofocus: true,
+        onKeyEvent: _handleGameKeyEvent,
+        child: PopScope<void>(
+          canPop: false,
+          onPopInvokedWithResult: (bool didPop, void _) async {
+            if (didPop) {
+              return;
+            }
+            await _attemptLeaveMatch();
+          },
+          child: Scaffold(
+            body: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.md,
+                  AppSpacing.lg,
+                  AppSpacing.md,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    _CompactPlayersStrip(
+                      players: game.players,
+                      game: game,
+                      localPlayerId: effectiveRole == GameViewRole.player
+                          ? effectiveLocalPlayerId
+                          : null,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Expanded(
+                      child: _TimedFrame(
+                        strokeScale: isLight ? 1.22 : 1,
+                        activeColorOverride: questionStripeColor,
+                        progress: _panelTimerProgress(game),
+                        active: _panelTimerActive(game),
+                        paused: _panelTimerPaused(game),
+                        secondsLeft: game.phaseSecondsLeft,
+                        secondsTotal: game.phaseSecondsTotal,
+                        borderRadius: 22,
+                        child: Stack(
+                          children: <Widget>[
+                            AppPanel(
+                              padding: const EdgeInsets.all(AppSpacing.sm),
+                              child: _MatchStageBody(
+                                game: game,
+                                role: effectiveRole,
+                                localPlayerId: effectiveLocalPlayerId,
+                                onPickQuestion: (String questionId) {
+                                  controller.chooseQuestion(
+                                    questionId,
+                                    hostOverride:
+                                        effectiveRole == GameViewRole.host,
+                                  );
+                                },
+                              ),
                             ),
-                          ),
-                          if (game.isPaused)
-                            const Positioned(
-                              right: 12,
-                              bottom: 12,
-                              child: _PausedCornerBadge(),
-                            ),
-                        ],
+                            if (game.isPaused)
+                              const Positioned(
+                                right: 12,
+                                bottom: 12,
+                                child: _PausedCornerBadge(),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  _CompactControlsBar(
-                    game: game,
-                    role: effectiveRole,
-                    localPlayerId: effectiveLocalPlayerId,
-                    onStart: () => unawaited(controller.startMatch()),
-                    onTogglePause: controller.togglePause,
-                    onCopyLink: () => unawaited(_copyReconnectLink()),
-                    onAnswer: () =>
-                        controller.requestAnswer(effectiveLocalPlayerId),
-                    onPass: () =>
-                        controller.passQuestion(effectiveLocalPlayerId),
-                    onAccept: controller.hostAcceptAnswer,
-                    onReject: controller.hostRejectAnswer,
-                  ),
-                ],
+                    const SizedBox(height: AppSpacing.sm),
+                    _CompactControlsBar(
+                      game: game,
+                      role: effectiveRole,
+                      localPlayerId: effectiveLocalPlayerId,
+                      onStart: () => unawaited(controller.startMatch()),
+                      onTogglePause: controller.togglePause,
+                      onEditScores: () => unawaited(_showEditScoresDialog()),
+                      onAnswer: () =>
+                          controller.requestAnswer(effectiveLocalPlayerId),
+                      onPass: () =>
+                          controller.passQuestion(effectiveLocalPlayerId),
+                      onAccept: controller.hostAcceptAnswer,
+                      onReject: controller.hostRejectAnswer,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -484,13 +659,18 @@ class _MatchStageBody extends StatelessWidget {
       );
     }
 
-    if (game.phase == GamePhase.boardSelection) {
+    if (game.phase == GamePhase.boardSelection ||
+        game.phase == GamePhase.questionReveal) {
       final bool canPick = role == GameViewRole.host ||
           (role == GameViewRole.player &&
               localPlayerId == game.currentChooserId);
       return _JeopardyBoard(
-        questions: game.boardQuestions,
-        enabled: canPick && !game.isPaused,
+        questions: game.roundBoardQuestions.toList(growable: false),
+        enabled:
+            game.phase == GamePhase.boardSelection && canPick && !game.isPaused,
+        highlightedQuestionId: game.phase == GamePhase.questionReveal
+            ? game.currentQuestion?.id
+            : null,
         onPickQuestion: onPickQuestion,
       );
     }
@@ -503,11 +683,13 @@ class _JeopardyBoard extends StatelessWidget {
   const _JeopardyBoard({
     required this.questions,
     required this.enabled,
+    required this.highlightedQuestionId,
     required this.onPickQuestion,
   });
 
   final List<Question> questions;
   final bool enabled;
+  final String? highlightedQuestionId;
   final ValueChanged<String> onPickQuestion;
 
   @override
@@ -568,6 +750,8 @@ class _JeopardyBoard extends StatelessWidget {
                               child: _BoardQuestionCell(
                                 question: question,
                                 enabled: enabled,
+                                highlighted:
+                                    question?.id == highlightedQuestionId,
                                 onTap: () {
                                   if (question != null) {
                                     onPickQuestion(question.id);
@@ -629,11 +813,13 @@ class _BoardQuestionCell extends StatelessWidget {
   const _BoardQuestionCell({
     required this.question,
     required this.enabled,
+    required this.highlighted,
     required this.onTap,
   });
 
   final Question? question;
   final bool enabled;
+  final bool highlighted;
   final VoidCallback onTap;
 
   @override
@@ -641,7 +827,15 @@ class _BoardQuestionCell extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     final bool isLight = theme.brightness == Brightness.light;
     final ColorScheme scheme = theme.colorScheme;
-    final bool isUsed = question == null || question!.used;
+    final Color highlightedBackground =
+        isLight ? const Color(0xFFFFE18A) : const Color(0xFF245785);
+    final Color highlightedBorder =
+        isLight ? const Color(0xFFAD6E00) : AppColors.focusRing;
+    final Color highlightedShadow =
+        isLight ? const Color(0xFFE7A500) : AppColors.focusRing;
+    final Color highlightedText =
+        isLight ? const Color(0xFF4C2A00) : const Color(0xFFF3FBFF);
+    final bool isUsed = question == null || (question!.used && !highlighted);
     final bool canTap = enabled && !isUsed;
     return InkWell(
       borderRadius: BorderRadius.circular(10),
@@ -649,23 +843,44 @@ class _BoardQuestionCell extends StatelessWidget {
       child: Ink(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
-          color: isUsed
-              ? (isLight ? const Color(0xFFB8C9E7) : const Color(0xFF0F2445))
-              : (isLight ? const Color(0xFF3F74BE) : const Color(0xFF1D4A8A)),
+          color: highlighted
+              ? highlightedBackground
+              : isUsed
+                  ? (isLight
+                      ? const Color(0xFFB8C9E7)
+                      : const Color(0xFF0F2445))
+                  : (isLight
+                      ? const Color(0xFF3F74BE)
+                      : const Color(0xFF1D4A8A)),
           border: Border.all(
-            color: isUsed
-                ? (isLight
-                    ? scheme.outline.withValues(alpha: 0.32)
-                    : Colors.transparent)
-                : Colors.white.withValues(alpha: canTap ? 0.56 : 0.24),
+            color: highlighted
+                ? highlightedBorder
+                : isUsed
+                    ? (isLight
+                        ? scheme.outline.withValues(alpha: 0.32)
+                        : Colors.transparent)
+                    : Colors.white.withValues(alpha: canTap ? 0.56 : 0.24),
           ),
+          boxShadow: highlighted
+              ? <BoxShadow>[
+                  BoxShadow(
+                    color: highlightedShadow.withValues(
+                        alpha: isLight ? 0.34 : 0.28),
+                    blurRadius: 16,
+                    spreadRadius: 1,
+                  ),
+                ]
+              : null,
         ),
         child: Center(
           child: Text(
             isUsed ? '' : '${question!.value}',
             style: theme.textTheme.titleMedium?.copyWith(
-              color:
-                  isLight ? const Color(0xFFFFEDAD) : const Color(0xFFF7D66A),
+              color: highlighted
+                  ? highlightedText
+                  : (isLight
+                      ? const Color(0xFFFFEDAD)
+                      : const Color(0xFFF7D66A)),
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -894,7 +1109,7 @@ class _CompactControlsBar extends StatelessWidget {
     required this.localPlayerId,
     required this.onStart,
     required this.onTogglePause,
-    required this.onCopyLink,
+    required this.onEditScores,
     required this.onAnswer,
     required this.onPass,
     required this.onAccept,
@@ -906,7 +1121,7 @@ class _CompactControlsBar extends StatelessWidget {
   final String localPlayerId;
   final VoidCallback onStart;
   final VoidCallback onTogglePause;
-  final VoidCallback onCopyLink;
+  final VoidCallback onEditScores;
   final VoidCallback onAnswer;
   final VoidCallback onPass;
   final VoidCallback onAccept;
@@ -919,7 +1134,7 @@ class _CompactControlsBar extends StatelessWidget {
         game: game,
         onStart: onStart,
         onTogglePause: onTogglePause,
-        onCopyLink: onCopyLink,
+        onEditScores: onEditScores,
         onAccept: onAccept,
         onReject: onReject,
       );
@@ -938,7 +1153,7 @@ class _HostCompactControls extends StatelessWidget {
     required this.game,
     required this.onStart,
     required this.onTogglePause,
-    required this.onCopyLink,
+    required this.onEditScores,
     required this.onAccept,
     required this.onReject,
   });
@@ -946,7 +1161,7 @@ class _HostCompactControls extends StatelessWidget {
   final GameState game;
   final VoidCallback onStart;
   final VoidCallback onTogglePause;
-  final VoidCallback onCopyLink;
+  final VoidCallback onEditScores;
   final VoidCallback onAccept;
   final VoidCallback onReject;
 
@@ -961,8 +1176,9 @@ class _HostCompactControls extends StatelessWidget {
     final bool paused = game.isPaused;
     final bool canModerate = pending && !game.isMatchEnded;
     final bool canTogglePauseOrStart = !game.isMatchEnded;
+    final bool canEditScores = !waiting && !game.isMatchEnded;
     final ButtonStyle hostMainStyle = FilledButton.styleFrom();
-    final ButtonStyle copyLinkStyle = hostMainStyle;
+    final ButtonStyle editScoresStyle = hostMainStyle;
     final ButtonStyle acceptStyle = FilledButton.styleFrom(
       backgroundColor:
           isLight ? const Color(0xFF2A8346) : const Color(0xFF2F8F4E),
@@ -1011,10 +1227,10 @@ class _HostCompactControls extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: FilledButton.icon(
-                  style: copyLinkStyle,
-                  onPressed: game.isMatchEnded ? null : onCopyLink,
-                  icon: const Icon(Icons.link_rounded),
-                  label: Text(l10n.gameCopyLinkCta),
+                  style: editScoresStyle,
+                  onPressed: canEditScores ? onEditScores : null,
+                  icon: const Icon(Icons.tune_rounded),
+                  label: Text(l10n.gameHostScoresCta),
                 ),
               ),
             ],

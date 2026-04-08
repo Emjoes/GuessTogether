@@ -113,6 +113,10 @@ class WaitingRoomController extends StateNotifier<WaitingRoomState> {
     state = state.copyWith(isStarting: true, errorText: null);
     try {
       await _api.startRoom(roomId);
+    } on BackendException catch (error) {
+      state = state.copyWith(
+        errorText: error.message.isEmpty ? 'start_failed' : error.message,
+      );
     } catch (_) {
       state = state.copyWith(errorText: 'start_failed');
     } finally {

@@ -59,6 +59,8 @@ class CreateRoomController extends StateNotifier<CreateRoomState> {
 
   final GameApi _api;
 
+  void reset() => state = CreateRoomState();
+
   void setName(String value) => state = state.copyWith(name: value);
 
   void setPassword(String value) => state = state.copyWith(password: value);

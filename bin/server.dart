@@ -352,6 +352,11 @@ class AppServer {
     return _findParticipant(room, room.hostUserId);
   }
 
+  bool _isRoomHostAvailable(StoredRoom room) {
+    final StoredRoomParticipant? hostParticipant = _hostParticipant(room);
+    return hostParticipant != null && hostParticipant.isConnected;
+  }
+
   bool _isHostSocketConnected(StoredRoom room) {
     return _roomSockets[room.id]?.containsKey(room.hostUserId) ?? false;
   }
@@ -938,8 +943,9 @@ class AppServer {
     return _guarded(() async {
       final StoredUser user = _requireUser(request);
       final List<RoomSummary> rooms = _store.rooms
-          .where(
-              (StoredRoom room) => room.status == RoomLifecycleStatus.waiting)
+          .where((StoredRoom room) =>
+              room.status == RoomLifecycleStatus.waiting &&
+              _isRoomHostAvailable(room))
           .map((StoredRoom room) => _roomSummaryForUser(room, user))
           .toList()
         ..sort((RoomSummary a, RoomSummary b) => a.name.compareTo(b.name));
@@ -985,7 +991,7 @@ class AppServer {
           StoredRoomParticipant(
             userId: user.id,
             displayName: user.displayName,
-            isConnected: false,
+            isConnected: true,
           ),
         ],
       );
@@ -1011,6 +1017,9 @@ class AppServer {
           );
       if (room == null) {
         throw const ApiError(404, 'Room not found');
+      }
+      if (!_isRoomHostAvailable(room)) {
+        throw const ApiError(409, 'Room is no longer active');
       }
       if (room.password.isNotEmpty && room.password != password) {
         throw const ApiError(403, 'Wrong password');

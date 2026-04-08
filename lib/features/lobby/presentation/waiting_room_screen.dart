@@ -57,6 +57,13 @@ class _WaitingRoomScreenState extends ConsumerState<WaitingRoomScreen> {
 
   String get _standardPackageText => _isRussian ? 'Стандартный' : 'Standard';
 
+  String get _needPlayersText => _isRussian
+      ? 'Для старта нужно минимум 2 игрока, не считая ведущего'
+      : 'At least 2 players besides the host are required to start';
+
+  String get _startFailedText =>
+      _isRussian ? 'Не удалось запустить матч.' : 'Failed to start the match.';
+
   @override
   void initState() {
     super.initState();
@@ -85,6 +92,21 @@ class _WaitingRoomScreenState extends ConsumerState<WaitingRoomScreen> {
             context.go(HomeScreen.routePath);
           }
           return;
+        }
+        if (mounted &&
+            next.errorText != null &&
+            next.errorText != previous?.errorText &&
+            next.errorText != 'load_failed' &&
+            next.errorText != 'realtime_failed') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                next.errorText == 'start_failed'
+                    ? _startFailedText
+                    : next.errorText!,
+              ),
+            ),
+          );
         }
         if (!mounted || !next.hasStarted || next.room == null) {
           return;
@@ -189,9 +211,8 @@ class _WaitingRoomScreenState extends ConsumerState<WaitingRoomScreen> {
         room?.playerParticipants ?? const <RoomParticipant>[];
     final bool canStart = room?.summary.canStartMatch ?? false;
     final String playerWaitingStatusText =
-        canStart ? l10n.waitingRoomHostPreparing : l10n.waitingRoomNeedPlayers;
-    final String? hostWaitingStatusText =
-        canStart ? null : l10n.waitingRoomNeedPlayers;
+        canStart ? l10n.waitingRoomHostPreparing : _needPlayersText;
+    final String? hostWaitingStatusText = canStart ? null : _needPlayersText;
 
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;

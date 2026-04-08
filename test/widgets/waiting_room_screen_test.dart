@@ -18,10 +18,12 @@ class _FakeWaitingRoomApi implements AppBackendApi {
   _FakeWaitingRoomApi({
     required this.room,
     required this.messages,
+    this.startErrorText,
   });
 
   final RoomDetails room;
   final StreamController<RoomRealtimeMessage> messages;
+  final String? startErrorText;
 
   @override
   RoomRealtimeConnection connectToRoom(String roomId) {
@@ -38,7 +40,11 @@ class _FakeWaitingRoomApi implements AppBackendApi {
   Future<void> leaveRoom(String roomId) async {}
 
   @override
-  Future<void> startRoom(String roomId) async {}
+  Future<void> startRoom(String roomId) async {
+    if (startErrorText != null) {
+      throw BackendException(startErrorText!);
+    }
+  }
 
   @override
   Future<void> acceptAnswer(String roomId) async {}
@@ -286,9 +292,43 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.text('At least 2 players are required to start'),
+      find.text('At least 2 players besides the host are required to start'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('WaitingRoomScreen shows backend start error for host',
+      (tester) async {
+    final StreamController<RoomRealtimeMessage> messages =
+        StreamController<RoomRealtimeMessage>.broadcast();
+    addTearDown(messages.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: <Override>[
+          appBackendApiProvider.overrideWithValue(
+            _FakeWaitingRoomApi(
+              room: _buildRoom(currentPlayers: 2),
+              messages: messages,
+              startErrorText: 'Need one more player',
+            ),
+          ),
+          appSessionControllerProvider.overrideWith(
+            () => _FakeAppSessionController(_sessionState('host-1')),
+          ),
+        ],
+        child: buildTestMaterialApp(
+          home: const WaitingRoomScreen(roomId: 'room-1'),
+          locale: const Locale('en'),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Start match'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Need one more player'), findsOneWidget);
   });
 
   testWidgets('Host back action opens room destruction confirmation',

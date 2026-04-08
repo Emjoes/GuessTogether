@@ -58,6 +58,34 @@ void main() {
       RoomMode.duel,
     );
   });
+
+  testWidgets('CreateRoomScreen resets hidden form state on open',
+      (tester) async {
+    final ProviderContainer container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    final CreateRoomController controller =
+        container.read(createRoomControllerProvider.notifier);
+    controller.setName('Old Room');
+    controller.setPassword('4321');
+    controller.setMode(RoomMode.duel);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: buildTestMaterialApp(
+          home: const CreateRoomScreen(),
+          locale: const Locale('en'),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final CreateRoomState state = container.read(createRoomControllerProvider);
+    expect(state.name, isEmpty);
+    expect(state.password, isEmpty);
+    expect(state.mode, RoomMode.multiplayer);
+  });
 }
 
 class _CreateRoomApp extends StatelessWidget {

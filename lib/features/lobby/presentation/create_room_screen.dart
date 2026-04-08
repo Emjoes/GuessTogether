@@ -11,14 +11,30 @@ import 'package:guesstogether/features/lobby/presentation/waiting_room_screen.da
 import 'package:guesstogether/widgets/app_panel.dart';
 import 'package:guesstogether/widgets/back_shortcut_scope.dart';
 
-class CreateRoomScreen extends ConsumerWidget {
+class CreateRoomScreen extends ConsumerStatefulWidget {
   const CreateRoomScreen({super.key});
 
   static const String routePath = '/create-room';
   static const String routeName = 'createRoom';
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CreateRoomScreen> createState() => _CreateRoomScreenState();
+}
+
+class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      ref.read(createRoomControllerProvider.notifier).reset();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = context.l10n;
     final CreateRoomState state = ref.watch(createRoomControllerProvider);
     final CreateRoomController controller =

@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:guesstogether/core/l10n/generated/app_localizations.dart';
+import 'package:guesstogether/core/theme/app_theme.dart';
 import 'package:guesstogether/data/api/game_api.dart';
 import 'package:guesstogether/features/game/domain/game_models.dart';
 import 'package:guesstogether/features/game/presentation/game_screen.dart';
@@ -140,6 +142,21 @@ Future<void> _pumpUi(WidgetTester tester) async {
   await tester.pump(const Duration(milliseconds: 300));
 }
 
+MaterialApp _buildThemedTestApp({
+  required Widget home,
+  Locale? locale,
+}) {
+  return MaterialApp(
+    theme: buildLightTheme(),
+    darkTheme: buildDarkTheme(),
+    themeMode: ThemeMode.light,
+    locale: locale,
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    home: home,
+  );
+}
+
 RoomDetails _buildActiveRoom({required bool secondPlayerConnected}) {
   return RoomDetails(
     summary: const RoomSummary(
@@ -250,7 +267,7 @@ void main() {
     expect(find.text('500'), findsOneWidget);
   });
 
-  testWidgets('GameScreen adapts board values and controls on narrow width',
+  testWidgets('GameScreen keeps host controls in fixed rows on narrow width',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(280, 720));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -265,7 +282,7 @@ void main() {
         ],
         child: buildTestMaterialApp(
           home: const GameScreen(),
-          locale: const Locale('en'),
+          locale: const Locale('ru'),
         ),
       ),
     );
@@ -273,10 +290,26 @@ void main() {
 
     expect(tester.takeException(), isNull);
 
+    final double pauseX =
+        tester.getTopLeft(find.byIcon(Icons.pause_rounded)).dx;
     final double pauseY =
         tester.getTopLeft(find.byIcon(Icons.pause_rounded)).dy;
+    final double tuneX = tester.getTopLeft(find.byIcon(Icons.tune_rounded)).dx;
     final double tuneY = tester.getTopLeft(find.byIcon(Icons.tune_rounded)).dy;
-    expect(tuneY, greaterThan(pauseY + 20));
+    final double acceptX =
+        tester.getTopLeft(find.byIcon(Icons.check_rounded)).dx;
+    final double acceptY =
+        tester.getTopLeft(find.byIcon(Icons.check_rounded)).dy;
+    final double rejectX =
+        tester.getTopLeft(find.byIcon(Icons.close_rounded)).dx;
+    final double rejectY =
+        tester.getTopLeft(find.byIcon(Icons.close_rounded)).dy;
+
+    expect((pauseY - tuneY).abs(), lessThan(8));
+    expect(tuneX, greaterThan(pauseX + 20));
+    expect(acceptY, greaterThan(pauseY + 20));
+    expect((acceptY - rejectY).abs(), lessThan(8));
+    expect(rejectX, greaterThan(acceptX + 20));
 
     final Iterable<Text> scoreTexts = tester
         .widgetList<Text>(
@@ -291,6 +324,110 @@ void main() {
       ),
       isTrue,
     );
+  });
+
+  testWidgets('GameScreen keeps player controls in one row on narrow width',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(280, 720));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final _FakeGameController controller = _FakeGameController();
+    controller.state = controller.state.copyWith(
+      phase: GamePhase.answerWindow,
+      phaseSecondsLeft: 15,
+      phaseSecondsTotal: 15,
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: <Override>[
+          gameControllerProvider.overrideWith((ref) => controller),
+          gameViewRoleProvider.overrideWith((ref) => GameViewRole.player),
+        ],
+        child: buildTestMaterialApp(
+          home: const GameScreen(),
+          locale: const Locale('ru'),
+        ),
+      ),
+    );
+    await _pumpUi(tester);
+
+    expect(tester.takeException(), isNull);
+
+    final double answerX =
+        tester.getTopLeft(find.byIcon(Icons.check_rounded)).dx;
+    final double answerY =
+        tester.getTopLeft(find.byIcon(Icons.check_rounded)).dy;
+    final double passX = tester.getTopLeft(find.byIcon(Icons.close_rounded)).dx;
+    final double passY = tester.getTopLeft(find.byIcon(Icons.close_rounded)).dy;
+
+    expect((answerY - passY).abs(), lessThan(8));
+    expect(passX, greaterThan(answerX + 20));
+  });
+
+  testWidgets('Host pause and scores buttons use black content',
+      (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: <Override>[
+          gameControllerProvider.overrideWith(
+            (ref) => _FakeGameController(),
+          ),
+          gameViewRoleProvider.overrideWith((ref) => GameViewRole.host),
+        ],
+        child: _buildThemedTestApp(
+          home: const GameScreen(),
+          locale: const Locale('ru'),
+        ),
+      ),
+    );
+    await _pumpUi(tester);
+
+    final Text pauseText = tester.widget<Text>(find.text('Пауза'));
+    final Text scoresText = tester.widget<Text>(find.text('Очки'));
+    final Icon pauseIcon =
+        tester.widget<Icon>(find.byIcon(Icons.pause_rounded));
+    final Icon scoresIcon =
+        tester.widget<Icon>(find.byIcon(Icons.tune_rounded));
+
+    expect(pauseText.style?.color, Colors.black);
+    expect(scoresText.style?.color, Colors.black);
+    expect(pauseIcon.color, Colors.black);
+    expect(scoresIcon.color, Colors.black);
+  });
+
+  testWidgets('Disabled player controls use darker content color',
+      (tester) async {
+    final ThemeData theme = buildLightTheme();
+    final Color expectedDisabledColor =
+        theme.colorScheme.onSurface.withValues(alpha: 0.72);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: <Override>[
+          gameControllerProvider.overrideWith(
+            (ref) => _FakeGameController(),
+          ),
+          gameViewRoleProvider.overrideWith((ref) => GameViewRole.player),
+        ],
+        child: _buildThemedTestApp(
+          home: const GameScreen(),
+          locale: const Locale('ru'),
+        ),
+      ),
+    );
+    await _pumpUi(tester);
+
+    final Text answerText = tester.widget<Text>(find.text('Ответить'));
+    final Text passText = tester.widget<Text>(find.text('Пас'));
+    final Icon answerIcon =
+        tester.widget<Icon>(find.byIcon(Icons.check_rounded));
+    final Icon passIcon = tester.widget<Icon>(find.byIcon(Icons.close_rounded));
+
+    expect(answerText.style?.color, expectedDisabledColor);
+    expect(passText.style?.color, expectedDisabledColor);
+    expect(answerIcon.color, expectedDisabledColor);
+    expect(passIcon.color, expectedDisabledColor);
   });
 
   testWidgets('Host can use space to randomly pick a question', (tester) async {

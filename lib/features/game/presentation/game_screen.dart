@@ -648,8 +648,7 @@ class _CompactPlayerTile extends StatelessWidget {
                 duration: const Duration(milliseconds: 180),
                 curve: Curves.easeOut,
                 constraints: const BoxConstraints(minHeight: 58),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: tileBorderColor),
@@ -1290,6 +1289,8 @@ class _HostCompactControls extends StatelessWidget {
     final l10n = context.l10n;
     final ThemeData theme = Theme.of(context);
     final bool isLight = theme.brightness == Brightness.light;
+    final Color disabledActionForeground =
+        theme.colorScheme.onSurface.withValues(alpha: isLight ? 0.72 : 0.78);
     final bool pending = game.pendingAnswerPlayerId != null &&
         game.phase == GamePhase.answerWindow;
     final bool waiting = game.phase == GamePhase.waitingForHost;
@@ -1297,7 +1298,10 @@ class _HostCompactControls extends StatelessWidget {
     final bool canModerate = pending && !game.isMatchEnded;
     final bool canTogglePauseOrStart = !game.isMatchEnded;
     final bool canEditScores = !waiting && !game.isMatchEnded;
-    final ButtonStyle hostMainStyle = FilledButton.styleFrom();
+    final ButtonStyle hostMainStyle = FilledButton.styleFrom(
+      foregroundColor: Colors.black,
+      disabledForegroundColor: Colors.black.withValues(alpha: 0.58),
+    );
     final ButtonStyle editScoresStyle = hostMainStyle;
     final ButtonStyle acceptStyle = FilledButton.styleFrom(
       backgroundColor:
@@ -1306,13 +1310,13 @@ class _HostCompactControls extends StatelessWidget {
       disabledBackgroundColor:
           (isLight ? const Color(0xFF2A8346) : const Color(0xFF2F8F4E))
               .withValues(alpha: 0.32),
-      disabledForegroundColor: Colors.white.withValues(alpha: 0.62),
+      disabledForegroundColor: disabledActionForeground,
     );
     final ButtonStyle rejectStyle = FilledButton.styleFrom(
       backgroundColor: const Color(0xFFA93E3E),
       foregroundColor: const Color(0xFFFFEBEB),
       disabledBackgroundColor: const Color(0xFFA93E3E).withValues(alpha: 0.34),
-      disabledForegroundColor: const Color(0xFFFFEBEB).withValues(alpha: 0.62),
+      disabledForegroundColor: disabledActionForeground,
     );
 
     return AppPanel(
@@ -1321,46 +1325,38 @@ class _HostCompactControls extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           _AdaptiveButtonPair(
-            leading: FilledButton.icon(
+            leading: _CompactFilledButton(
               style: hostMainStyle,
               onPressed: canTogglePauseOrStart
                   ? (waiting ? onStart : onTogglePause)
                   : null,
-              icon: Icon(
-                waiting
-                    ? Icons.play_arrow_rounded
-                    : (paused
-                        ? Icons.play_arrow_rounded
-                        : Icons.pause_rounded),
-              ),
-              label: Text(
-                waiting
-                    ? l10n.gameHostStartCta
-                    : (paused
-                        ? l10n.gameHostUnpauseCta
-                        : l10n.gameHostPauseCta),
-              ),
+              icon: waiting
+                  ? Icons.play_arrow_rounded
+                  : (paused ? Icons.play_arrow_rounded : Icons.pause_rounded),
+              label: waiting
+                  ? l10n.gameHostStartCta
+                  : (paused ? l10n.gameHostUnpauseCta : l10n.gameHostPauseCta),
             ),
-            trailing: FilledButton.icon(
+            trailing: _CompactFilledButton(
               style: editScoresStyle,
               onPressed: canEditScores ? onEditScores : null,
-              icon: const Icon(Icons.tune_rounded),
-              label: Text(l10n.gameHostScoresCta),
+              icon: Icons.tune_rounded,
+              label: l10n.gameHostScoresCta,
             ),
           ),
           const SizedBox(height: 8),
           _AdaptiveButtonPair(
-            leading: FilledButton.icon(
+            leading: _CompactFilledButton(
               style: acceptStyle,
               onPressed: canModerate ? onAccept : null,
-              icon: const Icon(Icons.check_rounded),
-              label: Text(l10n.gameHostAcceptCta),
+              icon: Icons.check_rounded,
+              label: l10n.gameHostAcceptCta,
             ),
-            trailing: FilledButton.icon(
+            trailing: _CompactFilledButton(
               style: rejectStyle,
               onPressed: canModerate ? onReject : null,
-              icon: const Icon(Icons.close_rounded),
-              label: Text(l10n.gameHostRejectCta),
+              icon: Icons.close_rounded,
+              label: l10n.gameHostRejectCta,
             ),
           ),
         ],
@@ -1387,6 +1383,8 @@ class _PlayerCompactControls extends StatelessWidget {
     final l10n = context.l10n;
     final ThemeData theme = Theme.of(context);
     final bool isLight = theme.brightness == Brightness.light;
+    final Color disabledActionForeground =
+        theme.colorScheme.onSurface.withValues(alpha: isLight ? 0.72 : 0.78);
     final bool canAnswer = game.phase == GamePhase.answerWindow &&
         !game.isPaused &&
         game.pendingAnswerPlayerId == null &&
@@ -1399,7 +1397,7 @@ class _PlayerCompactControls extends StatelessWidget {
       disabledBackgroundColor:
           (isLight ? const Color(0xFF2A8346) : const Color(0xFF2F8F4E))
               .withValues(alpha: 0.36),
-      disabledForegroundColor: Colors.white.withValues(alpha: 0.62),
+      disabledForegroundColor: disabledActionForeground,
     );
     final ButtonStyle passStyle = FilledButton.styleFrom(
       backgroundColor:
@@ -1408,25 +1406,107 @@ class _PlayerCompactControls extends StatelessWidget {
       disabledBackgroundColor:
           (isLight ? const Color(0xFF5F6774) : const Color(0xFF6F7681))
               .withValues(alpha: 0.34),
-      disabledForegroundColor: Colors.white.withValues(alpha: 0.62),
+      disabledForegroundColor: disabledActionForeground,
     );
 
     return AppPanel(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: _AdaptiveButtonPair(
-        leading: FilledButton.icon(
+        leading: _CompactFilledButton(
           style: answerStyle,
           onPressed: canAnswer ? onAnswer : null,
-          icon: const Icon(Icons.check_rounded),
-          label: Text(l10n.gameAnswerCta),
+          icon: Icons.check_rounded,
+          label: l10n.gameAnswerCta,
         ),
-        trailing: FilledButton.icon(
+        trailing: _CompactFilledButton(
           style: passStyle,
           onPressed: canAnswer ? onPass : null,
-          icon: const Icon(Icons.close_rounded),
-          label: Text(l10n.gamePassCta),
+          icon: Icons.close_rounded,
+          label: l10n.gamePassCta,
         ),
       ),
+    );
+  }
+}
+
+class _CompactFilledButton extends StatelessWidget {
+  const _CompactFilledButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+    this.style,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback? onPressed;
+  final ButtonStyle? style;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        final ThemeData theme = Theme.of(context);
+        final bool compact = constraints.maxWidth < 118;
+        final bool ultraCompact = constraints.maxWidth < 102;
+        final double iconSize = ultraCompact ? 15 : (compact ? 16 : 18);
+        final double spacing = ultraCompact ? 3 : (compact ? 4 : 6);
+        final EdgeInsetsGeometry padding = EdgeInsets.symmetric(
+          horizontal: ultraCompact ? 6 : 8,
+          vertical: ultraCompact ? 8 : 10,
+        );
+        final Set<WidgetState> states = onPressed == null
+            ? const <WidgetState>{WidgetState.disabled}
+            : const <WidgetState>{};
+        final ButtonStyle mergedStyle =
+            theme.filledButtonTheme.style?.merge(style) ??
+                style ??
+                const ButtonStyle();
+        final ButtonStyle effectiveStyle = mergedStyle.copyWith(
+          minimumSize: const WidgetStatePropertyAll(
+            Size(0, AppSpacing.tapTargetMin),
+          ),
+          padding: WidgetStatePropertyAll<EdgeInsetsGeometry>(padding),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          visualDensity: VisualDensity.compact,
+        );
+        final Color contentColor =
+            effectiveStyle.foregroundColor?.resolve(states) ??
+                (onPressed == null
+                    ? theme.colorScheme.onSurface.withValues(alpha: 0.38)
+                    : theme.colorScheme.onPrimary);
+        final TextStyle? labelStyle = theme.textTheme.labelLarge?.copyWith(
+          fontSize: ultraCompact ? 11.5 : (compact ? 12.5 : null),
+          fontWeight: FontWeight.w700,
+          height: 1,
+          color: contentColor,
+        );
+
+        return FilledButton(
+          style: effectiveStyle,
+          onPressed: onPressed,
+          child: SizedBox(
+            width: double.infinity,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Icon(icon, size: iconSize, color: contentColor),
+                  SizedBox(width: spacing),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.visible,
+                    style: labelStyle,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -1442,28 +1522,12 @@ class _AdaptiveButtonPair extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints constraints) {
-        final bool stackVertically = constraints.maxWidth < 360;
-        if (stackVertically) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              leading,
-              const SizedBox(height: 8),
-              trailing,
-            ],
-          );
-        }
-
-        return Row(
-          children: <Widget>[
-            Expanded(child: leading),
-            const SizedBox(width: 8),
-            Expanded(child: trailing),
-          ],
-        );
-      },
+    return Row(
+      children: <Widget>[
+        Expanded(child: leading),
+        const SizedBox(width: 8),
+        Expanded(child: trailing),
+      ],
     );
   }
 }

@@ -13,7 +13,7 @@ extension RoomModeLabel on RoomMode {
       case RoomMode.multiplayer:
         return 'Multiplayer';
       case RoomMode.duel:
-        return 'Duel';
+        return 'Elimination';
     }
   }
 }
@@ -55,9 +55,11 @@ class CreateRoomState {
 }
 
 class CreateRoomController extends StateNotifier<CreateRoomState> {
-  CreateRoomController(this._api) : super(CreateRoomState());
+  CreateRoomController(this._ref) : super(CreateRoomState());
 
-  final GameApi _api;
+  final Ref _ref;
+
+  GameApi get _api => _ref.read(gameApiProvider);
 
   void reset() => state = CreateRoomState();
 
@@ -69,7 +71,7 @@ class CreateRoomController extends StateNotifier<CreateRoomState> {
       state = state.copyWith(packageFileName: value);
 
   void setMode(RoomMode value) {
-    // Duel is always 2 players.
+    // Elimination mode is always 2 players.
     final int nextPlayers = value == RoomMode.duel ? 2 : state.players;
     state = state.copyWith(mode: value, players: nextPlayers);
   }
@@ -86,7 +88,7 @@ class CreateRoomController extends StateNotifier<CreateRoomState> {
         name: state.name,
         password: state.password,
         mode: state.mode.name,
-        topic: state.mode == RoomMode.duel ? 'Duel' : 'Multiplayer',
+        topic: state.mode == RoomMode.duel ? 'Elimination' : 'Multiplayer',
         rounds: 3,
         finalWagerEnabled: false,
         maxPlayers: state.mode == RoomMode.duel ? 2 : state.players,
@@ -100,6 +102,6 @@ class CreateRoomController extends StateNotifier<CreateRoomState> {
 }
 
 final createRoomControllerProvider =
-    StateNotifierProvider<CreateRoomController, CreateRoomState>(
-  (ref) => CreateRoomController(ref.read(gameApiProvider)),
+    StateNotifierProvider.autoDispose<CreateRoomController, CreateRoomState>(
+  (ref) => CreateRoomController(ref),
 );

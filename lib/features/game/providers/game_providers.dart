@@ -719,8 +719,6 @@ class OnlineGameController extends GameController {
               .toList(),
           enableLocalTimers: false,
         ) {
-    _matchRoomClosedController.state = false;
-    _matchRoomClosedReasonController.state = null;
     final GameState? initialGameState = initialRoom?.gameState;
     if (initialGameState != null) {
       state = initialGameState;

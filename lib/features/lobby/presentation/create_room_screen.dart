@@ -127,6 +127,7 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
                         children: <Widget>[
                           _ModeButton(
                             selected: state.mode == RoomMode.multiplayer,
+                            enabled: true,
                             iconBuilder: (Color color) => Icon(
                               Icons.diversity_3_rounded,
                               size: 20,
@@ -139,9 +140,11 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
                           const SizedBox(height: AppSpacing.sm),
                           _ModeButton(
                             selected: state.mode == RoomMode.duel,
+                            enabled: false,
                             iconBuilder: (Color color) =>
                                 _CrossedSwordsIcon(size: 20, color: color),
-                            label: l10n.createRoomModeDuel,
+                            label:
+                                '${l10n.createRoomModeDuel} (${l10n.createRoomPackageSoon})',
                             onPressed: () => controller.setMode(RoomMode.duel),
                           ),
                         ],
@@ -156,7 +159,7 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
                       Text(
-                        '${l10n.createRoomPackageLabel} (${l10n.createRoomPackageSoon})',
+                        l10n.createRoomPackageLabel,
                         style: text.titleSmall,
                       ),
                       const SizedBox(height: AppSpacing.sm),
@@ -337,7 +340,7 @@ class _PackagePickerFieldState extends State<_PackagePickerField> {
                     const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
-                        l10n.createRoomPackagePick,
+                        '${l10n.createRoomPackagePick} (${l10n.createRoomPackageSoon})',
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: scheme.onSurfaceVariant.withValues(
@@ -360,12 +363,14 @@ class _PackagePickerFieldState extends State<_PackagePickerField> {
 class _ModeButton extends StatefulWidget {
   const _ModeButton({
     required this.selected,
+    required this.enabled,
     required this.iconBuilder,
     required this.label,
     required this.onPressed,
   });
 
   final bool selected;
+  final bool enabled;
   final Widget Function(Color color) iconBuilder;
   final String label;
   final VoidCallback onPressed;
@@ -397,8 +402,10 @@ class _ModeButtonState extends State<_ModeButton> {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
     final bool isLight = theme.brightness == Brightness.light;
-    final double interaction = _pressed ? 0.2 : (_hovered ? 0.12 : 0.06);
-    final Color base = widget.selected
+    final bool isInteractive = widget.enabled;
+    final double interaction =
+        !isInteractive ? 0 : (_pressed ? 0.2 : (_hovered ? 0.12 : 0.06));
+    final Color base = widget.selected && isInteractive
         ? Color.alphaBlend(
             scheme.primary.withValues(alpha: isLight ? 0.18 : 0.22),
             scheme.surfaceContainerHighest
@@ -406,28 +413,36 @@ class _ModeButtonState extends State<_ModeButton> {
           )
         : scheme.surfaceContainerHighest
             .withValues(alpha: isLight ? 0.66 : 0.44);
-    final Color accent = widget.selected ? scheme.secondary : scheme.primary;
+    final Color accent =
+        widget.selected && isInteractive ? scheme.secondary : scheme.primary;
     final Color topColor = Color.alphaBlend(
-      Colors.white.withValues(alpha: isLight ? 0.16 : 0.08),
+      Colors.white.withValues(
+        alpha: isInteractive ? (isLight ? 0.16 : 0.08) : 0.04,
+      ),
       base,
     );
     final Color bottomColor = Color.alphaBlend(
-      accent.withValues(alpha: interaction),
+      accent.withValues(alpha: isInteractive ? interaction : 0.02),
       base,
     );
-    final Color borderColor = widget.selected
+    final Color borderColor = !isInteractive
+        ? scheme.outline.withValues(alpha: 0.28)
+        : widget.selected
         ? scheme.primary.withValues(alpha: _hovered ? 0.78 : 0.62)
         : scheme.outline.withValues(alpha: _hovered ? 0.56 : 0.42);
-    final Color iconColor = widget.selected
-        ? scheme.primary
-        : scheme.onSurfaceVariant.withValues(alpha: 0.92);
+    final Color iconColor = !isInteractive
+        ? scheme.onSurfaceVariant.withValues(alpha: 0.72)
+        : widget.selected
+            ? scheme.primary
+            : scheme.onSurfaceVariant.withValues(alpha: 0.92);
 
     return MouseRegion(
-      cursor: SystemMouseCursors.click,
+      cursor:
+          isInteractive ? SystemMouseCursors.click : SystemMouseCursors.basic,
       child: AnimatedScale(
         duration: const Duration(milliseconds: 130),
         curve: Curves.easeOutCubic,
-        scale: _pressed ? 0.99 : (_hovered ? 1.01 : 1),
+        scale: !isInteractive ? 1 : (_pressed ? 0.99 : (_hovered ? 1.01 : 1)),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 170),
           curve: Curves.easeOutCubic,
@@ -453,10 +468,13 @@ class _ModeButtonState extends State<_ModeButton> {
             color: Colors.transparent,
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
-              onTap: widget.onPressed,
-              onHover: _setHovered,
-              onHighlightChanged: _setPressed,
+              onTap: isInteractive ? widget.onPressed : null,
+              onHover: isInteractive ? _setHovered : null,
+              onHighlightChanged: isInteractive ? _setPressed : null,
               overlayColor: WidgetStateProperty.resolveWith((states) {
+                if (!isInteractive) {
+                  return Colors.transparent;
+                }
                 if (states.contains(WidgetState.pressed)) {
                   return scheme.primary.withValues(alpha: isLight ? 0.14 : 0.2);
                 }
@@ -476,8 +494,13 @@ class _ModeButtonState extends State<_ModeButton> {
                       child: Text(
                         widget.label,
                         style: theme.textTheme.labelLarge?.copyWith(
-                          color: scheme.onSurface.withValues(
-                            alpha: widget.selected ? 1 : 0.92,
+                          color: (isInteractive
+                                  ? scheme.onSurface
+                                  : scheme.onSurfaceVariant)
+                              .withValues(
+                            alpha: !isInteractive
+                                ? 0.7
+                                : (widget.selected ? 1 : 0.92),
                           ),
                         ),
                       ),
@@ -487,7 +510,7 @@ class _ModeButtonState extends State<_ModeButton> {
                       child: AnimatedOpacity(
                         duration: const Duration(milliseconds: 170),
                         curve: Curves.easeOut,
-                        opacity: widget.selected ? 1 : 0,
+                        opacity: widget.selected && isInteractive ? 1 : 0,
                         child: Icon(
                           Icons.check_rounded,
                           size: 18,

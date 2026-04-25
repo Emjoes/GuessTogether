@@ -6,5 +6,7 @@ if (-not (Get-Command flutter -ErrorAction SilentlyContinue)) {
 }
 
 flutter test
-flutter test integration_test
+if (Test-Path "integration_test") {
+  flutter test integration_test
+}
 

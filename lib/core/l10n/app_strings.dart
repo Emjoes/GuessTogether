@@ -24,13 +24,14 @@ class AppStrings {
   static const String createRoomPasswordLabel = 'Password';
   static const String createRoomModeLabel = 'Game mode';
   static const String createRoomModeMultiplayer = 'Multiplayer';
-  static const String createRoomModeDuel = 'Duel';
+  static const String createRoomModeDuel = 'Elimination';
   static const String createRoomPackageLabel = 'Package';
   static const String createRoomPackageSoon = 'Soon';
   static const String createRoomPackagePick = 'Choose file';
   static const String createRoomPackageEmpty = 'No file selected';
   static const String createRoomPlayersLabel = 'Players';
-  static const String createRoomDuelHint = 'Duel mode is always 2 players';
+  static const String createRoomDuelHint =
+      'Elimination mode is always 2 players';
   static const String createRoomCreateCta = 'Create';
 
   // Join room

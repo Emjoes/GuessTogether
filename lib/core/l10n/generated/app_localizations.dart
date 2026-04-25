@@ -185,7 +185,7 @@ abstract class AppLocalizations {
   /// No description provided for @createRoomModeDuel.
   ///
   /// In en, this message translates to:
-  /// **'Duel'**
+  /// **'Elimination'**
   String get createRoomModeDuel;
 
   /// No description provided for @createRoomPackageLabel.

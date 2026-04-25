@@ -279,6 +279,13 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      ref.read(matchRoomClosedProvider.notifier).state = false;
+      ref.read(matchRoomClosedReasonProvider.notifier).state = null;
+    });
     _appLifecycleListener = AppLifecycleListener(
       onResume: _handleAppResume,
       onDetach: _handleAppDetach,
@@ -665,12 +672,14 @@ class _CompactPlayerTile extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
+                    _SingleLineScaleText(
                       '${player.score}',
-                      textAlign: TextAlign.center,
                       style: theme.textTheme.titleSmall?.copyWith(
                         color: scoreColor,
                         fontWeight: FontWeight.w800,
+                        fontFeatures: const <ui.FontFeature>[
+                          ui.FontFeature.tabularFigures(),
+                        ],
                       ),
                     ),
                   ],
@@ -946,17 +955,55 @@ class _BoardQuestionCell extends StatelessWidget {
               : null,
         ),
         child: Center(
-          child: Text(
-            isUsed ? '' : '${question!.value}',
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: highlighted
-                  ? highlightedText
-                  : (isLight
-                      ? const Color(0xFFFFEDAD)
-                      : const Color(0xFFF7D66A)),
-              fontWeight: FontWeight.w800,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            child: _SingleLineScaleText(
+              isUsed ? '' : '${question!.value}',
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: highlighted
+                    ? highlightedText
+                    : (isLight
+                        ? const Color(0xFFFFEDAD)
+                        : const Color(0xFFF7D66A)),
+                fontWeight: FontWeight.w800,
+                fontFeatures: const <ui.FontFeature>[
+                  ui.FontFeature.tabularFigures(),
+                ],
+              ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SingleLineScaleText extends StatelessWidget {
+  const _SingleLineScaleText(
+    this.text, {
+    this.style,
+  });
+
+  final String text;
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) {
+    if (text.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return SizedBox(
+      width: double.infinity,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.center,
+        child: Text(
+          text,
+          maxLines: 1,
+          softWrap: false,
+          textAlign: TextAlign.center,
+          style: style,
         ),
       ),
     );
@@ -1273,62 +1320,48 @@ class _HostCompactControls extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: FilledButton.icon(
-                  style: hostMainStyle,
-                  onPressed: canTogglePauseOrStart
-                      ? (waiting ? onStart : onTogglePause)
-                      : null,
-                  icon: Icon(
-                    waiting
+          _AdaptiveButtonPair(
+            leading: FilledButton.icon(
+              style: hostMainStyle,
+              onPressed: canTogglePauseOrStart
+                  ? (waiting ? onStart : onTogglePause)
+                  : null,
+              icon: Icon(
+                waiting
+                    ? Icons.play_arrow_rounded
+                    : (paused
                         ? Icons.play_arrow_rounded
-                        : (paused
-                            ? Icons.play_arrow_rounded
-                            : Icons.pause_rounded),
-                  ),
-                  label: Text(
-                    waiting
-                        ? l10n.gameHostStartCta
-                        : (paused
-                            ? l10n.gameHostUnpauseCta
-                            : l10n.gameHostPauseCta),
-                  ),
-                ),
+                        : Icons.pause_rounded),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: FilledButton.icon(
-                  style: editScoresStyle,
-                  onPressed: canEditScores ? onEditScores : null,
-                  icon: const Icon(Icons.tune_rounded),
-                  label: Text(l10n.gameHostScoresCta),
-                ),
+              label: Text(
+                waiting
+                    ? l10n.gameHostStartCta
+                    : (paused
+                        ? l10n.gameHostUnpauseCta
+                        : l10n.gameHostPauseCta),
               ),
-            ],
+            ),
+            trailing: FilledButton.icon(
+              style: editScoresStyle,
+              onPressed: canEditScores ? onEditScores : null,
+              icon: const Icon(Icons.tune_rounded),
+              label: Text(l10n.gameHostScoresCta),
+            ),
           ),
           const SizedBox(height: 8),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: FilledButton.icon(
-                  style: acceptStyle,
-                  onPressed: canModerate ? onAccept : null,
-                  icon: const Icon(Icons.check_rounded),
-                  label: Text(l10n.gameHostAcceptCta),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: FilledButton.icon(
-                  style: rejectStyle,
-                  onPressed: canModerate ? onReject : null,
-                  icon: const Icon(Icons.close_rounded),
-                  label: Text(l10n.gameHostRejectCta),
-                ),
-              ),
-            ],
+          _AdaptiveButtonPair(
+            leading: FilledButton.icon(
+              style: acceptStyle,
+              onPressed: canModerate ? onAccept : null,
+              icon: const Icon(Icons.check_rounded),
+              label: Text(l10n.gameHostAcceptCta),
+            ),
+            trailing: FilledButton.icon(
+              style: rejectStyle,
+              onPressed: canModerate ? onReject : null,
+              icon: const Icon(Icons.close_rounded),
+              label: Text(l10n.gameHostRejectCta),
+            ),
           ),
         ],
       ),
@@ -1380,27 +1413,57 @@ class _PlayerCompactControls extends StatelessWidget {
 
     return AppPanel(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: FilledButton.icon(
-              style: answerStyle,
-              onPressed: canAnswer ? onAnswer : null,
-              icon: const Icon(Icons.check_rounded),
-              label: Text(l10n.gameAnswerCta),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: FilledButton.icon(
-              style: passStyle,
-              onPressed: canAnswer ? onPass : null,
-              icon: const Icon(Icons.close_rounded),
-              label: Text(l10n.gamePassCta),
-            ),
-          ),
-        ],
+      child: _AdaptiveButtonPair(
+        leading: FilledButton.icon(
+          style: answerStyle,
+          onPressed: canAnswer ? onAnswer : null,
+          icon: const Icon(Icons.check_rounded),
+          label: Text(l10n.gameAnswerCta),
+        ),
+        trailing: FilledButton.icon(
+          style: passStyle,
+          onPressed: canAnswer ? onPass : null,
+          icon: const Icon(Icons.close_rounded),
+          label: Text(l10n.gamePassCta),
+        ),
       ),
+    );
+  }
+}
+
+class _AdaptiveButtonPair extends StatelessWidget {
+  const _AdaptiveButtonPair({
+    required this.leading,
+    required this.trailing,
+  });
+
+  final Widget leading;
+  final Widget trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        final bool stackVertically = constraints.maxWidth < 360;
+        if (stackVertically) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              leading,
+              const SizedBox(height: 8),
+              trailing,
+            ],
+          );
+        }
+
+        return Row(
+          children: <Widget>[
+            Expanded(child: leading),
+            const SizedBox(width: 8),
+            Expanded(child: trailing),
+          ],
+        );
+      },
     );
   }
 }

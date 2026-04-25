@@ -250,6 +250,49 @@ void main() {
     expect(find.text('500'), findsOneWidget);
   });
 
+  testWidgets('GameScreen adapts board values and controls on narrow width',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(280, 720));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: <Override>[
+          gameControllerProvider.overrideWith(
+            (ref) => _FakeGameController(),
+          ),
+          gameViewRoleProvider.overrideWith((ref) => GameViewRole.host),
+        ],
+        child: buildTestMaterialApp(
+          home: const GameScreen(),
+          locale: const Locale('en'),
+        ),
+      ),
+    );
+    await _pumpUi(tester);
+
+    expect(tester.takeException(), isNull);
+
+    final double pauseY =
+        tester.getTopLeft(find.byIcon(Icons.pause_rounded)).dy;
+    final double tuneY = tester.getTopLeft(find.byIcon(Icons.tune_rounded)).dy;
+    expect(tuneY, greaterThan(pauseY + 20));
+
+    final Iterable<Text> scoreTexts = tester
+        .widgetList<Text>(
+          find.byWidgetPredicate(
+            (Widget widget) => widget is Text && widget.data == '100',
+          ),
+        )
+        .cast<Text>();
+    expect(
+      scoreTexts.any(
+        (Text widget) => widget.maxLines == 1 && widget.softWrap == false,
+      ),
+      isTrue,
+    );
+  });
+
   testWidgets('Host can use space to randomly pick a question', (tester) async {
     final _FakeGameController controller = _FakeGameController();
     await tester.pumpWidget(
@@ -448,6 +491,39 @@ void main() {
 
     expect(find.text('Host left the game - match was ended'), findsOneWidget);
     expect(find.text('Create Room'), findsOneWidget);
+  });
+
+  testWidgets('GameScreen safely resets stale room-closed flags on reopen',
+      (tester) async {
+    final ProviderContainer container = ProviderContainer(
+      overrides: <Override>[
+        gameControllerProvider.overrideWith(
+          (ref) => _FakeGameController(),
+        ),
+        gameViewRoleProvider.overrideWith((ref) => GameViewRole.player),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    container.read(matchRoomClosedReasonProvider.notifier).state =
+        MatchRoomClosedReason.hostLeft;
+    container.read(matchRoomClosedProvider.notifier).state = true;
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: buildTestMaterialApp(
+          home: const GameScreen(),
+          locale: const Locale('en'),
+        ),
+      ),
+    );
+    await _pumpUi(tester);
+
+    expect(tester.takeException(), isNull);
+    expect(container.read(matchRoomClosedProvider), isFalse);
+    expect(container.read(matchRoomClosedReasonProvider), isNull);
+    expect(find.byType(GameScreen), findsOneWidget);
   });
 
   testWidgets('Finished match stays on results when room closes later',

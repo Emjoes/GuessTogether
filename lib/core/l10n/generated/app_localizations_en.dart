@@ -51,7 +51,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createRoomModeMultiplayer => 'Multiplayer';
 
   @override
-  String get createRoomModeDuel => 'Duel';
+  String get createRoomModeDuel => 'Elimination';
 
   @override
   String get createRoomPackageLabel => 'Package';

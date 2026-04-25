@@ -14,7 +14,7 @@
   "createRoomPasswordHint": "1234",
   "createRoomModeLabel": "Game mode",
   "createRoomModeMultiplayer": "Multiplayer",
-  "createRoomModeDuel": "Duel",
+  "createRoomModeDuel": "Elimination",
   "createRoomPackageLabel": "Package",
   "createRoomPackageSoon": "Soon",
   "createRoomPackagePick": "Choose file",

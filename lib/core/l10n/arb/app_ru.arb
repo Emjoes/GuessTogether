@@ -14,7 +14,7 @@
   "createRoomPasswordHint": "1234",
   "createRoomModeLabel": "Режим игры",
   "createRoomModeMultiplayer": "Мультиплеер",
-  "createRoomModeDuel": "Дуэль",
+  "createRoomModeDuel": "Выбывание",
   "createRoomPackageLabel": "Пакет вопросов",
   "createRoomPackageSoon": "Скоро",
   "createRoomPackagePick": "Выбрать файл",

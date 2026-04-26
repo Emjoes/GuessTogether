@@ -63,6 +63,14 @@ class _FakeRealtimeApi implements AppBackendApi {
   }
 
   @override
+  Future<AppVersionStatus> loadAppVersionStatus() async {
+    return const AppVersionStatus(
+      latestVersion: '1.0.1',
+      minimumSupportedVersion: '1.0.1',
+    );
+  }
+
+  @override
   Future<BootstrapPayload> loadBootstrap() {
     throw UnimplementedError();
   }

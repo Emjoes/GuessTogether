@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:guesstogether/data/api/backend_models.dart';
 import 'package:guesstogether/core/debug/debug_control_panel.dart';
 import 'package:guesstogether/features/auth/presentation/auth_screen.dart';
+import 'package:guesstogether/features/home/presentation/home_screen.dart';
 import 'package:guesstogether/main.dart';
 
 void main() {
@@ -23,7 +24,7 @@ void main() {
     expect(find.byType(DebugControlPanel), findsNothing);
   });
 
-  testWidgets('App starts logged out even when a saved session exists',
+  testWidgets('App restores a saved session on startup',
       (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues(<String, Object>{
       'app.session': jsonEncode(
@@ -42,6 +43,6 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.byType(AuthScreen), findsOneWidget);
+    expect(find.byType(HomeScreen), findsOneWidget);
   });
 }

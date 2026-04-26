@@ -1,6 +1,6 @@
 {
-    "name": "guesstogether",
-    "short_name": "guesstogether",
+    "name": "Guess Together",
+    "short_name": "Guess Together",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

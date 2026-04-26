@@ -65,6 +65,14 @@ class _FakeWaitingRoomApi implements AppBackendApi {
   }
 
   @override
+  Future<AppVersionStatus> loadAppVersionStatus() async {
+    return const AppVersionStatus(
+      latestVersion: '1.0.1',
+      minimumSupportedVersion: '1.0.1',
+    );
+  }
+
+  @override
   Future<BootstrapPayload> loadBootstrap() {
     throw UnimplementedError();
   }
@@ -197,7 +205,8 @@ void main() {
       await messages.close();
     });
 
-    final ProviderSubscription<WaitingRoomState> subscription = container.listen(
+    final ProviderSubscription<WaitingRoomState> subscription =
+        container.listen(
       waitingRoomControllerProvider('room-1'),
       (_, __) {},
       fireImmediately: true,
@@ -245,7 +254,8 @@ void main() {
       await messages.close();
     });
 
-    final ProviderSubscription<WaitingRoomState> subscription = container.listen(
+    final ProviderSubscription<WaitingRoomState> subscription =
+        container.listen(
       waitingRoomControllerProvider('room-1'),
       (_, __) {},
       fireImmediately: true,
@@ -287,7 +297,8 @@ void main() {
       await messages.close();
     });
 
-    final ProviderSubscription<WaitingRoomState> subscription = container.listen(
+    final ProviderSubscription<WaitingRoomState> subscription =
+        container.listen(
       waitingRoomControllerProvider('room-1'),
       (_, __) {},
       fireImmediately: true,
@@ -323,7 +334,8 @@ void main() {
       await messages.close();
     });
 
-    final ProviderSubscription<WaitingRoomState> subscription = container.listen(
+    final ProviderSubscription<WaitingRoomState> subscription =
+        container.listen(
       waitingRoomControllerProvider('room-1'),
       (_, __) {},
       fireImmediately: true,

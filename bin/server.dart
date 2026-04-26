@@ -11,6 +11,7 @@ import 'package:shelf_router/shelf_router.dart';
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import 'package:guesstogether/core/app_version.dart';
 import 'package:guesstogether/data/api/backend_models.dart';
 import 'package:guesstogether/data/api/game_api.dart';
 import 'package:guesstogether/features/game/domain/game_models.dart';
@@ -96,6 +97,18 @@ int _serverPortFromEnvironment() {
   return int.tryParse(configured) ?? 8080;
 }
 
+String _latestAppVersionFromEnvironment() {
+  final String configured =
+      Platform.environment['APP_LATEST_VERSION']?.trim() ?? '';
+  return configured.isEmpty ? AppVersion.current : configured;
+}
+
+String _minimumSupportedAppVersionFromEnvironment() {
+  final String configured =
+      Platform.environment['APP_MIN_SUPPORTED_VERSION']?.trim() ?? '';
+  return configured.isEmpty ? _latestAppVersionFromEnvironment() : configured;
+}
+
 class AppServer {
   static const Duration _hostlessRoomGracePeriod = Duration(seconds: 45);
   static const String _defaultPackageFileName = 'general_quiz_pack.json';
@@ -105,14 +118,21 @@ class AppServer {
           host: _serverHostFromEnvironment(),
           port: _serverPortFromEnvironment(),
           databaseUrl: _databaseUrlFromEnvironment(),
+          latestAppVersion: _latestAppVersionFromEnvironment(),
+          minimumSupportedAppVersion:
+              _minimumSupportedAppVersionFromEnvironment(),
         );
 
   AppServer({
     String host = '127.0.0.1',
     int port = 8080,
     String databaseUrl = _defaultDatabaseUrl,
+    String latestAppVersion = AppVersion.current,
+    String minimumSupportedAppVersion = AppVersion.current,
   })  : _host = host,
         _port = port,
+        _latestAppVersion = latestAppVersion,
+        _minimumSupportedAppVersion = minimumSupportedAppVersion,
         _store = _AppStateStore(
           databaseUrl: databaseUrl,
           packageRepository: _QuestionPackageRepository(
@@ -123,6 +143,8 @@ class AppServer {
 
   final String _host;
   final int _port;
+  final String _latestAppVersion;
+  final String _minimumSupportedAppVersion;
   final _AppStateStore _store;
   final Map<String, Map<String, WebSocketChannel>> _roomSockets =
       <String, Map<String, WebSocketChannel>>{};
@@ -139,6 +161,7 @@ class AppServer {
 
     final Router router = Router()
       ..get('/health', _handleHealth)
+      ..get('/api/app-version', _handleAppVersion)
       ..post('/api/register', _handleRegister)
       ..post('/api/login', _handleLogin)
       ..get('/api/me', _handleMe)
@@ -211,6 +234,16 @@ class AppServer {
       throw const ApiError(400, 'Invalid JSON body');
     }
     return decoded;
+  }
+
+  Future<Response> _handleAppVersion(Request request) {
+    return _guarded(() async {
+      final AppVersionStatus payload = AppVersionStatus(
+        latestVersion: _latestAppVersion,
+        minimumSupportedVersion: _minimumSupportedAppVersion,
+      );
+      return _json(payload.toJson());
+    });
   }
 
   StoredUser _requireUser(Request request) {
@@ -1044,7 +1077,8 @@ class AppServer {
         roomStatus: room.status,
         gameState: room.gameState,
       );
-      final StoredRoomParticipant? participant = _findParticipant(room, user.id);
+      final StoredRoomParticipant? participant =
+          _findParticipant(room, user.id);
       final WebSocketChannel? socket = _roomSockets[room.id]?.remove(user.id);
       if (_roomSockets[room.id]?.isEmpty ?? false) {
         _roomSockets.remove(room.id);

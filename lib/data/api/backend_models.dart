@@ -77,6 +77,31 @@ class UserSettingsDto extends Equatable {
   List<Object?> get props => <Object?>[themeMode, languageCode];
 }
 
+class AppVersionStatus extends Equatable {
+  const AppVersionStatus({
+    required this.latestVersion,
+    required this.minimumSupportedVersion,
+  });
+
+  final String latestVersion;
+  final String minimumSupportedVersion;
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'latestVersion': latestVersion,
+        'minimumSupportedVersion': minimumSupportedVersion,
+      };
+
+  factory AppVersionStatus.fromJson(Map<String, dynamic> json) {
+    return AppVersionStatus(
+      latestVersion: json['latestVersion'] as String? ?? '',
+      minimumSupportedVersion: json['minimumSupportedVersion'] as String? ?? '',
+    );
+  }
+
+  @override
+  List<Object?> get props => <Object?>[latestVersion, minimumSupportedVersion];
+}
+
 class BootstrapPayload extends Equatable {
   const BootstrapPayload({
     required this.session,

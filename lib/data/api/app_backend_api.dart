@@ -8,6 +8,7 @@ import 'package:guesstogether/data/api/backend_models.dart';
 import 'package:guesstogether/data/api/game_api.dart';
 
 abstract class AppBackendApi implements GameApi {
+  Future<AppVersionStatus> loadAppVersionStatus();
   Future<BootstrapPayload> register(RegisterRequest request);
   Future<BootstrapPayload> login(LoginRequest request);
   Future<BootstrapPayload> loadBootstrap();
@@ -117,6 +118,16 @@ class HttpAppBackendApi implements AppBackendApi {
       }
     }
     throw BackendException(message, statusCode: response.statusCode);
+  }
+
+  @override
+  Future<AppVersionStatus> loadAppVersionStatus() async {
+    final http.Response response = await _httpClient.get(
+      _uri('/api/app-version'),
+      headers: _headers(includeAuth: false),
+    );
+    await _ensureSuccess(response);
+    return AppVersionStatus.fromJson(await _decodeObject(response));
   }
 
   @override

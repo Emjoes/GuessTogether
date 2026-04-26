@@ -104,6 +104,7 @@ class AppSessionState {
 
 class AppSessionController extends AsyncNotifier<AppSessionState> {
   static const String _sessionKey = 'app.session';
+  static const String _profileKey = 'app.profile';
   static const String _themeModeKey = 'app.theme_mode';
   static const String _languageKey = 'app.language';
 
@@ -135,15 +136,48 @@ class AppSessionController extends AsyncNotifier<AppSessionState> {
     final AppLanguage appLanguage =
         _languageFromStorage(preferences.getString(_languageKey)) ??
             defaultAppLanguageFromSystem();
-    await preferences.remove(_sessionKey);
+    final AuthSession? storedSession =
+        _sessionFromStorage(preferences.getString(_sessionKey));
+    final ProfileSummary? storedProfile =
+        _profileFromStorage(preferences.getString(_profileKey));
 
-    AppSessionState state = AppSessionState(
-      session: null,
-      profile: null,
+    final AppSessionState restored = AppSessionState(
+      session: storedSession,
+      profile: storedProfile,
       themeMode: themeMode,
       appLanguage: appLanguage,
     );
-    return state;
+    if (storedSession == null) {
+      return restored;
+    }
+
+    try {
+      final BootstrapPayload payload = await _client(
+        sessionToken: storedSession.sessionToken,
+      ).loadBootstrap();
+      final AppSessionState next = restored.copyWith(
+        session: payload.session,
+        profile: payload.profile,
+        themeMode: _themeModeFromStorage(payload.settings.themeMode) ??
+            restored.themeMode,
+        appLanguage: _languageFromStorage(payload.settings.languageCode) ??
+            restored.appLanguage,
+      );
+      await _persist(preferences, next);
+      return next;
+    } on BackendException catch (error) {
+      if (error.statusCode == 401) {
+        final AppSessionState cleared = restored.copyWith(
+          clearSession: true,
+          clearProfile: true,
+        );
+        await _persist(preferences, cleared);
+        return cleared;
+      }
+      return restored;
+    } catch (_) {
+      return restored;
+    }
   }
 
   Future<void> register({
@@ -282,12 +316,50 @@ class AppSessionController extends AsyncNotifier<AppSessionState> {
         jsonEncode(state.session!.toJson()),
       );
     }
+    if (state.profile == null) {
+      await preferences.remove(_profileKey);
+    } else {
+      await preferences.setString(
+        _profileKey,
+        jsonEncode(state.profile!.toJson()),
+      );
+    }
     await preferences.setString(
         _themeModeKey, _themeModeToStorage(state.themeMode));
     await preferences.setString(
       _languageKey,
       _languageToStorage(state.appLanguage),
     );
+  }
+
+  AuthSession? _sessionFromStorage(String? raw) {
+    if (raw == null || raw.trim().isEmpty) {
+      return null;
+    }
+    try {
+      final dynamic decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) {
+        return AuthSession.fromJson(decoded);
+      }
+    } catch (_) {
+      // Ignore malformed local cache and continue with a clean session.
+    }
+    return null;
+  }
+
+  ProfileSummary? _profileFromStorage(String? raw) {
+    if (raw == null || raw.trim().isEmpty) {
+      return null;
+    }
+    try {
+      final dynamic decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) {
+        return ProfileSummary.fromJson(decoded);
+      }
+    } catch (_) {
+      // Ignore malformed local cache and continue without a cached profile.
+    }
+    return null;
   }
 
   ThemeMode? _themeModeFromStorage(String? value) {

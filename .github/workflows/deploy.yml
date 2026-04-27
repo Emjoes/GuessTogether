@@ -45,17 +45,39 @@ jobs:
       - name: Flutter pub get
         run: flutter pub get
 
-      - name: Build Android APK
+      - name: Restore Android signing files
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          : "${ANDROID_KEYSTORE_BASE64:?Missing ANDROID_KEYSTORE_BASE64 secret}"
+          : "${ANDROID_STORE_PASSWORD:?Missing ANDROID_STORE_PASSWORD secret}"
+          : "${ANDROID_KEY_PASSWORD:?Missing ANDROID_KEY_PASSWORD secret}"
+          : "${ANDROID_KEY_ALIAS:?Missing ANDROID_KEY_ALIAS secret}"
+          mkdir -p android/signing
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/signing/release-keystore.jks
+          chmod 600 android/signing/release-keystore.jks
+          cat > android/key.properties <<EOF
+          storePassword=$ANDROID_STORE_PASSWORD
+          keyPassword=$ANDROID_KEY_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          storeFile=signing/release-keystore.jks
+          EOF
+          test -s android/key.properties
+          test -s android/signing/release-keystore.jks
+
+      - name: Build signed Android APK
         run: >
           flutter build apk --release
-          --dart-define=APP_VERSION=1.00
           --dart-define=API_BASE_URL=https://guess-together.gall-studio.com
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: guesstogether-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: guesstogether-signed-apk
+          path: build/app/outputs/flutter-apk/*.apk
           if-no-files-found: error
 
   deploy-backend:
@@ -85,6 +107,7 @@ jobs:
           mkdir -p build/deploy/release/backend_packages
           cp -R build/deploy/bundle/. build/deploy/release/
           cp -R backend_packages/. build/deploy/release/backend_packages/
+          cp pubspec.yaml build/deploy/release/pubspec.yaml
           tar -C build/deploy/release -czf build/deploy/backend-release.tar.gz .
 
       - name: Configure SSH

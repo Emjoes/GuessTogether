@@ -57,12 +57,14 @@ class HttpAppBackendApi implements AppBackendApi {
     required this.baseHttpUrl,
     required this.baseWsUrl,
     this.sessionToken,
+    this.languageCode = '',
     http.Client? httpClient,
   }) : _httpClient = httpClient ?? http.Client();
 
   final String baseHttpUrl;
   final String baseWsUrl;
   final String? sessionToken;
+  final String languageCode;
   final http.Client _httpClient;
 
   Uri _uri(String path, [Map<String, String>? queryParameters]) {
@@ -77,6 +79,7 @@ class HttpAppBackendApi implements AppBackendApi {
   Map<String, String> _headers({bool includeAuth = true}) {
     return <String, String>{
       'content-type': 'application/json',
+      if (languageCode.trim().isNotEmpty) 'x-language-code': languageCode,
       if (includeAuth && sessionToken != null && sessionToken!.isNotEmpty)
         'authorization': 'Bearer $sessionToken',
     };
@@ -346,6 +349,7 @@ class HttpAppBackendApi implements AppBackendApi {
       queryParameters: <String, String>{
         if (sessionToken != null && sessionToken!.isNotEmpty)
           'token': sessionToken!,
+        if (languageCode.trim().isNotEmpty) 'languageCode': languageCode,
       },
     );
     final WebSocketChannel channel = WebSocketChannel.connect(uri);

@@ -1,0 +1,2345 @@
+{
+  "name": "Standard Pack",
+  "themes": [
+    {
+      "id": "geography",
+      "title": "Geography",
+      "questions": [
+        {
+          "id": "geography_d1_1",
+          "difficulty": 1,
+          "text": "Which city is the capital of Japan?",
+          "answer": "Tokyo"
+        },
+        {
+          "id": "geography_d1_2",
+          "difficulty": 1,
+          "text": "On which continent is Egypt located?",
+          "answer": "Africa"
+        },
+        {
+          "id": "geography_d1_3",
+          "difficulty": 1,
+          "text": "What is the largest ocean on Earth?",
+          "answer": "Pacific Ocean"
+        },
+        {
+          "id": "geography_d1_4",
+          "difficulty": 1,
+          "text": "Which river flows through Paris?",
+          "answer": "Seine"
+        },
+        {
+          "id": "geography_d1_5",
+          "difficulty": 1,
+          "text": "Which mountain range includes Mount Everest?",
+          "answer": "Himalayas"
+        },
+        {
+          "id": "geography_d2_1",
+          "difficulty": 2,
+          "text": "What is the capital of Canada?",
+          "answer": "Ottawa"
+        },
+        {
+          "id": "geography_d2_2",
+          "difficulty": 2,
+          "text": "What is the name of the desert in Mongolia and northern China?",
+          "answer": "Gobi Desert"
+        },
+        {
+          "id": "geography_d2_3",
+          "difficulty": 2,
+          "text": "Which country is home to the Great Barrier Reef?",
+          "answer": "Australia"
+        },
+        {
+          "id": "geography_d2_4",
+          "difficulty": 2,
+          "text": "Which sea lies between Europe and Africa?",
+          "answer": "Mediterranean Sea"
+        },
+        {
+          "id": "geography_d2_5",
+          "difficulty": 2,
+          "text": "What is the longest river in South America?",
+          "answer": "Amazon River"
+        },
+        {
+          "id": "geography_d3_1",
+          "difficulty": 3,
+          "text": "What is the capital of New Zealand?",
+          "answer": "Wellington"
+        },
+        {
+          "id": "geography_d3_2",
+          "difficulty": 3,
+          "text": "What waterfall lies on the border of Zambia and Zimbabwe?",
+          "answer": "Victoria Falls"
+        },
+        {
+          "id": "geography_d3_3",
+          "difficulty": 3,
+          "text": "What strait separates Asia from North America?",
+          "answer": "Bering Strait"
+        },
+        {
+          "id": "geography_d3_4",
+          "difficulty": 3,
+          "text": "What is the highest mountain in Africa?",
+          "answer": "Kilimanjaro"
+        },
+        {
+          "id": "geography_d3_5",
+          "difficulty": 3,
+          "text": "Which island country has Reykjavik as its capital?",
+          "answer": "Iceland"
+        },
+        {
+          "id": "geography_d4_1",
+          "difficulty": 4,
+          "text": "What is the capital of Kazakhstan?",
+          "answer": "Astana"
+        },
+        {
+          "id": "geography_d4_2",
+          "difficulty": 4,
+          "text": "Which country has the enclaves Ceuta and Melilla on the African coast?",
+          "answer": "Spain"
+        },
+        {
+          "id": "geography_d4_3",
+          "difficulty": 4,
+          "text": "Which river flows through Baghdad?",
+          "answer": "Tigris"
+        },
+        {
+          "id": "geography_d4_4",
+          "difficulty": 4,
+          "text": "What waterway connects the Black Sea to the Sea of Marmara?",
+          "answer": "Bosporus"
+        },
+        {
+          "id": "geography_d4_5",
+          "difficulty": 4,
+          "text": "Which peninsula is shared by Norway and Sweden?",
+          "answer": "Scandinavian Peninsula"
+        },
+        {
+          "id": "geography_d5_1",
+          "difficulty": 5,
+          "text": "What is the capital of Burkina Faso?",
+          "answer": "Ouagadougou"
+        },
+        {
+          "id": "geography_d5_2",
+          "difficulty": 5,
+          "text": "What is the deepest lake in the world?",
+          "answer": "Lake Baikal"
+        },
+        {
+          "id": "geography_d5_3",
+          "difficulty": 5,
+          "text": "Which autonomous Danish territory lies between Iceland and Norway?",
+          "answer": "Faroe Islands"
+        },
+        {
+          "id": "geography_d5_4",
+          "difficulty": 5,
+          "text": "Which mountain range traditionally marks the boundary between Europe and Asia in Russia?",
+          "answer": "Ural Mountains"
+        },
+        {
+          "id": "geography_d5_5",
+          "difficulty": 5,
+          "text": "Which desert in northern Chile is one of the driest places on Earth?",
+          "answer": "Atacama Desert"
+        }
+      ]
+    },
+    {
+      "id": "cinema",
+      "title": "Cinema",
+      "questions": [
+        {
+          "id": "cinema_d1_1",
+          "difficulty": 1,
+          "text": "Who directed Titanic?",
+          "answer": "James Cameron"
+        },
+        {
+          "id": "cinema_d1_2",
+          "difficulty": 1,
+          "text": "What is the name of the lion cub in The Lion King?",
+          "answer": "Simba"
+        },
+        {
+          "id": "cinema_d1_3",
+          "difficulty": 1,
+          "text": "Which green ogre stars in a popular animated film series?",
+          "answer": "Shrek"
+        },
+        {
+          "id": "cinema_d1_4",
+          "difficulty": 1,
+          "text": "Which actor played Harry Potter in the film series?",
+          "answer": "Daniel Radcliffe"
+        },
+        {
+          "id": "cinema_d1_5",
+          "difficulty": 1,
+          "text": "What is the name of the cowboy toy in Toy Story?",
+          "answer": "Woody"
+        },
+        {
+          "id": "cinema_d2_1",
+          "difficulty": 2,
+          "text": "Which film features a theme park filled with cloned dinosaurs?",
+          "answer": "Jurassic Park"
+        },
+        {
+          "id": "cinema_d2_2",
+          "difficulty": 2,
+          "text": "Who played Hermione Granger in the Harry Potter films?",
+          "answer": "Emma Watson"
+        },
+        {
+          "id": "cinema_d2_3",
+          "difficulty": 2,
+          "text": "What is the name of the kingdom in Frozen?",
+          "answer": "Arendelle"
+        },
+        {
+          "id": "cinema_d2_4",
+          "difficulty": 2,
+          "text": "Which film stars Tom Hanks as a man who runs across the United States?",
+          "answer": "Forrest Gump"
+        },
+        {
+          "id": "cinema_d2_5",
+          "difficulty": 2,
+          "text": "What is the name of Han Solo's spaceship?",
+          "answer": "Millennium Falcon"
+        },
+        {
+          "id": "cinema_d3_1",
+          "difficulty": 3,
+          "text": "Who directed Pulp Fiction?",
+          "answer": "Quentin Tarantino"
+        },
+        {
+          "id": "cinema_d3_2",
+          "difficulty": 3,
+          "text": "Which film features the quote I'll be back?",
+          "answer": "The Terminator"
+        },
+        {
+          "id": "cinema_d3_3",
+          "difficulty": 3,
+          "text": "Which actor played the Joker in The Dark Knight?",
+          "answer": "Heath Ledger"
+        },
+        {
+          "id": "cinema_d3_4",
+          "difficulty": 3,
+          "text": "What fictional metal powers Wakandan technology in Black Panther?",
+          "answer": "Vibranium"
+        },
+        {
+          "id": "cinema_d3_5",
+          "difficulty": 3,
+          "text": "What was Pixar's first full-length CGI feature film?",
+          "answer": "Toy Story"
+        },
+        {
+          "id": "cinema_d4_1",
+          "difficulty": 4,
+          "text": "Which country is home to Studio Ghibli?",
+          "answer": "Japan"
+        },
+        {
+          "id": "cinema_d4_2",
+          "difficulty": 4,
+          "text": "Which movie musical includes the songs Do-Re-Mi and My Favorite Things?",
+          "answer": "The Sound of Music"
+        },
+        {
+          "id": "cinema_d4_3",
+          "difficulty": 4,
+          "text": "Who directed Spirited Away?",
+          "answer": "Hayao Miyazaki"
+        },
+        {
+          "id": "cinema_d4_4",
+          "difficulty": 4,
+          "text": "Which actor portrayed Maximus in Gladiator?",
+          "answer": "Russell Crowe"
+        },
+        {
+          "id": "cinema_d4_5",
+          "difficulty": 4,
+          "text": "Which South Korean film became the first non-English-language Best Picture winner at the Oscars?",
+          "answer": "Parasite"
+        },
+        {
+          "id": "cinema_d5_1",
+          "difficulty": 5,
+          "text": "Who directed Seven Samurai?",
+          "answer": "Akira Kurosawa"
+        },
+        {
+          "id": "cinema_d5_2",
+          "difficulty": 5,
+          "text": "Which 1927 film is often cited as the first feature-length talkie?",
+          "answer": "The Jazz Singer"
+        },
+        {
+          "id": "cinema_d5_3",
+          "difficulty": 5,
+          "text": "In which film does the computer HAL 9000 appear?",
+          "answer": "2001: A Space Odyssey"
+        },
+        {
+          "id": "cinema_d5_4",
+          "difficulty": 5,
+          "text": "Which actress won the Oscar for playing Queen Anne in The Favourite?",
+          "answer": "Olivia Colman"
+        },
+        {
+          "id": "cinema_d5_5",
+          "difficulty": 5,
+          "text": "Which film follows prison escapee Andy Dufresne?",
+          "answer": "The Shawshank Redemption"
+        }
+      ]
+    },
+    {
+      "id": "science",
+      "title": "Science",
+      "questions": [
+        {
+          "id": "science_d1_1",
+          "difficulty": 1,
+          "text": "What is the chemical formula of water?",
+          "answer": "H2O"
+        },
+        {
+          "id": "science_d1_2",
+          "difficulty": 1,
+          "text": "What force pulls objects toward Earth?",
+          "answer": "Gravity"
+        },
+        {
+          "id": "science_d1_3",
+          "difficulty": 1,
+          "text": "What is the center of an atom called?",
+          "answer": "Nucleus"
+        },
+        {
+          "id": "science_d1_4",
+          "difficulty": 1,
+          "text": "Which gas do plants absorb from the air for photosynthesis?",
+          "answer": "Carbon dioxide"
+        },
+        {
+          "id": "science_d1_5",
+          "difficulty": 1,
+          "text": "What is the hardest natural substance?",
+          "answer": "Diamond"
+        },
+        {
+          "id": "science_d2_1",
+          "difficulty": 2,
+          "text": "What instrument is used to observe distant stars and planets?",
+          "answer": "Telescope"
+        },
+        {
+          "id": "science_d2_2",
+          "difficulty": 2,
+          "text": "Which organ pumps blood through the human body?",
+          "answer": "Heart"
+        },
+        {
+          "id": "science_d2_3",
+          "difficulty": 2,
+          "text": "What do you call a substance with a pH below 7?",
+          "answer": "Acid"
+        },
+        {
+          "id": "science_d2_4",
+          "difficulty": 2,
+          "text": "What is the SI unit of electrical resistance?",
+          "answer": "Ohm"
+        },
+        {
+          "id": "science_d2_5",
+          "difficulty": 2,
+          "text": "What is the process called when a liquid turns into a gas?",
+          "answer": "Evaporation"
+        },
+        {
+          "id": "science_d3_1",
+          "difficulty": 3,
+          "text": "Which scientist developed the theory of relativity?",
+          "answer": "Albert Einstein"
+        },
+        {
+          "id": "science_d3_2",
+          "difficulty": 3,
+          "text": "Which vitamin is produced in the skin under sunlight?",
+          "answer": "Vitamin D"
+        },
+        {
+          "id": "science_d3_3",
+          "difficulty": 3,
+          "text": "What is the main gas in Earth's atmosphere?",
+          "answer": "Nitrogen"
+        },
+        {
+          "id": "science_d3_4",
+          "difficulty": 3,
+          "text": "Which cell organelle is known as the powerhouse of the cell?",
+          "answer": "Mitochondrion"
+        },
+        {
+          "id": "science_d3_5",
+          "difficulty": 3,
+          "text": "What is the chemical symbol for gold?",
+          "answer": "Au"
+        },
+        {
+          "id": "science_d4_1",
+          "difficulty": 4,
+          "text": "Which element has atomic number 26?",
+          "answer": "Iron"
+        },
+        {
+          "id": "science_d4_2",
+          "difficulty": 4,
+          "text": "Who discovered penicillin?",
+          "answer": "Alexander Fleming"
+        },
+        {
+          "id": "science_d4_3",
+          "difficulty": 4,
+          "text": "Which Newton law states that every action has an equal and opposite reaction?",
+          "answer": "Newton's third law"
+        },
+        {
+          "id": "science_d4_4",
+          "difficulty": 4,
+          "text": "What is the first element in the periodic table?",
+          "answer": "Hydrogen"
+        },
+        {
+          "id": "science_d4_5",
+          "difficulty": 4,
+          "text": "What branch of biology studies heredity?",
+          "answer": "Genetics"
+        },
+        {
+          "id": "science_d5_1",
+          "difficulty": 5,
+          "text": "What scale measures mineral hardness?",
+          "answer": "Mohs scale"
+        },
+        {
+          "id": "science_d5_2",
+          "difficulty": 5,
+          "text": "What is the SI unit of force?",
+          "answer": "Newton"
+        },
+        {
+          "id": "science_d5_3",
+          "difficulty": 5,
+          "text": "What device splits white light into a spectrum?",
+          "answer": "Prism"
+        },
+        {
+          "id": "science_d5_4",
+          "difficulty": 5,
+          "text": "Who proposed the heliocentric model of the Solar System in the Renaissance?",
+          "answer": "Nicolaus Copernicus"
+        },
+        {
+          "id": "science_d5_5",
+          "difficulty": 5,
+          "text": "What is the process called when plants release water vapor through their leaves?",
+          "answer": "Transpiration"
+        }
+      ]
+    },
+    {
+      "id": "food",
+      "title": "Food",
+      "questions": [
+        {
+          "id": "food_d1_1",
+          "difficulty": 1,
+          "text": "What is the name of the Italian dish made from dough, sauce, and cheese?",
+          "answer": "Pizza"
+        },
+        {
+          "id": "food_d1_2",
+          "difficulty": 1,
+          "text": "Which fruit is the main ingredient in guacamole?",
+          "answer": "Avocado"
+        },
+        {
+          "id": "food_d1_3",
+          "difficulty": 1,
+          "text": "What dairy product is made by curdling milk?",
+          "answer": "Cheese"
+        },
+        {
+          "id": "food_d1_4",
+          "difficulty": 1,
+          "text": "What Japanese dish is made with vinegared rice and often fish?",
+          "answer": "Sushi"
+        },
+        {
+          "id": "food_d1_5",
+          "difficulty": 1,
+          "text": "What sweet food do bees make?",
+          "answer": "Honey"
+        },
+        {
+          "id": "food_d2_1",
+          "difficulty": 2,
+          "text": "Which spice comes from the dried inner bark of a tree?",
+          "answer": "Cinnamon"
+        },
+        {
+          "id": "food_d2_2",
+          "difficulty": 2,
+          "text": "What Spanish rice dish is traditionally cooked in a wide pan with saffron?",
+          "answer": "Paella"
+        },
+        {
+          "id": "food_d2_3",
+          "difficulty": 2,
+          "text": "What chickpea-based dip is common in Middle Eastern cuisine?",
+          "answer": "Hummus"
+        },
+        {
+          "id": "food_d2_4",
+          "difficulty": 2,
+          "text": "What flaky French pastry is often eaten for breakfast?",
+          "answer": "Croissant"
+        },
+        {
+          "id": "food_d2_5",
+          "difficulty": 2,
+          "text": "What Italian dessert is made with coffee-soaked ladyfingers and mascarpone?",
+          "answer": "Tiramisu"
+        },
+        {
+          "id": "food_d3_1",
+          "difficulty": 3,
+          "text": "What fermented Korean side dish is usually made from cabbage?",
+          "answer": "Kimchi"
+        },
+        {
+          "id": "food_d3_2",
+          "difficulty": 3,
+          "text": "What Indian cheese is often used in paneer tikka?",
+          "answer": "Paneer"
+        },
+        {
+          "id": "food_d3_3",
+          "difficulty": 3,
+          "text": "What layered dessert made with nuts and syrup is popular from the Balkans to the Middle East?",
+          "answer": "Baklava"
+        },
+        {
+          "id": "food_d3_4",
+          "difficulty": 3,
+          "text": "Which grain is used to make polenta?",
+          "answer": "Corn"
+        },
+        {
+          "id": "food_d3_5",
+          "difficulty": 3,
+          "text": "What Japanese soup often includes broth mixed with fermented soybean paste?",
+          "answer": "Miso soup"
+        },
+        {
+          "id": "food_d4_1",
+          "difficulty": 4,
+          "text": "What is the French term for a flavor base made from onion, carrot, and celery?",
+          "answer": "Mirepoix"
+        },
+        {
+          "id": "food_d4_2",
+          "difficulty": 4,
+          "text": "Which cheese from the Naples area is traditionally made from buffalo milk?",
+          "answer": "Mozzarella di bufala"
+        },
+        {
+          "id": "food_d4_3",
+          "difficulty": 4,
+          "text": "Which grain is used to make Japanese sake?",
+          "answer": "Rice"
+        },
+        {
+          "id": "food_d4_4",
+          "difficulty": 4,
+          "text": "What is the clarified butter widely used in Indian cooking called?",
+          "answer": "Ghee"
+        },
+        {
+          "id": "food_d4_5",
+          "difficulty": 4,
+          "text": "Which classic sauce is made from egg yolks and butter?",
+          "answer": "Hollandaise"
+        },
+        {
+          "id": "food_d5_1",
+          "difficulty": 5,
+          "text": "Which bean is used to make tofu?",
+          "answer": "Soybean"
+        },
+        {
+          "id": "food_d5_2",
+          "difficulty": 5,
+          "text": "What is the Japanese word for charcoal-grilled skewers, often made with chicken?",
+          "answer": "Yakitori"
+        },
+        {
+          "id": "food_d5_3",
+          "difficulty": 5,
+          "text": "Which Italian cheese is traditionally used in cacio e pepe?",
+          "answer": "Pecorino Romano"
+        },
+        {
+          "id": "food_d5_4",
+          "difficulty": 5,
+          "text": "What is the method of cooking vacuum-sealed food at a precise low temperature called?",
+          "answer": "Sous vide"
+        },
+        {
+          "id": "food_d5_5",
+          "difficulty": 5,
+          "text": "Which Spanish cured ham is traditionally made from Iberian pigs?",
+          "answer": "Jamon Iberico"
+        }
+      ]
+    },
+    {
+      "id": "sport",
+      "title": "Sports",
+      "questions": [
+        {
+          "id": "sport_d1_1",
+          "difficulty": 1,
+          "text": "In which sport would you perform a slam dunk?",
+          "answer": "Basketball"
+        },
+        {
+          "id": "sport_d1_2",
+          "difficulty": 1,
+          "text": "How many players from one team are on the field in association football?",
+          "answer": "11"
+        },
+        {
+          "id": "sport_d1_3",
+          "difficulty": 1,
+          "text": "Which race made Usain Bolt famous around the world?",
+          "answer": "100 meters"
+        },
+        {
+          "id": "sport_d1_4",
+          "difficulty": 1,
+          "text": "Which sport is played with a puck on ice?",
+          "answer": "Ice hockey"
+        },
+        {
+          "id": "sport_d1_5",
+          "difficulty": 1,
+          "text": "Which card sends a football player off the pitch?",
+          "answer": "Red card"
+        },
+        {
+          "id": "sport_d2_1",
+          "difficulty": 2,
+          "text": "Which country won the 2014 FIFA World Cup?",
+          "answer": "Germany"
+        },
+        {
+          "id": "sport_d2_2",
+          "difficulty": 2,
+          "text": "How many points is a touchdown worth before the extra kick in American football?",
+          "answer": "6"
+        },
+        {
+          "id": "sport_d2_3",
+          "difficulty": 2,
+          "text": "Which sport is the Tour de France associated with?",
+          "answer": "Cycling"
+        },
+        {
+          "id": "sport_d2_4",
+          "difficulty": 2,
+          "text": "What does NBA stand for?",
+          "answer": "National Basketball Association"
+        },
+        {
+          "id": "sport_d2_5",
+          "difficulty": 2,
+          "text": "Which athlete has won the most Olympic gold medals?",
+          "answer": "Michael Phelps"
+        },
+        {
+          "id": "sport_d3_1",
+          "difficulty": 3,
+          "text": "What is the official marathon distance?",
+          "answer": "42.195 kilometers"
+        },
+        {
+          "id": "sport_d3_2",
+          "difficulty": 3,
+          "text": "Which team won the first Cricket World Cup in 1975?",
+          "answer": "West Indies"
+        },
+        {
+          "id": "sport_d3_3",
+          "difficulty": 3,
+          "text": "What is three strikes in a row called in bowling?",
+          "answer": "Turkey"
+        },
+        {
+          "id": "sport_d3_4",
+          "difficulty": 3,
+          "text": "Which city hosted the 2016 Summer Olympics?",
+          "answer": "Rio de Janeiro"
+        },
+        {
+          "id": "sport_d3_5",
+          "difficulty": 3,
+          "text": "What trophy is awarded to the NHL champion?",
+          "answer": "Stanley Cup"
+        },
+        {
+          "id": "sport_d4_1",
+          "difficulty": 4,
+          "text": "How many defensive players are on the field for one baseball team?",
+          "answer": "9"
+        },
+        {
+          "id": "sport_d4_2",
+          "difficulty": 4,
+          "text": "What color jersey does the leader of the Tour de France wear?",
+          "answer": "Yellow jersey"
+        },
+        {
+          "id": "sport_d4_3",
+          "difficulty": 4,
+          "text": "Which national team is known as the All Blacks?",
+          "answer": "New Zealand"
+        },
+        {
+          "id": "sport_d4_4",
+          "difficulty": 4,
+          "text": "Which winter sport combines cross-country skiing and rifle shooting?",
+          "answer": "Biathlon"
+        },
+        {
+          "id": "sport_d4_5",
+          "difficulty": 4,
+          "text": "Which country has won the most men's FIFA World Cups?",
+          "answer": "Brazil"
+        },
+        {
+          "id": "sport_d5_1",
+          "difficulty": 5,
+          "text": "What is the maximum possible break in snooker?",
+          "answer": "147"
+        },
+        {
+          "id": "sport_d5_2",
+          "difficulty": 5,
+          "text": "What is the length of an Olympic swimming pool?",
+          "answer": "50 meters"
+        },
+        {
+          "id": "sport_d5_3",
+          "difficulty": 5,
+          "text": "Which martial art uses the uniform called a dobok?",
+          "answer": "Taekwondo"
+        },
+        {
+          "id": "sport_d5_4",
+          "difficulty": 5,
+          "text": "Which football club plays its home matches at Anfield?",
+          "answer": "Liverpool"
+        },
+        {
+          "id": "sport_d5_5",
+          "difficulty": 5,
+          "text": "Which tennis Grand Slam is nicknamed the Happy Slam?",
+          "answer": "Australian Open"
+        }
+      ]
+    },
+    {
+      "id": "history",
+      "title": "History",
+      "questions": [
+        {
+          "id": "history_d1_1",
+          "difficulty": 1,
+          "text": "Who was the first President of the United States?",
+          "answer": "George Washington"
+        },
+        {
+          "id": "history_d1_2",
+          "difficulty": 1,
+          "text": "What large stone structures are most associated with ancient Egypt?",
+          "answer": "Pyramids"
+        },
+        {
+          "id": "history_d1_3",
+          "difficulty": 1,
+          "text": "Which wall fell in 1989, symbolizing the end of the Cold War divide in Europe?",
+          "answer": "Berlin Wall"
+        },
+        {
+          "id": "history_d1_4",
+          "difficulty": 1,
+          "text": "What ship carried the Pilgrims to North America in 1620?",
+          "answer": "Mayflower"
+        },
+        {
+          "id": "history_d1_5",
+          "difficulty": 1,
+          "text": "Which country was ruled by pharaohs in ancient times?",
+          "answer": "Egypt"
+        },
+        {
+          "id": "history_d2_1",
+          "difficulty": 2,
+          "text": "Which explorer reached the Americas in 1492?",
+          "answer": "Christopher Columbus"
+        },
+        {
+          "id": "history_d2_2",
+          "difficulty": 2,
+          "text": "Which French heroine was executed in 1431 and later canonized?",
+          "answer": "Joan of Arc"
+        },
+        {
+          "id": "history_d2_3",
+          "difficulty": 2,
+          "text": "What war was fought between the northern and southern states of the USA?",
+          "answer": "American Civil War"
+        },
+        {
+          "id": "history_d2_4",
+          "difficulty": 2,
+          "text": "Which Roman city was buried after the eruption of Mount Vesuvius?",
+          "answer": "Pompeii"
+        },
+        {
+          "id": "history_d2_5",
+          "difficulty": 2,
+          "text": "In which country was the Magna Carta signed?",
+          "answer": "England"
+        },
+        {
+          "id": "history_d3_1",
+          "difficulty": 3,
+          "text": "Which empire was founded by Genghis Khan?",
+          "answer": "Mongol Empire"
+        },
+        {
+          "id": "history_d3_2",
+          "difficulty": 3,
+          "text": "In which year did World War I begin?",
+          "answer": "1914"
+        },
+        {
+          "id": "history_d3_3",
+          "difficulty": 3,
+          "text": "Who led the Soviet Union during most of World War II?",
+          "answer": "Joseph Stalin"
+        },
+        {
+          "id": "history_d3_4",
+          "difficulty": 3,
+          "text": "Which document announced the independence of the United States in 1776?",
+          "answer": "Declaration of Independence"
+        },
+        {
+          "id": "history_d3_5",
+          "difficulty": 3,
+          "text": "Which English queen ruled during the defeat of the Spanish Armada in 1588?",
+          "answer": "Elizabeth I"
+        },
+        {
+          "id": "history_d4_1",
+          "difficulty": 4,
+          "text": "At which battle was Napoleon finally defeated in 1815?",
+          "answer": "Waterloo"
+        },
+        {
+          "id": "history_d4_2",
+          "difficulty": 4,
+          "text": "In which city was Archduke Franz Ferdinand assassinated in 1914?",
+          "answer": "Sarajevo"
+        },
+        {
+          "id": "history_d4_3",
+          "difficulty": 4,
+          "text": "Which Chinese dynasty built much of the Forbidden City?",
+          "answer": "Ming dynasty"
+        },
+        {
+          "id": "history_d4_4",
+          "difficulty": 4,
+          "text": "Which Roman statesman was assassinated on the Ides of March?",
+          "answer": "Julius Caesar"
+        },
+        {
+          "id": "history_d4_5",
+          "difficulty": 4,
+          "text": "Which empire had Constantinople as its capital for most of its history?",
+          "answer": "Byzantine Empire"
+        },
+        {
+          "id": "history_d5_1",
+          "difficulty": 5,
+          "text": "Which treaty ended the Thirty Years' War in 1648?",
+          "answer": "Peace of Westphalia"
+        },
+        {
+          "id": "history_d5_2",
+          "difficulty": 5,
+          "text": "Who is considered the leading figure of the Haitian Revolution?",
+          "answer": "Toussaint Louverture"
+        },
+        {
+          "id": "history_d5_3",
+          "difficulty": 5,
+          "text": "In which year did Constantinople fall to the Ottoman Empire?",
+          "answer": "1453"
+        },
+        {
+          "id": "history_d5_4",
+          "difficulty": 5,
+          "text": "Which Chinese admiral led the Ming treasure voyages across the Indian Ocean?",
+          "answer": "Zheng He"
+        },
+        {
+          "id": "history_d5_5",
+          "difficulty": 5,
+          "text": "Which Persian king was defeated by Alexander the Great at Gaugamela?",
+          "answer": "Darius III"
+        }
+      ]
+    },
+    {
+      "id": "music",
+      "title": "Music",
+      "questions": [
+        {
+          "id": "music_d1_1",
+          "difficulty": 1,
+          "text": "What musical instrument has 88 keys?",
+          "answer": "Piano"
+        },
+        {
+          "id": "music_d1_2",
+          "difficulty": 1,
+          "text": "Which band sang Hey Jude?",
+          "answer": "The Beatles"
+        },
+        {
+          "id": "music_d1_3",
+          "difficulty": 1,
+          "text": "Which singer released the song Rolling in the Deep?",
+          "answer": "Adele"
+        },
+        {
+          "id": "music_d1_4",
+          "difficulty": 1,
+          "text": "Which clef is commonly used for higher notes?",
+          "answer": "Treble clef"
+        },
+        {
+          "id": "music_d1_5",
+          "difficulty": 1,
+          "text": "What annual song contest features countries competing with original songs?",
+          "answer": "Eurovision"
+        },
+        {
+          "id": "music_d2_1",
+          "difficulty": 2,
+          "text": "Who composed the famous Fifth Symphony motif da-da-da-dum?",
+          "answer": "Ludwig van Beethoven"
+        },
+        {
+          "id": "music_d2_2",
+          "difficulty": 2,
+          "text": "Which instrument was closely associated with Louis Armstrong?",
+          "answer": "Trumpet"
+        },
+        {
+          "id": "music_d2_3",
+          "difficulty": 2,
+          "text": "Which music genre from Jamaica is closely linked with Bob Marley?",
+          "answer": "Reggae"
+        },
+        {
+          "id": "music_d2_4",
+          "difficulty": 2,
+          "text": "Which artist is known as the King of Pop?",
+          "answer": "Michael Jackson"
+        },
+        {
+          "id": "music_d2_5",
+          "difficulty": 2,
+          "text": "How many musicians are there in a string quartet?",
+          "answer": "Four"
+        },
+        {
+          "id": "music_d3_1",
+          "difficulty": 3,
+          "text": "Who composed The Four Seasons?",
+          "answer": "Antonio Vivaldi"
+        },
+        {
+          "id": "music_d3_2",
+          "difficulty": 3,
+          "text": "What is the lowest standard female singing voice?",
+          "answer": "Contralto"
+        },
+        {
+          "id": "music_d3_3",
+          "difficulty": 3,
+          "text": "Which band was fronted by Freddie Mercury?",
+          "answer": "Queen"
+        },
+        {
+          "id": "music_d3_4",
+          "difficulty": 3,
+          "text": "Which accidental sign raises a note by a semitone?",
+          "answer": "Sharp"
+        },
+        {
+          "id": "music_d3_5",
+          "difficulty": 3,
+          "text": "Who wrote the ballet Swan Lake?",
+          "answer": "Pyotr Tchaikovsky"
+        },
+        {
+          "id": "music_d4_1",
+          "difficulty": 4,
+          "text": "Which instrument is Yo-Yo Ma famous for playing?",
+          "answer": "Cello"
+        },
+        {
+          "id": "music_d4_2",
+          "difficulty": 4,
+          "text": "Which American city is commonly called the birthplace of jazz?",
+          "answer": "New Orleans"
+        },
+        {
+          "id": "music_d4_3",
+          "difficulty": 4,
+          "text": "What is the musical term for the speed of a piece?",
+          "answer": "Tempo"
+        },
+        {
+          "id": "music_d4_4",
+          "difficulty": 4,
+          "text": "Who composed the orchestral suite The Planets?",
+          "answer": "Gustav Holst"
+        },
+        {
+          "id": "music_d4_5",
+          "difficulty": 4,
+          "text": "What traditional Japanese three-string instrument is played with a plectrum?",
+          "answer": "Shamisen"
+        },
+        {
+          "id": "music_d5_1",
+          "difficulty": 5,
+          "text": "Who composed the opera The Magic Flute?",
+          "answer": "Wolfgang Amadeus Mozart"
+        },
+        {
+          "id": "music_d5_2",
+          "difficulty": 5,
+          "text": "What vocal technique uses improvised syllables in jazz singing?",
+          "answer": "Scat singing"
+        },
+        {
+          "id": "music_d5_3",
+          "difficulty": 5,
+          "text": "Which Indian string instrument is associated with Ravi Shankar?",
+          "answer": "Sitar"
+        },
+        {
+          "id": "music_d5_4",
+          "difficulty": 5,
+          "text": "What is the interval from one C to the next higher C called?",
+          "answer": "Octave"
+        },
+        {
+          "id": "music_d5_5",
+          "difficulty": 5,
+          "text": "Who composed The Rite of Spring?",
+          "answer": "Igor Stravinsky"
+        }
+      ]
+    },
+    {
+      "id": "literature",
+      "title": "Literature",
+      "questions": [
+        {
+          "id": "literature_d1_1",
+          "difficulty": 1,
+          "text": "Who wrote the Harry Potter books?",
+          "answer": "J.K. Rowling"
+        },
+        {
+          "id": "literature_d1_2",
+          "difficulty": 1,
+          "text": "Which detective was created by Arthur Conan Doyle?",
+          "answer": "Sherlock Holmes"
+        },
+        {
+          "id": "literature_d1_3",
+          "difficulty": 1,
+          "text": "Who wrote Romeo and Juliet?",
+          "answer": "William Shakespeare"
+        },
+        {
+          "id": "literature_d1_4",
+          "difficulty": 1,
+          "text": "Who wrote the novel Moby-Dick?",
+          "answer": "Herman Melville"
+        },
+        {
+          "id": "literature_d1_5",
+          "difficulty": 1,
+          "text": "What is the name of the boy who never grows up in J. M. Barrie's play?",
+          "answer": "Peter Pan"
+        },
+        {
+          "id": "literature_d2_1",
+          "difficulty": 2,
+          "text": "Who wrote 1984?",
+          "answer": "George Orwell"
+        },
+        {
+          "id": "literature_d2_2",
+          "difficulty": 2,
+          "text": "Who wrote The Hobbit?",
+          "answer": "J.R.R. Tolkien"
+        },
+        {
+          "id": "literature_d2_3",
+          "difficulty": 2,
+          "text": "In which country is Don Quixote set?",
+          "answer": "Spain"
+        },
+        {
+          "id": "literature_d2_4",
+          "difficulty": 2,
+          "text": "Who narrates The Great Gatsby?",
+          "answer": "Nick Carraway"
+        },
+        {
+          "id": "literature_d2_5",
+          "difficulty": 2,
+          "text": "Who wrote Pride and Prejudice?",
+          "answer": "Jane Austen"
+        },
+        {
+          "id": "literature_d3_1",
+          "difficulty": 3,
+          "text": "Who wrote Crime and Punishment?",
+          "answer": "Fyodor Dostoevsky"
+        },
+        {
+          "id": "literature_d3_2",
+          "difficulty": 3,
+          "text": "What is the name of the fantasy land in The Chronicles of Narnia?",
+          "answer": "Narnia"
+        },
+        {
+          "id": "literature_d3_3",
+          "difficulty": 3,
+          "text": "Which ancient Greek poet is traditionally credited with The Iliad?",
+          "answer": "Homer"
+        },
+        {
+          "id": "literature_d3_4",
+          "difficulty": 3,
+          "text": "Which novel begins with the line Call me Ishmael?",
+          "answer": "Moby-Dick"
+        },
+        {
+          "id": "literature_d3_5",
+          "difficulty": 3,
+          "text": "Who wrote One Hundred Years of Solitude?",
+          "answer": "Gabriel Garcia Marquez"
+        },
+        {
+          "id": "literature_d4_1",
+          "difficulty": 4,
+          "text": "What creature does Victor Frankenstein create?",
+          "answer": "Frankenstein's monster"
+        },
+        {
+          "id": "literature_d4_2",
+          "difficulty": 4,
+          "text": "Who wrote the poem The Raven?",
+          "answer": "Edgar Allan Poe"
+        },
+        {
+          "id": "literature_d4_3",
+          "difficulty": 4,
+          "text": "Who wrote The Trial?",
+          "answer": "Franz Kafka"
+        },
+        {
+          "id": "literature_d4_4",
+          "difficulty": 4,
+          "text": "What is the surname of the family at the center of One Hundred Years of Solitude?",
+          "answer": "Buendia"
+        },
+        {
+          "id": "literature_d4_5",
+          "difficulty": 4,
+          "text": "Who narrates To Kill a Mockingbird as an adult looking back on childhood?",
+          "answer": "Scout Finch"
+        },
+        {
+          "id": "literature_d5_1",
+          "difficulty": 5,
+          "text": "Who wrote The Master and Margarita?",
+          "answer": "Mikhail Bulgakov"
+        },
+        {
+          "id": "literature_d5_2",
+          "difficulty": 5,
+          "text": "What fictional county appears in many novels by William Faulkner?",
+          "answer": "Yoknapatawpha County"
+        },
+        {
+          "id": "literature_d5_3",
+          "difficulty": 5,
+          "text": "Who wrote If on a winter's night a traveler?",
+          "answer": "Italo Calvino"
+        },
+        {
+          "id": "literature_d5_4",
+          "difficulty": 5,
+          "text": "What is the name of the ship in Treasure Island?",
+          "answer": "Hispaniola"
+        },
+        {
+          "id": "literature_d5_5",
+          "difficulty": 5,
+          "text": "Who wrote Leaves of Grass?",
+          "answer": "Walt Whitman"
+        }
+      ]
+    },
+    {
+      "id": "technology",
+      "title": "Technology",
+      "questions": [
+        {
+          "id": "technology_d1_1",
+          "difficulty": 1,
+          "text": "What is the main computing chip in a computer called?",
+          "answer": "Processor"
+        },
+        {
+          "id": "technology_d1_2",
+          "difficulty": 1,
+          "text": "Which company created the iPhone?",
+          "answer": "Apple"
+        },
+        {
+          "id": "technology_d1_3",
+          "difficulty": 1,
+          "text": "What does URL stand for?",
+          "answer": "Uniform Resource Locator"
+        },
+        {
+          "id": "technology_d1_4",
+          "difficulty": 1,
+          "text": "What handheld device is commonly used to move a cursor on a computer screen?",
+          "answer": "Mouse"
+        },
+        {
+          "id": "technology_d1_5",
+          "difficulty": 1,
+          "text": "What does USB stand for?",
+          "answer": "Universal Serial Bus"
+        },
+        {
+          "id": "technology_d2_1",
+          "difficulty": 2,
+          "text": "Which two digits are used in binary code?",
+          "answer": "0 and 1"
+        },
+        {
+          "id": "technology_d2_2",
+          "difficulty": 2,
+          "text": "Which web browser is developed by Mozilla?",
+          "answer": "Firefox"
+        },
+        {
+          "id": "technology_d2_3",
+          "difficulty": 2,
+          "text": "Which language is used primarily to style web pages?",
+          "answer": "CSS"
+        },
+        {
+          "id": "technology_d2_4",
+          "difficulty": 2,
+          "text": "What storage device with no moving parts is commonly abbreviated as SSD?",
+          "answer": "SSD"
+        },
+        {
+          "id": "technology_d2_5",
+          "difficulty": 2,
+          "text": "What does CPU stand for?",
+          "answer": "Central Processing Unit"
+        },
+        {
+          "id": "technology_d3_1",
+          "difficulty": 3,
+          "text": "Which operating system kernel is most associated with Linus Torvalds?",
+          "answer": "Linux"
+        },
+        {
+          "id": "technology_d3_2",
+          "difficulty": 3,
+          "text": "What does RAM stand for?",
+          "answer": "Random Access Memory"
+        },
+        {
+          "id": "technology_d3_3",
+          "difficulty": 3,
+          "text": "Which version control system is widely used on GitHub?",
+          "answer": "Git"
+        },
+        {
+          "id": "technology_d3_4",
+          "difficulty": 3,
+          "text": "What does PDF stand for?",
+          "answer": "Portable Document Format"
+        },
+        {
+          "id": "technology_d3_5",
+          "difficulty": 3,
+          "text": "Which protocol is indicated by the padlock icon in a web browser?",
+          "answer": "HTTPS"
+        },
+        {
+          "id": "technology_d4_1",
+          "difficulty": 4,
+          "text": "What architectural style breaks an application into many small independent services?",
+          "answer": "Microservices"
+        },
+        {
+          "id": "technology_d4_2",
+          "difficulty": 4,
+          "text": "Which language is commonly used to query relational databases?",
+          "answer": "SQL"
+        },
+        {
+          "id": "technology_d4_3",
+          "difficulty": 4,
+          "text": "What does API stand for?",
+          "answer": "Application Programming Interface"
+        },
+        {
+          "id": "technology_d4_4",
+          "difficulty": 4,
+          "text": "Which sensor in a smartphone measures rotation and orientation changes?",
+          "answer": "Gyroscope"
+        },
+        {
+          "id": "technology_d4_5",
+          "difficulty": 4,
+          "text": "Which network protocol automatically assigns IP addresses to devices on many home networks?",
+          "answer": "DHCP"
+        },
+        {
+          "id": "technology_d5_1",
+          "difficulty": 5,
+          "text": "What does OCR stand for?",
+          "answer": "Optical Character Recognition"
+        },
+        {
+          "id": "technology_d5_2",
+          "difficulty": 5,
+          "text": "Which data format is built around objects, arrays, and key-value pairs and is common in web APIs?",
+          "answer": "JSON"
+        },
+        {
+          "id": "technology_d5_3",
+          "difficulty": 5,
+          "text": "Which public-key cryptosystem is named after Rivest, Shamir, and Adleman?",
+          "answer": "RSA"
+        },
+        {
+          "id": "technology_d5_4",
+          "difficulty": 5,
+          "text": "What does CDN stand for?",
+          "answer": "Content Delivery Network"
+        },
+        {
+          "id": "technology_d5_5",
+          "difficulty": 5,
+          "text": "What distributed ledger technology underpins Bitcoin?",
+          "answer": "Blockchain"
+        }
+      ]
+    },
+    {
+      "id": "space",
+      "title": "Space",
+      "questions": [
+        {
+          "id": "space_d1_1",
+          "difficulty": 1,
+          "text": "Which star is closest to Earth?",
+          "answer": "Sun"
+        },
+        {
+          "id": "space_d1_2",
+          "difficulty": 1,
+          "text": "Which planet is known as the Red Planet?",
+          "answer": "Mars"
+        },
+        {
+          "id": "space_d1_3",
+          "difficulty": 1,
+          "text": "What is the natural satellite of Earth called?",
+          "answer": "Moon"
+        },
+        {
+          "id": "space_d1_4",
+          "difficulty": 1,
+          "text": "What is the largest planet in the Solar System?",
+          "answer": "Jupiter"
+        },
+        {
+          "id": "space_d1_5",
+          "difficulty": 1,
+          "text": "Who was the first human in space?",
+          "answer": "Yuri Gagarin"
+        },
+        {
+          "id": "space_d2_1",
+          "difficulty": 2,
+          "text": "What galaxy contains the Solar System?",
+          "answer": "Milky Way"
+        },
+        {
+          "id": "space_d2_2",
+          "difficulty": 2,
+          "text": "Which planet is famous for its prominent rings?",
+          "answer": "Saturn"
+        },
+        {
+          "id": "space_d2_3",
+          "difficulty": 2,
+          "text": "Which space telescope was launched in 1990 and transformed astronomy?",
+          "answer": "Hubble Space Telescope"
+        },
+        {
+          "id": "space_d2_4",
+          "difficulty": 2,
+          "text": "Who was the first person to walk on the Moon?",
+          "answer": "Neil Armstrong"
+        },
+        {
+          "id": "space_d2_5",
+          "difficulty": 2,
+          "text": "What force keeps planets in orbit around stars?",
+          "answer": "Gravity"
+        },
+        {
+          "id": "space_d3_1",
+          "difficulty": 3,
+          "text": "What is the name of the Mars rover that carried the Ingenuity helicopter?",
+          "answer": "Perseverance"
+        },
+        {
+          "id": "space_d3_2",
+          "difficulty": 3,
+          "text": "What is the nearest major galaxy to the Milky Way?",
+          "answer": "Andromeda Galaxy"
+        },
+        {
+          "id": "space_d3_3",
+          "difficulty": 3,
+          "text": "What is the boundary around a black hole beyond which light cannot escape?",
+          "answer": "Event horizon"
+        },
+        {
+          "id": "space_d3_4",
+          "difficulty": 3,
+          "text": "Which moon of Saturn is known for its thick atmosphere?",
+          "answer": "Titan"
+        },
+        {
+          "id": "space_d3_5",
+          "difficulty": 3,
+          "text": "What do you call a rock from space that survives passage through Earth's atmosphere?",
+          "answer": "Meteorite"
+        },
+        {
+          "id": "space_d4_1",
+          "difficulty": 4,
+          "text": "Which mission first landed humans on the Moon?",
+          "answer": "Apollo 11"
+        },
+        {
+          "id": "space_d4_2",
+          "difficulty": 4,
+          "text": "What is the name of the Sun's outer atmosphere visible during a total solar eclipse?",
+          "answer": "Corona"
+        },
+        {
+          "id": "space_d4_3",
+          "difficulty": 4,
+          "text": "Which planet rotates on its side relative to its orbit?",
+          "answer": "Uranus"
+        },
+        {
+          "id": "space_d4_4",
+          "difficulty": 4,
+          "text": "What is the boundary called where the solar wind is stopped by interstellar space?",
+          "answer": "Heliopause"
+        },
+        {
+          "id": "space_d4_5",
+          "difficulty": 4,
+          "text": "Which infrared telescope launched in 2021 is often called the successor to Hubble?",
+          "answer": "James Webb Space Telescope"
+        },
+        {
+          "id": "space_d5_1",
+          "difficulty": 5,
+          "text": "What is the name of the distant cloud of icy bodies thought to surround the Solar System?",
+          "answer": "Oort Cloud"
+        },
+        {
+          "id": "space_d5_2",
+          "difficulty": 5,
+          "text": "Which Soviet space station remained in orbit for about 15 years before re-entry in 2001?",
+          "answer": "Mir"
+        },
+        {
+          "id": "space_d5_3",
+          "difficulty": 5,
+          "text": "At which Earth-Sun Lagrange point does the James Webb Space Telescope operate?",
+          "answer": "L2 Lagrange point"
+        },
+        {
+          "id": "space_d5_4",
+          "difficulty": 5,
+          "text": "Which moon of Jupiter is considered one of the best places to search for a subsurface ocean?",
+          "answer": "Europa"
+        },
+        {
+          "id": "space_d5_5",
+          "difficulty": 5,
+          "text": "What name is used for the scale that measures the apparent brightness of stars?",
+          "answer": "Magnitude"
+        }
+      ]
+    },
+    {
+      "id": "nature",
+      "title": "Nature",
+      "questions": [
+        {
+          "id": "nature_d1_1",
+          "difficulty": 1,
+          "text": "What is the process by which plants use sunlight to make food?",
+          "answer": "Photosynthesis"
+        },
+        {
+          "id": "nature_d1_2",
+          "difficulty": 1,
+          "text": "What is the largest land animal living today?",
+          "answer": "African elephant"
+        },
+        {
+          "id": "nature_d1_3",
+          "difficulty": 1,
+          "text": "What do you call a baby frog before it develops legs?",
+          "answer": "Tadpole"
+        },
+        {
+          "id": "nature_d1_4",
+          "difficulty": 1,
+          "text": "Which tree is known for producing acorns?",
+          "answer": "Oak"
+        },
+        {
+          "id": "nature_d1_5",
+          "difficulty": 1,
+          "text": "Which season is most associated with leaves changing color and falling?",
+          "answer": "Autumn"
+        },
+        {
+          "id": "nature_d2_1",
+          "difficulty": 2,
+          "text": "What is the fastest land animal?",
+          "answer": "Cheetah"
+        },
+        {
+          "id": "nature_d2_2",
+          "difficulty": 2,
+          "text": "Which layer of Earth's atmosphere contains most weather phenomena?",
+          "answer": "Troposphere"
+        },
+        {
+          "id": "nature_d2_3",
+          "difficulty": 2,
+          "text": "What is the largest rainforest in the world?",
+          "answer": "Amazon Rainforest"
+        },
+        {
+          "id": "nature_d2_4",
+          "difficulty": 2,
+          "text": "What type of animal is a Komodo dragon?",
+          "answer": "Lizard"
+        },
+        {
+          "id": "nature_d2_5",
+          "difficulty": 2,
+          "text": "What is the stage of the water cycle called when water vapor forms clouds?",
+          "answer": "Condensation"
+        },
+        {
+          "id": "nature_d3_1",
+          "difficulty": 3,
+          "text": "Which egg-laying mammal is native to Australia?",
+          "answer": "Platypus"
+        },
+        {
+          "id": "nature_d3_2",
+          "difficulty": 3,
+          "text": "What term describes animals that are active mainly at night?",
+          "answer": "Nocturnal"
+        },
+        {
+          "id": "nature_d3_3",
+          "difficulty": 3,
+          "text": "What is the hottest layer of Earth's atmosphere?",
+          "answer": "Thermosphere"
+        },
+        {
+          "id": "nature_d3_4",
+          "difficulty": 3,
+          "text": "What type of tree usually has needles and cones?",
+          "answer": "Conifer"
+        },
+        {
+          "id": "nature_d3_5",
+          "difficulty": 3,
+          "text": "What is the ecological relationship called when both species benefit?",
+          "answer": "Mutualism"
+        },
+        {
+          "id": "nature_d4_1",
+          "difficulty": 4,
+          "text": "What is the deepest ocean trench on Earth?",
+          "answer": "Mariana Trench"
+        },
+        {
+          "id": "nature_d4_2",
+          "difficulty": 4,
+          "text": "What do you call an organism that breaks down dead organic matter?",
+          "answer": "Decomposer"
+        },
+        {
+          "id": "nature_d4_3",
+          "difficulty": 4,
+          "text": "What is the largest coral reef system in the world?",
+          "answer": "Great Barrier Reef"
+        },
+        {
+          "id": "nature_d4_4",
+          "difficulty": 4,
+          "text": "What is a group of wolves called?",
+          "answer": "Pack"
+        },
+        {
+          "id": "nature_d4_5",
+          "difficulty": 4,
+          "text": "Which volcanic rock can float on water because it is full of air bubbles?",
+          "answer": "Pumice"
+        },
+        {
+          "id": "nature_d5_1",
+          "difficulty": 5,
+          "text": "Which biome is characterized by permafrost and very short summers?",
+          "answer": "Tundra"
+        },
+        {
+          "id": "nature_d5_2",
+          "difficulty": 5,
+          "text": "What evolutionary process occurs when one ancestral species rapidly gives rise to many forms adapted to different niches?",
+          "answer": "Adaptive radiation"
+        },
+        {
+          "id": "nature_d5_3",
+          "difficulty": 5,
+          "text": "What ecological relationship is it when one species benefits and the other is neither helped nor harmed?",
+          "answer": "Commensalism"
+        },
+        {
+          "id": "nature_d5_4",
+          "difficulty": 5,
+          "text": "Which cloud type is most strongly associated with thunderstorms?",
+          "answer": "Cumulonimbus"
+        },
+        {
+          "id": "nature_d5_5",
+          "difficulty": 5,
+          "text": "What is the mixing zone called where a river meets the sea?",
+          "answer": "Estuary"
+        }
+      ]
+    },
+    {
+      "id": "art",
+      "title": "Art",
+      "questions": [
+        {
+          "id": "art_d1_1",
+          "difficulty": 1,
+          "text": "Who painted the Mona Lisa?",
+          "answer": "Leonardo da Vinci"
+        },
+        {
+          "id": "art_d1_2",
+          "difficulty": 1,
+          "text": "Which two colors do you mix to make purple?",
+          "answer": "Red and blue"
+        },
+        {
+          "id": "art_d1_3",
+          "difficulty": 1,
+          "text": "What is the art of folding paper called?",
+          "answer": "Origami"
+        },
+        {
+          "id": "art_d1_4",
+          "difficulty": 1,
+          "text": "Which Dutch painter is famous for The Starry Night and for cutting off part of his ear?",
+          "answer": "Vincent van Gogh"
+        },
+        {
+          "id": "art_d1_5",
+          "difficulty": 1,
+          "text": "What material is classically used for many famous sculptures?",
+          "answer": "Marble"
+        },
+        {
+          "id": "art_d2_1",
+          "difficulty": 2,
+          "text": "Which Spanish artist painted Guernica?",
+          "answer": "Pablo Picasso"
+        },
+        {
+          "id": "art_d2_2",
+          "difficulty": 2,
+          "text": "What is painting on wet plaster called?",
+          "answer": "Fresco"
+        },
+        {
+          "id": "art_d2_3",
+          "difficulty": 2,
+          "text": "What is the name of Auguste Rodin's famous seated sculpture of a man in contemplation?",
+          "answer": "The Thinker"
+        },
+        {
+          "id": "art_d2_4",
+          "difficulty": 2,
+          "text": "Which artist became famous for Campbell's soup can images?",
+          "answer": "Andy Warhol"
+        },
+        {
+          "id": "art_d2_5",
+          "difficulty": 2,
+          "text": "Which chapel has a ceiling painted by Michelangelo?",
+          "answer": "Sistine Chapel"
+        },
+        {
+          "id": "art_d3_1",
+          "difficulty": 3,
+          "text": "Which art movement is associated with Claude Monet and Pierre-Auguste Renoir?",
+          "answer": "Impressionism"
+        },
+        {
+          "id": "art_d3_2",
+          "difficulty": 3,
+          "text": "Which Japanese artist created The Great Wave off Kanagawa?",
+          "answer": "Hokusai"
+        },
+        {
+          "id": "art_d3_3",
+          "difficulty": 3,
+          "text": "What are the primary colors in traditional painting?",
+          "answer": "Red, blue, and yellow"
+        },
+        {
+          "id": "art_d3_4",
+          "difficulty": 3,
+          "text": "Which museum in Madrid is home to Las Meninas and many other Spanish masterpieces?",
+          "answer": "Prado Museum"
+        },
+        {
+          "id": "art_d3_5",
+          "difficulty": 3,
+          "text": "Who painted The Persistence of Memory with its melting clocks?",
+          "answer": "Salvador Dali"
+        },
+        {
+          "id": "art_d4_1",
+          "difficulty": 4,
+          "text": "Who designed the house Fallingwater?",
+          "answer": "Frank Lloyd Wright"
+        },
+        {
+          "id": "art_d4_2",
+          "difficulty": 4,
+          "text": "What art style emphasizes nonrepresentational shapes and colors instead of realistic subjects?",
+          "answer": "Abstract art"
+        },
+        {
+          "id": "art_d4_3",
+          "difficulty": 4,
+          "text": "What Japanese repair technique highlights cracks in ceramics with gold?",
+          "answer": "Kintsugi"
+        },
+        {
+          "id": "art_d4_4",
+          "difficulty": 4,
+          "text": "Who sculpted David?",
+          "answer": "Michelangelo"
+        },
+        {
+          "id": "art_d4_5",
+          "difficulty": 4,
+          "text": "Who painted Girl with a Pearl Earring?",
+          "answer": "Johannes Vermeer"
+        },
+        {
+          "id": "art_d5_1",
+          "difficulty": 5,
+          "text": "Which Mexican painter is famous for self-portraits and a distinctive unibrow?",
+          "answer": "Frida Kahlo"
+        },
+        {
+          "id": "art_d5_2",
+          "difficulty": 5,
+          "text": "Who painted A Sunday Afternoon on the Island of La Grande Jatte?",
+          "answer": "Georges Seurat"
+        },
+        {
+          "id": "art_d5_3",
+          "difficulty": 5,
+          "text": "Which architectural style is known for pointed arches and flying buttresses?",
+          "answer": "Gothic"
+        },
+        {
+          "id": "art_d5_4",
+          "difficulty": 5,
+          "text": "Which sculptor is famous for creating mobile kinetic sculptures?",
+          "answer": "Alexander Calder"
+        },
+        {
+          "id": "art_d5_5",
+          "difficulty": 5,
+          "text": "What printmaking technique uses a design carved into linoleum?",
+          "answer": "Linocut"
+        }
+      ]
+    },
+    {
+      "id": "cities",
+      "title": "Cities",
+      "questions": [
+        {
+          "id": "cities_d1_1",
+          "difficulty": 1,
+          "text": "In which city is Big Ben located?",
+          "answer": "London"
+        },
+        {
+          "id": "cities_d1_2",
+          "difficulty": 1,
+          "text": "In which city is the Eiffel Tower located?",
+          "answer": "Paris"
+        },
+        {
+          "id": "cities_d1_3",
+          "difficulty": 1,
+          "text": "In which city is the Colosseum located?",
+          "answer": "Rome"
+        },
+        {
+          "id": "cities_d1_4",
+          "difficulty": 1,
+          "text": "In which city is the Statue of Liberty located?",
+          "answer": "New York City"
+        },
+        {
+          "id": "cities_d1_5",
+          "difficulty": 1,
+          "text": "In which city is the famous Opera House with sail-like roofs located?",
+          "answer": "Sydney"
+        },
+        {
+          "id": "cities_d2_1",
+          "difficulty": 2,
+          "text": "Which city lies on two continents and is divided by the Bosporus?",
+          "answer": "Istanbul"
+        },
+        {
+          "id": "cities_d2_2",
+          "difficulty": 2,
+          "text": "Which Italian city is famous for canals and gondolas?",
+          "answer": "Venice"
+        },
+        {
+          "id": "cities_d2_3",
+          "difficulty": 2,
+          "text": "In which city would you find the Sagrada Familia?",
+          "answer": "Barcelona"
+        },
+        {
+          "id": "cities_d2_4",
+          "difficulty": 2,
+          "text": "Which city is home to the Burj Khalifa?",
+          "answer": "Dubai"
+        },
+        {
+          "id": "cities_d2_5",
+          "difficulty": 2,
+          "text": "Which city is famous for the Christ the Redeemer statue?",
+          "answer": "Rio de Janeiro"
+        },
+        {
+          "id": "cities_d3_1",
+          "difficulty": 3,
+          "text": "Which city is nicknamed the Windy City?",
+          "answer": "Chicago"
+        },
+        {
+          "id": "cities_d3_2",
+          "difficulty": 3,
+          "text": "In which city is the Acropolis located?",
+          "answer": "Athens"
+        },
+        {
+          "id": "cities_d3_3",
+          "difficulty": 3,
+          "text": "Which city is home to Red Square and Saint Basil's Cathedral?",
+          "answer": "Moscow"
+        },
+        {
+          "id": "cities_d3_4",
+          "difficulty": 3,
+          "text": "Which South African city is overlooked by Table Mountain?",
+          "answer": "Cape Town"
+        },
+        {
+          "id": "cities_d3_5",
+          "difficulty": 3,
+          "text": "In which city would you find the Brandenburg Gate?",
+          "answer": "Berlin"
+        },
+        {
+          "id": "cities_d4_1",
+          "difficulty": 4,
+          "text": "Which city is famous for its canals and the Anne Frank House?",
+          "answer": "Amsterdam"
+        },
+        {
+          "id": "cities_d4_2",
+          "difficulty": 4,
+          "text": "Which city is known for Shibuya Crossing and Tokyo Tower?",
+          "answer": "Tokyo"
+        },
+        {
+          "id": "cities_d4_3",
+          "difficulty": 4,
+          "text": "Which city is home to the CN Tower?",
+          "answer": "Toronto"
+        },
+        {
+          "id": "cities_d4_4",
+          "difficulty": 4,
+          "text": "Which city is often called the Pearl of the Danube?",
+          "answer": "Budapest"
+        },
+        {
+          "id": "cities_d4_5",
+          "difficulty": 4,
+          "text": "In which city is the Golden Gate Bridge located?",
+          "answer": "San Francisco"
+        },
+        {
+          "id": "cities_d5_1",
+          "difficulty": 5,
+          "text": "Which city is home to the Gateway of India?",
+          "answer": "Mumbai"
+        },
+        {
+          "id": "cities_d5_2",
+          "difficulty": 5,
+          "text": "Which Moroccan city is famous for the Jemaa el-Fnaa square?",
+          "answer": "Marrakech"
+        },
+        {
+          "id": "cities_d5_3",
+          "difficulty": 5,
+          "text": "Which city is associated with the Petronas Twin Towers?",
+          "answer": "Kuala Lumpur"
+        },
+        {
+          "id": "cities_d5_4",
+          "difficulty": 5,
+          "text": "Which European capital is known as the City of a Hundred Spires?",
+          "answer": "Prague"
+        },
+        {
+          "id": "cities_d5_5",
+          "difficulty": 5,
+          "text": "Which city is built around the Zocalo and the Palacio de Bellas Artes?",
+          "answer": "Mexico City"
+        }
+      ]
+    },
+    {
+      "id": "inventions",
+      "title": "Inventions",
+      "questions": [
+        {
+          "id": "inventions_d1_1",
+          "difficulty": 1,
+          "text": "Who is usually credited with the invention of the telephone?",
+          "answer": "Alexander Graham Bell"
+        },
+        {
+          "id": "inventions_d1_2",
+          "difficulty": 1,
+          "text": "Which brothers built the first successful powered airplane?",
+          "answer": "Wright brothers"
+        },
+        {
+          "id": "inventions_d1_3",
+          "difficulty": 1,
+          "text": "What invention is used to tell time with hands or a digital display?",
+          "answer": "Clock"
+        },
+        {
+          "id": "inventions_d1_4",
+          "difficulty": 1,
+          "text": "What common invention provides electric light in homes?",
+          "answer": "Light bulb"
+        },
+        {
+          "id": "inventions_d1_5",
+          "difficulty": 1,
+          "text": "What invention is used to capture photographs?",
+          "answer": "Camera"
+        },
+        {
+          "id": "inventions_d2_1",
+          "difficulty": 2,
+          "text": "Who invented the World Wide Web?",
+          "answer": "Tim Berners-Lee"
+        },
+        {
+          "id": "inventions_d2_2",
+          "difficulty": 2,
+          "text": "What machine transfers text or images from a computer onto paper?",
+          "answer": "Printer"
+        },
+        {
+          "id": "inventions_d2_3",
+          "difficulty": 2,
+          "text": "What optical invention helps people observe distant objects in the sky?",
+          "answer": "Telescope"
+        },
+        {
+          "id": "inventions_d2_4",
+          "difficulty": 2,
+          "text": "What invention made long-distance voice communication portable and pocket-sized?",
+          "answer": "Mobile phone"
+        },
+        {
+          "id": "inventions_d2_5",
+          "difficulty": 2,
+          "text": "Who patented the phonograph?",
+          "answer": "Thomas Edison"
+        },
+        {
+          "id": "inventions_d3_1",
+          "difficulty": 3,
+          "text": "What invention by Johannes Gutenberg transformed book production in Europe?",
+          "answer": "Printing press"
+        },
+        {
+          "id": "inventions_d3_2",
+          "difficulty": 3,
+          "text": "What device uses satellite signals to help drivers find their route?",
+          "answer": "Navigation system"
+        },
+        {
+          "id": "inventions_d3_3",
+          "difficulty": 3,
+          "text": "What kitchen appliance emerged from Percy Spencer's radar research?",
+          "answer": "Microwave oven"
+        },
+        {
+          "id": "inventions_d3_4",
+          "difficulty": 3,
+          "text": "What safety invention inflates to protect passengers during a car crash?",
+          "answer": "Airbag"
+        },
+        {
+          "id": "inventions_d3_5",
+          "difficulty": 3,
+          "text": "What device records sound onto magnetic tape?",
+          "answer": "Tape recorder"
+        },
+        {
+          "id": "inventions_d4_1",
+          "difficulty": 4,
+          "text": "What invention by Karl Benz is often called the first practical automobile?",
+          "answer": "Automobile"
+        },
+        {
+          "id": "inventions_d4_2",
+          "difficulty": 4,
+          "text": "What device converts sunlight directly into electricity?",
+          "answer": "Solar panel"
+        },
+        {
+          "id": "inventions_d4_3",
+          "difficulty": 4,
+          "text": "What invention by Willis Carrier made modern climate control possible?",
+          "answer": "Air conditioner"
+        },
+        {
+          "id": "inventions_d4_4",
+          "difficulty": 4,
+          "text": "What underwater detection technology uses sound waves to locate objects?",
+          "answer": "Sonar"
+        },
+        {
+          "id": "inventions_d4_5",
+          "difficulty": 4,
+          "text": "What invention by John Logie Baird helped bring moving images into homes?",
+          "answer": "Television"
+        },
+        {
+          "id": "inventions_d5_1",
+          "difficulty": 5,
+          "text": "What software invention associated with Grace Hopper translates source code into machine instructions?",
+          "answer": "Compiler"
+        },
+        {
+          "id": "inventions_d5_2",
+          "difficulty": 5,
+          "text": "What manufacturing invention creates objects layer by layer from a digital model?",
+          "answer": "3D printer"
+        },
+        {
+          "id": "inventions_d5_3",
+          "difficulty": 5,
+          "text": "What medical imaging invention uses strong magnetic fields instead of X-rays?",
+          "answer": "MRI scanner"
+        },
+        {
+          "id": "inventions_d5_4",
+          "difficulty": 5,
+          "text": "What writing invention is named after Laszlo Biro?",
+          "answer": "Ballpoint pen"
+        },
+        {
+          "id": "inventions_d5_5",
+          "difficulty": 5,
+          "text": "What semiconductor invention by Bardeen, Brattain, and Shockley revolutionized electronics?",
+          "answer": "Transistor"
+        }
+      ]
+    },
+    {
+      "id": "series",
+      "title": "TV Series",
+      "questions": [
+        {
+          "id": "series_d1_1",
+          "difficulty": 1,
+          "text": "What is the name of the coffee shop where the friends often meet in Friends?",
+          "answer": "Central Perk"
+        },
+        {
+          "id": "series_d1_2",
+          "difficulty": 1,
+          "text": "What is the name of the chemistry teacher who becomes a drug kingpin in Breaking Bad?",
+          "answer": "Walter White"
+        },
+        {
+          "id": "series_d1_3",
+          "difficulty": 1,
+          "text": "What paper company do the characters work for in The Office?",
+          "answer": "Dunder Mifflin"
+        },
+        {
+          "id": "series_d1_4",
+          "difficulty": 1,
+          "text": "Which fantasy series revolves around the Iron Throne?",
+          "answer": "Game of Thrones"
+        },
+        {
+          "id": "series_d1_5",
+          "difficulty": 1,
+          "text": "What family is at the center of The Simpsons?",
+          "answer": "The Simpsons"
+        },
+        {
+          "id": "series_d2_1",
+          "difficulty": 2,
+          "text": "Which medical drama follows the career of Dr. Meredith Grey?",
+          "answer": "Grey's Anatomy"
+        },
+        {
+          "id": "series_d2_2",
+          "difficulty": 2,
+          "text": "What monster from the Upside Down terrorizes Hawkins in Stranger Things?",
+          "answer": "Demogorgon"
+        },
+        {
+          "id": "series_d2_3",
+          "difficulty": 2,
+          "text": "What is the name of the pub where the gang often meets in How I Met Your Mother?",
+          "answer": "MacLaren's Pub"
+        },
+        {
+          "id": "series_d2_4",
+          "difficulty": 2,
+          "text": "Which Star Wars series follows a bounty hunter protecting Grogu?",
+          "answer": "The Mandalorian"
+        },
+        {
+          "id": "series_d2_5",
+          "difficulty": 2,
+          "text": "In which city is The Wire set?",
+          "answer": "Baltimore"
+        },
+        {
+          "id": "series_d3_1",
+          "difficulty": 3,
+          "text": "What is the name of the time machine and spacecraft in Doctor Who?",
+          "answer": "TARDIS"
+        },
+        {
+          "id": "series_d3_2",
+          "difficulty": 3,
+          "text": "What company creates the android hosts in Westworld?",
+          "answer": "Delos"
+        },
+        {
+          "id": "series_d3_3",
+          "difficulty": 3,
+          "text": "What royal house does The Crown follow?",
+          "answer": "House of Windsor"
+        },
+        {
+          "id": "series_d3_4",
+          "difficulty": 3,
+          "text": "What is the codename of the mastermind behind the heists in Money Heist?",
+          "answer": "The Professor"
+        },
+        {
+          "id": "series_d3_5",
+          "difficulty": 3,
+          "text": "What is the name of the startup created by the main characters in Silicon Valley?",
+          "answer": "Pied Piper"
+        },
+        {
+          "id": "series_d4_1",
+          "difficulty": 4,
+          "text": "Which anthology crime series features Rust Cohle in its first season?",
+          "answer": "True Detective"
+        },
+        {
+          "id": "series_d4_2",
+          "difficulty": 4,
+          "text": "What company performs the severance procedure in Severance?",
+          "answer": "Lumon"
+        },
+        {
+          "id": "series_d4_3",
+          "difficulty": 4,
+          "text": "What advertising agency is at the center of Mad Men?",
+          "answer": "Sterling Cooper"
+        },
+        {
+          "id": "series_d4_4",
+          "difficulty": 4,
+          "text": "What is the name of the mob boss played by James Gandolfini in The Sopranos?",
+          "answer": "Tony Soprano"
+        },
+        {
+          "id": "series_d4_5",
+          "difficulty": 4,
+          "text": "What is the name of the spaceship used by Holden's crew in The Expanse?",
+          "answer": "Rocinante"
+        },
+        {
+          "id": "series_d5_1",
+          "difficulty": 5,
+          "text": "Which series features several clone sisters all played by Tatiana Maslany?",
+          "answer": "Orphan Black"
+        },
+        {
+          "id": "series_d5_2",
+          "difficulty": 5,
+          "text": "What organization built the mysterious hatch and stations in Lost?",
+          "answer": "Dharma Initiative"
+        },
+        {
+          "id": "series_d5_3",
+          "difficulty": 5,
+          "text": "What media empire is at the center of Succession?",
+          "answer": "Waystar Royco"
+        },
+        {
+          "id": "series_d5_4",
+          "difficulty": 5,
+          "text": "Which Shakespeare character is reimagined through Jax Teller in Sons of Anarchy?",
+          "answer": "Hamlet"
+        },
+        {
+          "id": "series_d5_5",
+          "difficulty": 5,
+          "text": "What fictional town gives its name to the mystery series created by David Lynch and Mark Frost?",
+          "answer": "Twin Peaks"
+        }
+      ]
+    }
+  ]
+}

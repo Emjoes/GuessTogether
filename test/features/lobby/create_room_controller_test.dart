@@ -209,8 +209,8 @@ void main() {
 
     final CreateRoomController c =
         container.read(createRoomControllerProvider.notifier);
-    c.setPackageFileName('general_quiz_pack.json');
-    expect(c.state.packageFileName, 'general_quiz_pack.json');
+    c.setPackageFileName(defaultRoomPackageFileName);
+    expect(c.state.packageFileName, defaultRoomPackageFileName);
   });
 
   test('CreateRoomController uses standard package and three rounds', () async {

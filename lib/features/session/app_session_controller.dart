@@ -44,6 +44,8 @@ final appSessionControllerProvider =
 final appBackendApiProvider = Provider<AppBackendApi>((ref) {
   final String baseHttpUrl = ref.watch(backendBaseHttpUrlProvider);
   final String baseWsUrl = ref.watch(backendBaseWsUrlProvider);
+  final String languageCode =
+      ref.watch(appLanguageProvider).locale.languageCode;
   final String? sessionToken = ref
       .watch(appSessionControllerProvider)
       .valueOrNull
@@ -53,6 +55,7 @@ final appBackendApiProvider = Provider<AppBackendApi>((ref) {
     baseHttpUrl: baseHttpUrl,
     baseWsUrl: baseWsUrl,
     sessionToken: sessionToken,
+    languageCode: languageCode,
   );
 });
 
@@ -111,10 +114,15 @@ class AppSessionController extends AsyncNotifier<AppSessionState> {
   HttpAppBackendApi _client({String? sessionToken}) {
     final String baseHttpUrl = ref.read(backendBaseHttpUrlProvider);
     final String baseWsUrl = ref.read(backendBaseWsUrlProvider);
+    final String languageCode =
+        (state.valueOrNull?.appLanguage ?? defaultAppLanguageFromSystem())
+            .locale
+            .languageCode;
     return HttpAppBackendApi(
       baseHttpUrl: baseHttpUrl,
       baseWsUrl: baseWsUrl,
       sessionToken: sessionToken,
+      languageCode: languageCode,
     );
   }
 

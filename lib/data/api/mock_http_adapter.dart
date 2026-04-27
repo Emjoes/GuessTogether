@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:guesstogether/core/constants/question_packages.dart';
 import 'package:guesstogether/core/debug/loading_debug_gate.dart';
 import 'package:guesstogether/data/api/game_api.dart';
 
@@ -106,7 +107,7 @@ class MockHttpAdapter implements GameApi {
       ),
       hostPlayerId: 'p1',
       roomPassword: '4321',
-      packageFileName: 'general_quiz_pack.json',
+      packageFileName: standardQuestionPackFileName,
       participants: <RoomParticipant>[
         RoomParticipant(
           id: 'p1',

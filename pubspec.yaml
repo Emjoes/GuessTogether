@@ -1,5 +1,5 @@
 name: guesstogether
-description: A Guess Together multiplayer quiz app with mock realtime adapters.
+description: Mobile quiz game where players compete with each other in real time, guessing answers together in engaging and interactive matches.
 publish_to: "none"
 
 version: 1.0.1+101
@@ -29,6 +29,7 @@ dependencies:
   intl: ^0.20.2
   file_picker: ^10.3.10
   postgres: ^3.5.9
+  package_info_plus: ^9.0.1
 
 dev_dependencies:
   flutter_test:
@@ -44,4 +45,3 @@ flutter:
     - assets/icons/
     - assets/images/
     - assets/fonts/google_fonts/
-

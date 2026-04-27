@@ -1,18 +1,37 @@
 import 'dart:math' as math;
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+
+final appVersionProvider = FutureProvider<AppVersionInfo>((ref) async {
+  final PackageInfo packageInfo = await PackageInfo.fromPlatform();
+  return AppVersionInfo.fromPackageInfo(packageInfo);
+});
+
+class AppVersionInfo {
+  const AppVersionInfo({
+    required this.current,
+    required this.buildNumber,
+  });
+
+  factory AppVersionInfo.fromPackageInfo(PackageInfo packageInfo) {
+    return AppVersionInfo(
+      current: _normalizedVersion(packageInfo.version),
+      buildNumber: int.tryParse(packageInfo.buildNumber) ?? 0,
+    );
+  }
+
+  final String current;
+  final int buildNumber;
+
+  String get display => current;
+}
+
 class AppVersion {
   AppVersion._();
 
-  static const String current =
-      String.fromEnvironment('APP_VERSION', defaultValue: '1.0.1');
-  static const int buildNumber =
-      int.fromEnvironment('APP_BUILD_NUMBER', defaultValue: 101);
-
-  // Human-facing version shown in the app UI.
-  static const String display = current;
-
-  static bool isAtLeast(String requiredVersion) {
-    return compare(current, requiredVersion) >= 0;
+  static bool isAtLeast(String currentVersion, String requiredVersion) {
+    return compare(currentVersion, requiredVersion) >= 0;
   }
 
   static int compare(String left, String right) {
@@ -42,4 +61,9 @@ class AppVersion {
         .toList(growable: false);
     return parts.isEmpty ? const <int>[0] : parts;
   }
+}
+
+String _normalizedVersion(String version) {
+  final String trimmed = version.trim();
+  return trimmed.isEmpty ? '0.0.0' : trimmed;
 }

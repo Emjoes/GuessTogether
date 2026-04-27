@@ -30,6 +30,7 @@ void main() {
         ),
       ),
     );
+    await tester.pump();
 
     expect(find.text('Create Room'), findsOneWidget);
     expect(find.text('v1.0.1'), findsOneWidget);

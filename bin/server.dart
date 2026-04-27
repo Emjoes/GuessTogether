@@ -11,15 +11,17 @@ import 'package:shelf_router/shelf_router.dart';
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
-import 'package:guesstogether/core/app_version.dart';
 import 'package:guesstogether/data/api/backend_models.dart';
 import 'package:guesstogether/data/api/game_api.dart';
+import 'package:guesstogether/core/constants/question_packages.dart';
 import 'package:guesstogether/features/game/domain/game_models.dart';
 import 'package:guesstogether/features/game/domain/game_state_machine.dart';
+import 'package:guesstogether/server/question_pack_builder.dart';
 
 const String _defaultDatabaseUrl =
     'postgresql://postgres:postgres@localhost:5432/'
     'guesstogether?sslmode=disable';
+const String _fallbackAppVersion = '0.0.0';
 
 Future<void> main() async {
   try {
@@ -97,10 +99,28 @@ int _serverPortFromEnvironment() {
   return int.tryParse(configured) ?? 8080;
 }
 
+String _appVersionFromPubspec() {
+  try {
+    final File pubspecFile = File('pubspec.yaml');
+    if (!pubspecFile.existsSync()) {
+      return _fallbackAppVersion;
+    }
+
+    final Match? match = RegExp(
+      r'^version:\s*([^\s+]+)(?:\+\d+)?\s*$',
+      multiLine: true,
+    ).firstMatch(pubspecFile.readAsStringSync());
+    final String? version = match?.group(1)?.trim();
+    return version == null || version.isEmpty ? _fallbackAppVersion : version;
+  } catch (_) {
+    return _fallbackAppVersion;
+  }
+}
+
 String _latestAppVersionFromEnvironment() {
   final String configured =
       Platform.environment['APP_LATEST_VERSION']?.trim() ?? '';
-  return configured.isEmpty ? AppVersion.current : configured;
+  return configured.isEmpty ? _appVersionFromPubspec() : configured;
 }
 
 String _minimumSupportedAppVersionFromEnvironment() {
@@ -111,7 +131,7 @@ String _minimumSupportedAppVersionFromEnvironment() {
 
 class AppServer {
   static const Duration _hostlessRoomGracePeriod = Duration(seconds: 45);
-  static const String _defaultPackageFileName = 'general_quiz_pack.json';
+  static const String _defaultPackageFileName = standardQuestionPackFileName;
 
   AppServer.fromEnvironment()
       : this(
@@ -127,8 +147,8 @@ class AppServer {
     String host = '127.0.0.1',
     int port = 8080,
     String databaseUrl = _defaultDatabaseUrl,
-    String latestAppVersion = AppVersion.current,
-    String minimumSupportedAppVersion = AppVersion.current,
+    String latestAppVersion = _fallbackAppVersion,
+    String minimumSupportedAppVersion = _fallbackAppVersion,
   })  : _host = host,
         _port = port,
         _latestAppVersion = latestAppVersion,
@@ -146,8 +166,8 @@ class AppServer {
   final String _latestAppVersion;
   final String _minimumSupportedAppVersion;
   final _AppStateStore _store;
-  final Map<String, Map<String, WebSocketChannel>> _roomSockets =
-      <String, Map<String, WebSocketChannel>>{};
+  final Map<String, Map<String, _RoomSocketClient>> _roomSockets =
+      <String, Map<String, _RoomSocketClient>>{};
   Timer? _matchTicker;
 
   Future<void> start() async {
@@ -299,13 +319,28 @@ class AppServer {
     );
   }
 
-  RoomDetails _roomDetailsForUser(StoredRoom room, StoredUser user) {
+  Future<RoomDetails> _roomDetailsForUser(
+    StoredRoom room,
+    StoredUser user, {
+    String? languageCode,
+  }) async {
+    final String effectiveLanguageCode = _resolvedLanguageCode(
+      explicitLanguageCode: languageCode,
+      storedLanguageCode: user.settings.languageCode,
+    );
+    final GameState? localizedGameState = room.gameState == null
+        ? null
+        : await _store.localizeGameState(
+            room.packageFileName,
+            room.gameState!,
+            languageCode: effectiveLanguageCode,
+          );
     return RoomDetails(
       summary: _roomSummaryForUser(room, user),
       hostPlayerId: room.hostUserId,
       roomPassword: room.password,
       packageFileName: room.packageFileName,
-      gameState: room.gameState,
+      gameState: localizedGameState,
       participants: room.participants
           .map(
             (StoredRoomParticipant participant) => RoomParticipant(
@@ -319,27 +354,64 @@ class AppServer {
     );
   }
 
+  String _languageCodeFromRequest(Request request, StoredUser user) {
+    return _resolvedLanguageCode(
+      explicitLanguageCode: request.headers['x-language-code'] ??
+          request.url.queryParameters['languageCode'],
+      storedLanguageCode: user.settings.languageCode,
+    );
+  }
+
+  String _resolvedLanguageCode({
+    String? explicitLanguageCode,
+    String? storedLanguageCode,
+  }) {
+    final String explicit = _normalizeLanguageCode(explicitLanguageCode);
+    if (explicit.isNotEmpty) {
+      return explicit;
+    }
+    return _normalizeLanguageCode(storedLanguageCode);
+  }
+
+  String _normalizeLanguageCode(String? languageCode) {
+    switch ((languageCode ?? '').trim().toLowerCase()) {
+      case 'ru':
+      case 'russian':
+        return 'ru';
+      case 'en':
+      case 'english':
+        return 'en';
+      default:
+        return '';
+    }
+  }
+
   Future<void> _broadcastRoom(StoredRoom room,
       {required String eventType}) async {
-    final Map<String, WebSocketChannel>? roomSockets = _roomSockets[room.id];
+    final Map<String, _RoomSocketClient>? roomSockets = _roomSockets[room.id];
     if (roomSockets == null || roomSockets.isEmpty) {
       return;
     }
 
-    final List<MapEntry<String, WebSocketChannel>> entries =
+    final List<MapEntry<String, _RoomSocketClient>> entries =
         roomSockets.entries.toList();
-    for (final MapEntry<String, WebSocketChannel> entry in entries) {
+    for (final MapEntry<String, _RoomSocketClient> entry in entries) {
       final StoredUser? user = _store.findUserById(entry.key);
       if (user == null) {
         continue;
       }
+      final RoomDetails roomDetails = await _roomDetailsForUser(
+        room,
+        user,
+        languageCode: entry.value.languageCode,
+      );
       final RoomRealtimeMessage payload = RoomRealtimeMessage(
         type: eventType,
-        room: _roomDetailsForUser(room, user),
-        gameState: room.gameState,
+        room: roomDetails,
+        gameState: roomDetails.gameState,
       );
       try {
-        entry.value.sink.add(jsonEncode(payload.toJson()));
+        entry.value.channel.sink.add(jsonEncode(payload.toJson()));
       } catch (_) {
         roomSockets.remove(entry.key);
       }
@@ -347,26 +419,31 @@ class AppServer {
   }
 
   Future<void> _broadcastAndCloseRoom(StoredRoom room) async {
-    final Map<String, WebSocketChannel>? roomSockets = _roomSockets[room.id];
+    final Map<String, _RoomSocketClient>? roomSockets = _roomSockets[room.id];
     if (roomSockets == null || roomSockets.isEmpty) {
       return;
     }
 
-    final List<MapEntry<String, WebSocketChannel>> entries =
+    final List<MapEntry<String, _RoomSocketClient>> entries =
         roomSockets.entries.toList();
-    for (final MapEntry<String, WebSocketChannel> entry in entries) {
+    for (final MapEntry<String, _RoomSocketClient> entry in entries) {
       final StoredUser? user = _store.findUserById(entry.key);
       if (user == null) {
         continue;
       }
+      final RoomDetails roomDetails = await _roomDetailsForUser(
+        room,
+        user,
+        languageCode: entry.value.languageCode,
+      );
       final RoomRealtimeMessage payload = RoomRealtimeMessage(
         type: 'room_closed',
-        room: _roomDetailsForUser(room, user),
-        gameState: room.gameState,
+        room: roomDetails,
+        gameState: roomDetails.gameState,
       );
       try {
-        entry.value.sink.add(jsonEncode(payload.toJson()));
-        await entry.value.sink.close();
+        entry.value.channel.sink.add(jsonEncode(payload.toJson()));
+        await entry.value.channel.sink.close();
       } catch (_) {
         // Ignore socket shutdown errors while closing the room.
       }
@@ -381,13 +458,13 @@ class AppServer {
     if (notifyClients) {
       await _broadcastAndCloseRoom(room);
     } else {
-      final Map<String, WebSocketChannel>? roomSockets = _roomSockets.remove(
+      final Map<String, _RoomSocketClient>? roomSockets = _roomSockets.remove(
         room.id,
       );
       if (roomSockets != null) {
-        for (final WebSocketChannel socket in roomSockets.values) {
+        for (final _RoomSocketClient socket in roomSockets.values) {
           try {
-            await socket.sink.close();
+            await socket.channel.sink.close();
           } catch (_) {
             // Ignore socket shutdown errors during cleanup.
           }
@@ -423,7 +500,7 @@ class AppServer {
   Future<void> _handleSocketClosed({
     required String roomId,
     required String userId,
-    required Map<String, WebSocketChannel> sockets,
+    required Map<String, _RoomSocketClient> sockets,
   }) async {
     final StoredRoom? latestRoom = _store.findRoomById(roomId);
     final StoredRoomParticipant? latestParticipant =
@@ -538,10 +615,16 @@ class AppServer {
           ),
         )
         .toList(growable: false);
-    final List<Question> boardQuestions = await _store.loadQuestionsForRoom(
-      room.packageFileName,
-      rounds: room.rounds,
-    );
+    final List<Question> boardQuestions;
+    if (room.questionSet.isNotEmpty) {
+      boardQuestions = _cloneQuestions(room.questionSet);
+    } else {
+      boardQuestions = await _store.buildQuestionSetForRoom(
+        room.packageFileName,
+        rounds: room.rounds,
+      );
+      room.questionSet = _cloneQuestions(boardQuestions);
+    }
     return GameStateMachine.initialMatch(
       players,
       boardQuestions: boardQuestions,
@@ -978,6 +1061,13 @@ class AppServer {
         maxPlayers: (json['maxPlayers'] as num?)?.toInt() ?? 4,
         packageFileName: (json['packageFileName'] as String? ?? '').trim(),
       );
+      final String packageFileName = createRoomRequest.packageFileName.isEmpty
+          ? _defaultPackageFileName
+          : createRoomRequest.packageFileName;
+      final List<Question> questionSet = await _store.buildQuestionSetForRoom(
+        packageFileName,
+        rounds: createRoomRequest.rounds,
+      );
 
       final StoredRoom room = StoredRoom(
         id: _store.nextId('room'),
@@ -993,9 +1083,8 @@ class AppServer {
         maxPlayers: createRoomRequest.maxPlayers.clamp(2, 8),
         password: createRoomRequest.password,
         hostUserId: user.id,
-        packageFileName: createRoomRequest.packageFileName.isEmpty
-            ? _defaultPackageFileName
-            : createRoomRequest.packageFileName,
+        packageFileName: packageFileName,
+        questionSet: questionSet,
         status: RoomLifecycleStatus.waiting,
         matchProgress: StoredMatchProgress(),
         participants: <StoredRoomParticipant>[
@@ -1061,7 +1150,14 @@ class AppServer {
       final StoredUser user = _requireUser(request);
       final StoredRoom room = _requireRoom(roomId);
       _requireRoomMember(room, user);
-      return _json(_roomDetailsForUser(room, user).toJson());
+      return _json(
+        (await _roomDetailsForUser(
+          room,
+          user,
+          languageCode: _languageCodeFromRequest(request, user),
+        ))
+            .toJson(),
+      );
     });
   }
 
@@ -1079,12 +1175,12 @@ class AppServer {
       );
       final StoredRoomParticipant? participant =
           _findParticipant(room, user.id);
-      final WebSocketChannel? socket = _roomSockets[room.id]?.remove(user.id);
+      final _RoomSocketClient? socket = _roomSockets[room.id]?.remove(user.id);
       if (_roomSockets[room.id]?.isEmpty ?? false) {
         _roomSockets.remove(room.id);
       }
       try {
-        await socket?.sink.close();
+        await socket?.channel.sink.close();
       } catch (_) {
         // Ignore socket shutdown errors during explicit leave.
       }
@@ -1341,9 +1437,12 @@ class AppServer {
         if (user.id == room.hostUserId) {
           room.hostDisconnectedAtEpochMs = null;
         }
-        final Map<String, WebSocketChannel> sockets = _roomSockets.putIfAbsent(
-            room.id, () => <String, WebSocketChannel>{});
-        sockets[user.id] = webSocket;
+        final Map<String, _RoomSocketClient> sockets = _roomSockets.putIfAbsent(
+            room.id, () => <String, _RoomSocketClient>{});
+        sockets[user.id] = _RoomSocketClient(
+          channel: webSocket,
+          languageCode: _languageCodeFromRequest(request, user),
+        );
         await _store.save();
         await _broadcastRoom(room, eventType: 'room_state');
 
@@ -1381,6 +1480,16 @@ class ApiError implements Exception {
   final String message;
 }
 
+class _RoomSocketClient {
+  const _RoomSocketClient({
+    required this.channel,
+    required this.languageCode,
+  });
+
+  final WebSocketChannel channel;
+  final String languageCode;
+}
+
 class _AppStateStore {
   _AppStateStore({
     required String databaseUrl,
@@ -1402,6 +1511,29 @@ class _AppStateStore {
     required int rounds,
   }) {
     return _database.loadQuestions(packageFileName, rounds: rounds);
+  }
+
+  Future<List<Question>> buildQuestionSetForRoom(
+    String packageFileName, {
+    required int rounds,
+  }) {
+    return _database.buildQuestionSetForRoom(
+      packageFileName,
+      rounds: rounds,
+      random: _random,
+    );
+  }
+
+  Future<GameState> localizeGameState(
+    String packageFileName,
+    GameState gameState, {
+    String? languageCode,
+  }) {
+    return _database.localizeGameState(
+      packageFileName,
+      gameState,
+      languageCode: languageCode,
+    );
   }
 
   Future<void> load() async {
@@ -1597,6 +1729,7 @@ class _PostgresDatabase {
         password TEXT NOT NULL,
         host_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         package_file_name TEXT NOT NULL,
+        question_set_json TEXT NOT NULL DEFAULT '',
         status TEXT NOT NULL,
         phase TEXT,
         is_paused BOOLEAN NOT NULL DEFAULT FALSE,
@@ -1710,6 +1843,12 @@ class _PostgresDatabase {
       ADD COLUMN IF NOT EXISTS ended_by_abandonment BOOLEAN NOT NULL DEFAULT FALSE
       ''',
     );
+    await connection.execute(
+      '''
+      ALTER TABLE rooms
+      ADD COLUMN IF NOT EXISTS question_set_json TEXT NOT NULL DEFAULT ''
+      ''',
+    );
   }
 
   Future<bool> _needsSchemaReset(Connection connection) async {
@@ -1811,6 +1950,30 @@ class _PostgresDatabase {
     required int rounds,
   }) {
     return _packageRepository.loadQuestions(packageFileName, rounds: rounds);
+  }
+
+  Future<List<Question>> buildQuestionSetForRoom(
+    String packageFileName, {
+    required int rounds,
+    required Random random,
+  }) {
+    return _packageRepository.buildQuestionSetForRoom(
+      packageFileName,
+      rounds: rounds,
+      random: random,
+    );
+  }
+
+  Future<GameState> localizeGameState(
+    String packageFileName,
+    GameState gameState, {
+    String? languageCode,
+  }) {
+    return _packageRepository.localizeGameState(
+      gameState,
+      packageFileName: packageFileName,
+      languageCode: languageCode,
+    );
   }
 
   Future<List<StoredUser>> loadUsers() async {
@@ -1951,6 +2114,7 @@ class _PostgresDatabase {
         password,
         host_user_id,
         package_file_name,
+        question_set_json,
         status,
         phase,
         is_paused,
@@ -1985,6 +2149,9 @@ class _PostgresDatabase {
         password: _stringValue(columns['password']),
         hostUserId: _stringValue(columns['host_user_id']),
         packageFileName: _stringValue(columns['package_file_name']),
+        questionSet: _decodeQuestions(
+          _stringValue(columns['question_set_json']),
+        ),
         status: _parseRoomLifecycleStatus(_stringValue(columns['status'])),
         hostDisconnectedAtEpochMs: null,
         participants: <StoredRoomParticipant>[],
@@ -2314,6 +2481,7 @@ class _PostgresDatabase {
               password,
               host_user_id,
               package_file_name,
+              question_set_json,
               status,
               phase,
               is_paused,
@@ -2343,6 +2511,7 @@ class _PostgresDatabase {
               @password,
               @hostUserId,
               @packageFileName,
+              @questionSetJson,
               @status,
               @phase,
               @isPaused,
@@ -2399,6 +2568,7 @@ class _PostgresDatabase {
             'password': room.password,
             'hostUserId': room.hostUserId,
             'packageFileName': room.packageFileName,
+            'questionSetJson': _encodeQuestions(room.questionSet),
             'status': room.status.name,
           },
         );
@@ -2599,10 +2769,12 @@ class _LoadedGameState {
     StoredRoom room,
     _QuestionPackageRepository packageRepository,
   ) async {
-    final List<Question> boardQuestions = await packageRepository.loadQuestions(
-      room.packageFileName,
-      rounds: room.rounds,
-    );
+    final List<Question> boardQuestions = room.questionSet.isNotEmpty
+        ? _cloneQuestions(room.questionSet)
+        : await packageRepository.loadQuestions(
+            room.packageFileName,
+            rounds: room.rounds,
+          );
     final Set<String> usedQuestionIdsSet = usedQuestionIds.toSet();
     final List<Question> hydratedQuestions = boardQuestions
         .map(
@@ -2665,100 +2837,113 @@ class _QuestionPackageRepository {
 
   final Directory _packageDirectory;
   final String defaultPackageFileName;
-  final Map<String, List<Question>> _cache = <String, List<Question>>{};
+  final Map<String, Map<String, dynamic>> _cache =
+      <String, Map<String, dynamic>>{};
+  final Map<String, QuestionLocalizationCatalog> _localizationCatalogCache =
+      <String, QuestionLocalizationCatalog>{};
 
   Future<List<Question>> loadQuestions(
     String packageFileName, {
     required int rounds,
   }) async {
-    final File file = await _resolveFile(packageFileName);
+    final Map<String, dynamic> json = await _loadPackageJson(packageFileName);
+    return loadQuestionsFromPackageJson(json, rounds: rounds);
+  }
+
+  Future<List<Question>> buildQuestionSetForRoom(
+    String packageFileName, {
+    required int rounds,
+    required Random random,
+  }) async {
+    final Map<String, dynamic> json = await _loadPackageJson(packageFileName);
+    return buildQuestionSetFromPackageJson(
+      json,
+      rounds: rounds,
+      random: random,
+    );
+  }
+
+  Future<GameState> localizeGameState(
+    GameState gameState, {
+    required String packageFileName,
+    String? languageCode,
+  }) async {
+    final QuestionLocalizationCatalog catalog = await _loadLocalizationCatalog(
+      packageFileName,
+      languageCode: languageCode,
+    );
+    return catalog.localizeGameState(gameState);
+  }
+
+  Future<QuestionLocalizationCatalog> _loadLocalizationCatalog(
+    String packageFileName, {
+    String? languageCode,
+  }) async {
+    final File file = await _resolveFile(
+      packageFileName,
+      languageCode: languageCode,
+    );
     final String cacheKey = file.path.toLowerCase();
-    final List<Question>? cached = _cache[cacheKey];
+    final QuestionLocalizationCatalog? cached =
+        _localizationCatalogCache[cacheKey];
     if (cached != null) {
-      return _cloneQuestions(_filterQuestions(cached, rounds: rounds));
+      return cached;
+    }
+
+    final QuestionLocalizationCatalog catalog =
+        buildQuestionLocalizationCatalogFromPackageJson(
+      await _loadPackageJsonForFile(file),
+    );
+    _localizationCatalogCache[cacheKey] = catalog;
+    return catalog;
+  }
+
+  Future<Map<String, dynamic>> _loadPackageJson(
+    String packageFileName, {
+    String? languageCode,
+  }) async {
+    final File file = await _resolveFile(
+      packageFileName,
+      languageCode: languageCode,
+    );
+    return _loadPackageJsonForFile(file);
+  }
+
+  Future<Map<String, dynamic>> _loadPackageJsonForFile(File file) async {
+    final String cacheKey = file.path.toLowerCase();
+    final Map<String, dynamic>? cached = _cache[cacheKey];
+    if (cached != null) {
+      return cached;
     }
 
     final Map<String, dynamic> json =
         jsonDecode(await file.readAsString()) as Map<String, dynamic>;
-    final List<Question> questions = <Question>[];
-    final List<dynamic> roundEntries =
-        json['rounds'] as List<dynamic>? ?? <dynamic>[];
-    for (int roundIndex = 0; roundIndex < roundEntries.length; roundIndex++) {
-      final Map<String, dynamic> roundJson =
-          roundEntries[roundIndex] as Map<String, dynamic>;
-      final int roundNumber =
-          (roundJson['round'] as num?)?.toInt() ?? (roundIndex + 1);
-      final List<dynamic> themes =
-          roundJson['themes'] as List<dynamic>? ?? <dynamic>[];
-      for (int themeIndex = 0; themeIndex < themes.length; themeIndex++) {
-        final Map<String, dynamic> themeJson =
-            themes[themeIndex] as Map<String, dynamic>;
-        final String category = (themeJson['title'] as String? ?? '').trim();
-        final List<dynamic> themeQuestions =
-            themeJson['questions'] as List<dynamic>? ?? <dynamic>[];
-        for (int questionIndex = 0;
-            questionIndex < themeQuestions.length;
-            questionIndex++) {
-          final Map<String, dynamic> item =
-              themeQuestions[questionIndex] as Map<String, dynamic>;
-          final int value =
-              (item['value'] as num?)?.toInt() ?? ((questionIndex + 1) * 100);
-          final String id = (item['id'] as String? ?? '').trim().isEmpty
-              ? 'r${roundNumber}_t${themeIndex + 1}_q${questionIndex + 1}'
-              : (item['id'] as String).trim();
-          questions.add(
-            Question(
-              id: id,
-              text: item['text'] as String? ?? '',
-              answer: item['answer'] as String? ?? '',
-              category: category.isEmpty ? 'Theme ${themeIndex + 1}' : category,
-              value: value,
-              used: false,
-              round: roundNumber,
-            ),
-          );
-        }
-      }
-    }
-    if (questions.isEmpty) {
-      throw StateError('Question package "${file.path}" is empty.');
-    }
-
-    _cache[cacheKey] = questions;
-    return _cloneQuestions(_filterQuestions(questions, rounds: rounds));
+    _cache[cacheKey] = json;
+    return json;
   }
 
-  List<Question> _filterQuestions(
-    List<Question> questions, {
-    required int rounds,
-  }) {
-    final int effectiveRounds = rounds < 1 ? 1 : rounds;
-    return questions
-        .where((Question question) => question.round <= effectiveRounds)
-        .toList(growable: false);
-  }
-
-  Future<File> _resolveFile(String requestedFileName) async {
+  Future<File> _resolveFile(
+    String requestedFileName, {
+    String? languageCode,
+  }) async {
     final String normalized = requestedFileName.trim().isEmpty
         ? defaultPackageFileName
         : requestedFileName.trim();
-    final File explicitFile = File(normalized);
-    if (await explicitFile.exists()) {
-      return explicitFile;
-    }
+    for (final String candidate in _candidateFileNames(
+      normalized,
+      languageCode: languageCode,
+    )) {
+      final File explicitFile = File(candidate);
+      if (await explicitFile.exists()) {
+        return explicitFile;
+      }
 
-    final File packageFile = File(
-      '${_packageDirectory.path}${Platform.pathSeparator}$normalized',
-    );
-    if (await packageFile.exists()) {
-      return packageFile;
-    }
-
-    final File fallbackFile = File(
-      '${_packageDirectory.path}${Platform.pathSeparator}$defaultPackageFileName',
-    );
-    if (await fallbackFile.exists()) {
-      return fallbackFile;
+      final File packageFile = File(
+        '${_packageDirectory.path}${Platform.pathSeparator}$candidate',
+      );
+      if (await packageFile.exists()) {
+        return packageFile;
+      }
     }
 
     throw StateError(
@@ -2767,14 +2952,70 @@ class _QuestionPackageRepository {
     );
   }
 
-  List<Question> _cloneQuestions(List<Question> questions) {
-    return questions
-        .map(
-          (Question question) => question.copyWith(
-            used: false,
-          ),
-        )
-        .toList(growable: false);
+  List<String> _candidateFileNames(
+    String fileName, {
+    String? languageCode,
+  }) {
+    final String normalizedLanguageCode =
+        _normalizePackageLanguageCode(languageCode);
+    final String baseFileName = _basePackageFileName(fileName);
+    final String defaultBaseFileName =
+        _basePackageFileName(defaultPackageFileName);
+    final Set<String> candidates = <String>{};
+
+    if (normalizedLanguageCode.isNotEmpty) {
+      candidates.add(
+        _localizedPackageFileName(baseFileName, normalizedLanguageCode),
+      );
+    }
+
+    candidates.add(fileName);
+    if (baseFileName != fileName) {
+      candidates.add(baseFileName);
+    }
+
+    if (normalizedLanguageCode.isNotEmpty) {
+      candidates.add(
+        _localizedPackageFileName(defaultBaseFileName, normalizedLanguageCode),
+      );
+    }
+
+    candidates.add(defaultPackageFileName);
+    if (defaultBaseFileName != defaultPackageFileName) {
+      candidates.add(defaultBaseFileName);
+    }
+
+    return candidates.toList(growable: false);
+  }
+
+  String _basePackageFileName(String fileName) {
+    return fileName.replaceFirst(
+      RegExp(r'_(en|ru)\.json$', caseSensitive: false),
+      '.json',
+    );
+  }
+
+  String _localizedPackageFileName(String fileName, String languageCode) {
+    if (!fileName.toLowerCase().endsWith('.json')) {
+      return '${fileName}_$languageCode';
+    }
+    return fileName.replaceFirst(
+      RegExp(r'\.json$', caseSensitive: false),
+      '_$languageCode.json',
+    );
+  }
+
+  String _normalizePackageLanguageCode(String? languageCode) {
+    switch ((languageCode ?? '').trim().toLowerCase()) {
+      case 'ru':
+      case 'russian':
+        return 'ru';
+      case 'en':
+      case 'english':
+        return 'en';
+      default:
+        return '';
+    }
   }
 }
 
@@ -2847,6 +3088,10 @@ bool _boolValue(Object? value) {
 
 String _encodeStringList(Iterable<String> values) => values.join('\n');
 
+String _encodeQuestions(Iterable<Question> questions) => jsonEncode(
+      questions.map((Question question) => question.toJson()).toList(),
+    );
+
 List<String> _decodeStringList(String raw) {
   if (raw.trim().isEmpty) {
     return <String>[];
@@ -2854,6 +3099,30 @@ List<String> _decodeStringList(String raw) {
   return raw
       .split('\n')
       .where((String value) => value.trim().isNotEmpty)
+      .toList(growable: false);
+}
+
+List<Question> _decodeQuestions(String raw) {
+  if (raw.trim().isEmpty) {
+    return <Question>[];
+  }
+  final dynamic decoded = jsonDecode(raw);
+  if (decoded is! List<dynamic>) {
+    return <Question>[];
+  }
+  return decoded
+      .whereType<Map>()
+      .map((Map item) => Question.fromJson(Map<String, dynamic>.from(item)))
+      .toList(growable: false);
+}
+
+List<Question> _cloneQuestions(List<Question> questions) {
+  return questions
+      .map(
+        (Question question) => question.copyWith(
+          used: false,
+        ),
+      )
       .toList(growable: false);
 }
 
@@ -3094,12 +3363,13 @@ class StoredRoom {
     required this.password,
     required this.hostUserId,
     required this.packageFileName,
+    List<Question>? questionSet,
     required this.status,
     required this.participants,
     required this.matchProgress,
     this.hostDisconnectedAtEpochMs,
     this.gameState,
-  });
+  }) : questionSet = questionSet ?? <Question>[];
 
   factory StoredRoom.fromJson(Map<String, dynamic> json) {
     return StoredRoom(
@@ -3113,6 +3383,10 @@ class StoredRoom {
       password: json['password'] as String? ?? '',
       hostUserId: json['hostUserId'] as String? ?? '',
       packageFileName: json['packageFileName'] as String? ?? '',
+      questionSet: ((json['questionSet'] as List<dynamic>? ?? <dynamic>[]))
+          .map(
+              (dynamic item) => Question.fromJson(item as Map<String, dynamic>))
+          .toList(growable: false),
       hostDisconnectedAtEpochMs:
           (json['hostDisconnectedAtEpochMs'] as num?)?.toInt() ??
               DateTime.now().millisecondsSinceEpoch,
@@ -3149,6 +3423,7 @@ class StoredRoom {
   final String password;
   String hostUserId;
   final String packageFileName;
+  List<Question> questionSet;
   int? hostDisconnectedAtEpochMs;
   RoomLifecycleStatus status;
   final List<StoredRoomParticipant> participants;
@@ -3171,6 +3446,8 @@ class StoredRoom {
         'password': password,
         'hostUserId': hostUserId,
         'packageFileName': packageFileName,
+        'questionSet':
+            questionSet.map((Question question) => question.toJson()).toList(),
         'hostDisconnectedAtEpochMs': hostDisconnectedAtEpochMs,
         'status': status.name,
         'gameState': gameState?.toJson(),

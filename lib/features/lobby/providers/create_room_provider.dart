@@ -1,11 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:guesstogether/core/constants/question_packages.dart';
 import 'package:guesstogether/data/api/game_api.dart';
 import 'package:guesstogether/features/session/app_session_controller.dart';
 
 enum RoomMode { multiplayer, duel }
 
-const String defaultRoomPackageFileName = 'general_quiz_pack.json';
+const String defaultRoomPackageFileName = standardQuestionPackFileName;
 
 extension RoomModeLabel on RoomMode {
   String get label {

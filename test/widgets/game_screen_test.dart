@@ -11,6 +11,7 @@ import 'package:guesstogether/features/game/domain/game_models.dart';
 import 'package:guesstogether/features/game/presentation/game_screen.dart';
 import 'package:guesstogether/features/game/providers/game_providers.dart';
 import 'package:guesstogether/features/home/presentation/home_screen.dart';
+import 'package:guesstogether/features/lobby/providers/create_room_provider.dart';
 import 'package:guesstogether/features/lobby/providers/room_session_provider.dart';
 import 'package:guesstogether/features/result/presentation/result_screen.dart';
 import '../test_app.dart';
@@ -174,7 +175,7 @@ RoomDetails _buildActiveRoom({required bool secondPlayerConnected}) {
     ),
     hostPlayerId: 'host-1',
     roomPassword: '',
-    packageFileName: 'general_quiz_pack.json',
+    packageFileName: defaultRoomPackageFileName,
     participants: <RoomParticipant>[
       const RoomParticipant(
         id: 'host-1',

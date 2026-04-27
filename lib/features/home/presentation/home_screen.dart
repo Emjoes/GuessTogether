@@ -110,17 +110,22 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-class _VersionBadge extends StatelessWidget {
+class _VersionBadge extends ConsumerWidget {
   const _VersionBadge();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final String? version = ref.watch(appVersionProvider).valueOrNull?.display;
+    if (version == null || version.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     final ThemeData theme = Theme.of(context);
     final bool isLight = theme.brightness == Brightness.light;
     return Align(
       alignment: Alignment.center,
       child: Text(
-        'v${AppVersion.display}',
+        'v$version',
         style: theme.textTheme.labelLarge?.copyWith(
           color: isLight
               ? const Color(0xFF5F6F93)

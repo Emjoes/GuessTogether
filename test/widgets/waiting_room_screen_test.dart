@@ -10,6 +10,7 @@ import 'package:guesstogether/core/l10n/app_locale.dart';
 import 'package:guesstogether/data/api/app_backend_api.dart';
 import 'package:guesstogether/data/api/backend_models.dart';
 import 'package:guesstogether/data/api/game_api.dart';
+import 'package:guesstogether/features/lobby/providers/create_room_provider.dart';
 import 'package:guesstogether/features/lobby/presentation/waiting_room_screen.dart';
 import 'package:guesstogether/features/session/app_session_controller.dart';
 import '../test_app.dart';
@@ -184,7 +185,7 @@ RoomDetails _buildRoom({
     ),
     hostPlayerId: 'host-1',
     roomPassword: '',
-    packageFileName: 'general_quiz_pack.json',
+    packageFileName: defaultRoomPackageFileName,
     participants: participants,
   );
 }

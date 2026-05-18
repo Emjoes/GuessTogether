@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,6 +11,19 @@ import 'package:guesstogether/features/session/app_session_controller.dart';
 import '../test_app.dart';
 
 class _FakeJoinRoomsApi implements GameApi {
+  @override
+  Future<ImportedPackageSummary> importSiqPackage({
+    required String fileName,
+    required Uint8List bytes,
+  }) async {
+    return ImportedPackageSummary(
+      packageFileName: '$fileName.json',
+      packageName: fileName,
+      questionCount: 1,
+      hasMedia: false,
+    );
+  }
+
   @override
   Future<List<RoomSummary>> loadRooms() async => const <RoomSummary>[
         RoomSummary(

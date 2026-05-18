@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
+import 'package:path/path.dart' as path;
 import 'package:postgres/postgres.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
@@ -17,6 +18,7 @@ import 'package:guesstogether/core/constants/question_packages.dart';
 import 'package:guesstogether/features/game/domain/game_models.dart';
 import 'package:guesstogether/features/game/domain/game_state_machine.dart';
 import 'package:guesstogether/server/question_pack_builder.dart';
+import 'package:guesstogether/server/siq_package_importer.dart';
 
 const String _defaultDatabaseUrl =
     'postgresql://postgres:postgres@localhost:5432/'
@@ -186,6 +188,9 @@ class AppServer {
       ..post('/api/login', _handleLogin)
       ..get('/api/me', _handleMe)
       ..put('/api/me/settings', _handleSaveSettings)
+      ..post('/api/packages/import-siq', _handleImportSiqPackage)
+      ..get('/api/packages/media/<mediaPackageId>/<publicFileName>',
+          _handlePackageMedia)
       ..get('/api/leaderboard', _handleLeaderboard)
       ..get('/api/rooms', _handleRooms)
       ..post('/api/rooms', _handleCreateRoom)
@@ -232,7 +237,8 @@ class AppServer {
       ...response.headers,
       'access-control-allow-origin': '*',
       'access-control-allow-methods': 'GET, POST, PUT, OPTIONS',
-      'access-control-allow-headers': 'Origin, Content-Type, Authorization',
+      'access-control-allow-headers':
+          'Origin, Content-Type, Authorization, X-Package-File-Name',
     });
   }
 
@@ -263,6 +269,71 @@ class AppServer {
         minimumSupportedVersion: _minimumSupportedAppVersion,
       );
       return _json(payload.toJson());
+    });
+  }
+
+  Future<Response> _handleImportSiqPackage(Request request) {
+    return _guarded(() async {
+      _requireUser(request);
+      final String originalFileName =
+          (request.headers['x-package-file-name'] ?? '').trim();
+      if (originalFileName.isEmpty ||
+          !originalFileName.toLowerCase().endsWith('.siq')) {
+        throw const ApiError(400, 'A .siq file name is required');
+      }
+      final Directory uploadDirectory = await Directory.systemTemp.createTemp(
+        'guesstogether_siq_upload_',
+      );
+      try {
+        final File archiveFile = File(
+          path.join(uploadDirectory.path, 'upload.siq'),
+        );
+        final IOSink sink = archiveFile.openWrite();
+        int byteCount = 0;
+        try {
+          await for (final List<int> chunk in request.read()) {
+            byteCount += chunk.length;
+            sink.add(chunk);
+          }
+        } finally {
+          await sink.close();
+        }
+        if (byteCount == 0) {
+          throw const ApiError(400, 'The SIQ file is empty');
+        }
+        final SiqPackageImportResult result = await _store.importSiqPackage(
+          originalFileName: originalFileName,
+          archiveFile: archiveFile,
+        );
+        return _json(result.toJson(), status: 201);
+      } finally {
+        if (await uploadDirectory.exists()) {
+          await uploadDirectory.delete(recursive: true);
+        }
+      }
+    });
+  }
+
+  Future<Response> _handlePackageMedia(
+    Request request,
+    String mediaPackageId,
+    String publicFileName,
+  ) {
+    return _guarded(() async {
+      final File? file = _store.resolveImportedMediaFile(
+        mediaPackageId,
+        publicFileName,
+      );
+      if (file == null) {
+        throw const ApiError(404, 'Media file not found');
+      }
+      return Response.ok(
+        file.openRead(),
+        headers: <String, String>{
+          'content-type': _contentTypeForFileName(file.path),
+          'cache-control': 'public, max-age=31536000, immutable',
+        },
+      );
     });
   }
 
@@ -1536,6 +1607,20 @@ class _AppStateStore {
     );
   }
 
+  Future<SiqPackageImportResult> importSiqPackage({
+    required String originalFileName,
+    required File archiveFile,
+  }) {
+    return _database.importSiqPackage(
+      originalFileName: originalFileName,
+      archiveFile: archiveFile,
+    );
+  }
+
+  File? resolveImportedMediaFile(String mediaPackageId, String publicFileName) {
+    return _database.resolveImportedMediaFile(mediaPackageId, publicFileName);
+  }
+
   Future<void> load() async {
     await _database.open();
     await _database.ensureSchema();
@@ -1973,6 +2058,23 @@ class _PostgresDatabase {
       gameState,
       packageFileName: packageFileName,
       languageCode: languageCode,
+    );
+  }
+
+  Future<SiqPackageImportResult> importSiqPackage({
+    required String originalFileName,
+    required File archiveFile,
+  }) {
+    return _packageRepository.importSiqPackage(
+      originalFileName: originalFileName,
+      archiveFile: archiveFile,
+    );
+  }
+
+  File? resolveImportedMediaFile(String mediaPackageId, String publicFileName) {
+    return _packageRepository.resolveImportedMediaFile(
+      mediaPackageId,
+      publicFileName,
     );
   }
 
@@ -2833,14 +2935,41 @@ class _QuestionPackageRepository {
   _QuestionPackageRepository({
     required Directory packageDirectory,
     required this.defaultPackageFileName,
-  }) : _packageDirectory = packageDirectory;
+  })  : _packageDirectory = packageDirectory,
+        _siqImporter = SiqPackageImporter(
+          packageDirectory: packageDirectory,
+          mediaDirectory: Directory(
+            '${packageDirectory.path}${Platform.pathSeparator}_siq_media',
+          ),
+        );
 
   final Directory _packageDirectory;
   final String defaultPackageFileName;
+  final SiqPackageImporter _siqImporter;
   final Map<String, Map<String, dynamic>> _cache =
       <String, Map<String, dynamic>>{};
   final Map<String, QuestionLocalizationCatalog> _localizationCatalogCache =
       <String, QuestionLocalizationCatalog>{};
+
+  Future<SiqPackageImportResult> importSiqPackage({
+    required String originalFileName,
+    required File archiveFile,
+  }) async {
+    final SiqPackageImportResult result = await _siqImporter.importArchiveFile(
+      originalFileName: originalFileName,
+      archiveFile: archiveFile,
+    );
+    _cache.remove(
+      File(
+        '${_packageDirectory.path}${Platform.pathSeparator}${result.packageFileName}',
+      ).path.toLowerCase(),
+    );
+    return result;
+  }
+
+  File? resolveImportedMediaFile(String mediaPackageId, String publicFileName) {
+    return _siqImporter.resolveMediaFile(mediaPackageId, publicFileName);
+  }
 
   Future<List<Question>> loadQuestions(
     String packageFileName, {
@@ -3084,6 +3213,46 @@ bool _boolValue(Object? value) {
     return value;
   }
   return value.toString().toLowerCase() == 'true';
+}
+
+String _contentTypeForFileName(String fileName) {
+  switch (path.extension(fileName).toLowerCase()) {
+    case '.png':
+      return 'image/png';
+    case '.jpg':
+    case '.jpeg':
+      return 'image/jpeg';
+    case '.gif':
+      return 'image/gif';
+    case '.webp':
+      return 'image/webp';
+    case '.bmp':
+      return 'image/bmp';
+    case '.mp3':
+      return 'audio/mpeg';
+    case '.wav':
+      return 'audio/wav';
+    case '.ogg':
+      return 'audio/ogg';
+    case '.m4a':
+      return 'audio/mp4';
+    case '.aac':
+      return 'audio/aac';
+    case '.flac':
+      return 'audio/flac';
+    case '.mp4':
+      return 'video/mp4';
+    case '.mov':
+      return 'video/quicktime';
+    case '.avi':
+      return 'video/x-msvideo';
+    case '.webm':
+      return 'video/webm';
+    case '.mkv':
+      return 'video/x-matroska';
+    default:
+      return 'application/octet-stream';
+  }
 }
 
 String _encodeStringList(Iterable<String> values) => values.join('\n');

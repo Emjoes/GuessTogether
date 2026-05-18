@@ -69,3 +69,5 @@ app.*.map.json
 /release/
 /out/
 /launch/
+
+packs/

@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:guesstogether/core/constants/question_packages.dart';
 import 'package:guesstogether/core/debug/loading_debug_gate.dart';
@@ -9,6 +10,21 @@ class MockHttpAdapter implements GameApi {
   MockHttpAdapter();
 
   final Random _random = Random();
+
+  @override
+  Future<ImportedPackageSummary> importSiqPackage({
+    required String fileName,
+    required Uint8List bytes,
+  }) async {
+    await LoadingDebugGate.instance.delayed(const Duration(milliseconds: 250));
+    return ImportedPackageSummary(
+      packageFileName: '${fileName.replaceAll('.siq', '')}.json',
+      packageName: fileName.replaceAll('.siq', ''),
+      questionCount: 25,
+      hasMedia: true,
+      mediaPackageId: 'mock-package',
+    );
+  }
 
   @override
   Future<RoomSummary> createRoom(CreateRoomRequest request) async {

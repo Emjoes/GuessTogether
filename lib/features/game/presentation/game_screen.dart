@@ -7,6 +7,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:guesstogether/core/l10n/l10n.dart';
 import 'package:guesstogether/core/theme/app_colors.dart';
@@ -17,6 +18,7 @@ import 'package:guesstogether/features/game/providers/game_providers.dart';
 import 'package:guesstogether/features/home/presentation/home_screen.dart';
 import 'package:guesstogether/features/lobby/providers/room_session_provider.dart';
 import 'package:guesstogether/features/result/presentation/result_screen.dart';
+import 'package:guesstogether/features/session/app_session_controller.dart';
 import 'package:guesstogether/widgets/app_panel.dart';
 import 'package:guesstogether/widgets/back_shortcut_scope.dart';
 
@@ -25,6 +27,18 @@ Color _timedFrameActiveStripeColor(ColorScheme scheme) {
     return const Color(0xFF8F6400);
   }
   return const Color(0xFFD7B34A);
+}
+
+String _resolveBackendMediaUrl(String baseHttpUrl, String mediaPath) {
+  if (mediaPath.startsWith('http://') || mediaPath.startsWith('https://')) {
+    return mediaPath;
+  }
+  final String normalizedBase = baseHttpUrl.endsWith('/')
+      ? baseHttpUrl.substring(0, baseHttpUrl.length - 1)
+      : baseHttpUrl;
+  final String normalizedPath =
+      mediaPath.startsWith('/') ? mediaPath : '/$mediaPath';
+  return '$normalizedBase$normalizedPath';
 }
 
 class GameScreen extends ConsumerStatefulWidget {
@@ -305,6 +319,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     final l10n = context.l10n;
     final GameState game = ref.watch(gameControllerProvider);
     final GameController controller = ref.read(gameControllerProvider.notifier);
+    final String baseHttpUrl = ref.watch(backendBaseHttpUrlProvider);
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
     final bool isLight = theme.brightness == Brightness.light;
@@ -421,6 +436,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                               child: _MatchStageBody(
                                 game: game,
                                 role: effectiveRole,
+                                baseHttpUrl: baseHttpUrl,
                                 localPlayerId: effectiveLocalPlayerId,
                                 onPickQuestion: (String questionId) {
                                   controller.chooseQuestion(
@@ -717,12 +733,14 @@ class _MatchStageBody extends StatelessWidget {
   const _MatchStageBody({
     required this.game,
     required this.role,
+    required this.baseHttpUrl,
     required this.localPlayerId,
     required this.onPickQuestion,
   });
 
   final GameState game;
   final GameViewRole role;
+  final String baseHttpUrl;
   final String localPlayerId;
   final ValueChanged<String> onPickQuestion;
 
@@ -756,7 +774,11 @@ class _MatchStageBody extends StatelessWidget {
       );
     }
 
-    return _QuestionView(game: game, role: role);
+    return _QuestionView(
+      game: game,
+      role: role,
+      baseHttpUrl: baseHttpUrl,
+    );
   }
 }
 
@@ -1013,10 +1035,12 @@ class _QuestionView extends StatelessWidget {
   const _QuestionView({
     required this.game,
     required this.role,
+    required this.baseHttpUrl,
   });
 
   final GameState game;
   final GameViewRole role;
+  final String baseHttpUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -1084,10 +1108,13 @@ class _QuestionView extends StatelessWidget {
           Expanded(
             child: Center(
               child: revealAnswer
-                  ? Text(
-                      question.answer,
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.titleLarge?.copyWith(
+                  ? _QuestionRichContent(
+                      text: question.answer,
+                      media: question.answerMedia,
+                      baseHttpUrl: baseHttpUrl,
+                      animate: false,
+                      paused: game.isPaused,
+                      textStyle: theme.textTheme.titleLarge?.copyWith(
                         color: isLight
                             ? const Color(0xFF1F7A3D)
                             : const Color(0xFF9EF3B2),
@@ -1095,11 +1122,17 @@ class _QuestionView extends StatelessWidget {
                         height: 1.28,
                       ),
                     )
-                  : _TypewriterQuestion(
+                  : _QuestionRichContent(
                       text: question.text,
+                      media: question.questionMedia,
+                      baseHttpUrl: baseHttpUrl,
                       animate: animateQuestion,
                       paused: game.isPaused,
-                      color: isLight ? scheme.onSurface : Colors.white,
+                      textStyle: theme.textTheme.titleLarge?.copyWith(
+                        color: isLight ? scheme.onSurface : Colors.white,
+                        fontWeight: FontWeight.w700,
+                        height: 1.3,
+                      ),
                     ),
             ),
           ),
@@ -1123,18 +1156,166 @@ class _QuestionView extends StatelessWidget {
   }
 }
 
+class _QuestionRichContent extends StatelessWidget {
+  const _QuestionRichContent({
+    required this.text,
+    required this.media,
+    required this.baseHttpUrl,
+    required this.animate,
+    required this.paused,
+    required this.textStyle,
+  });
+
+  final String text;
+  final List<QuestionMedia> media;
+  final String baseHttpUrl;
+  final bool animate;
+  final bool paused;
+  final TextStyle? textStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    final List<Widget> children = <Widget>[];
+    if (text.trim().isNotEmpty) {
+      children.add(
+        animate
+            ? _TypewriterQuestion(
+                text: text,
+                animate: animate,
+                paused: paused,
+                color: textStyle?.color ?? Theme.of(context).colorScheme.onSurface,
+                textStyle: textStyle,
+              )
+            : Text(
+                text,
+                textAlign: TextAlign.center,
+                style: textStyle,
+              ),
+      );
+    }
+    for (final QuestionMedia item in media) {
+      if (children.isNotEmpty) {
+        children.add(const SizedBox(height: AppSpacing.md));
+      }
+      children.add(
+        _QuestionMediaBlock(
+          media: item,
+          baseHttpUrl: baseHttpUrl,
+        ),
+      );
+    }
+
+    if (children.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return SingleChildScrollView(
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: children,
+        ),
+      ),
+    );
+  }
+}
+
+class _QuestionMediaBlock extends StatelessWidget {
+  const _QuestionMediaBlock({
+    required this.media,
+    required this.baseHttpUrl,
+  });
+
+  final QuestionMedia media;
+  final String baseHttpUrl;
+
+  Future<void> _openExternalMedia() async {
+    final Uri uri = Uri.parse(_resolveBackendMediaUrl(baseHttpUrl, media.path));
+    await launchUrl(uri, mode: LaunchMode.platformDefault);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final String label = media.label.trim().isEmpty
+        ? switch (media.type) {
+            QuestionMediaType.image => 'Image',
+            QuestionMediaType.audio => 'Audio clip',
+            QuestionMediaType.video => 'Video clip',
+          }
+        : media.label;
+    final String url = _resolveBackendMediaUrl(baseHttpUrl, media.path);
+
+    if (media.type == QuestionMediaType.image) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          constraints: const BoxConstraints(maxHeight: 320),
+          decoration: BoxDecoration(
+            border: Border.all(color: scheme.outline.withValues(alpha: 0.28)),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Image.network(
+            url,
+            fit: BoxFit.contain,
+            loadingBuilder: (
+              BuildContext context,
+              Widget child,
+              ImageChunkEvent? loadingProgress,
+            ) {
+              if (loadingProgress == null) {
+                return child;
+              }
+              return const Padding(
+                padding: EdgeInsets.all(AppSpacing.lg),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            },
+            errorBuilder: (
+              BuildContext context,
+              Object error,
+              StackTrace? stackTrace,
+            ) {
+              return Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium,
+                ),
+              );
+            },
+          ),
+        ),
+      );
+    }
+
+    final bool isAudio = media.type == QuestionMediaType.audio;
+    return FilledButton.tonalIcon(
+      onPressed: () => unawaited(_openExternalMedia()),
+      icon: Icon(
+        isAudio ? Icons.audiotrack_rounded : Icons.play_circle_outline_rounded,
+      ),
+      label: Text(label),
+    );
+  }
+}
+
 class _TypewriterQuestion extends StatefulWidget {
   const _TypewriterQuestion({
     required this.text,
     required this.animate,
     required this.paused,
     required this.color,
+    this.textStyle,
   });
 
   final String text;
   final bool animate;
   final bool paused;
   final Color color;
+  final TextStyle? textStyle;
 
   @override
   State<_TypewriterQuestion> createState() => _TypewriterQuestionState();
@@ -1212,11 +1393,12 @@ class _TypewriterQuestionState extends State<_TypewriterQuestion> {
     return Text(
       visible,
       textAlign: TextAlign.center,
-      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            color: widget.color,
-            fontWeight: FontWeight.w700,
-            height: 1.3,
-          ),
+      style: widget.textStyle ??
+          Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: widget.color,
+                fontWeight: FontWeight.w700,
+                height: 1.3,
+              ),
     );
   }
 }

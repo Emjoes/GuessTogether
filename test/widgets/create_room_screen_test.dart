@@ -34,7 +34,7 @@ void main() {
     expect(find.text(defaultRoomPackageFileName), findsNothing);
     expect(
       find.text(
-        '${AppStrings.createRoomPackagePick} (${AppStrings.createRoomPackageSoon})',
+        '${AppStrings.createRoomPackagePick} (.siq)',
       ),
       findsOneWidget,
     );

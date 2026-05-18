@@ -1,6 +1,10 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:file_picker/file_picker.dart';
 
 import 'package:guesstogether/core/l10n/l10n.dart';
 import 'package:guesstogether/core/theme/app_spacing.dart';
@@ -31,6 +35,94 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
       }
       ref.read(createRoomControllerProvider.notifier).reset();
     });
+  }
+
+  Future<void> _pickSiqPackage(CreateRoomController controller) async {
+    final bool isRussian =
+        Localizations.localeOf(context).languageCode.toLowerCase() == 'ru';
+    final String importFailedText = isRussian
+        ? 'Не удалось импортировать SIQ-пакет.'
+        : 'Failed to import the SIQ package.';
+    final FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const <String>['siq'],
+      withData: false,
+      withReadStream: true,
+    );
+    if (!mounted || result == null || result.files.isEmpty) {
+      return;
+    }
+
+    final PlatformFile file = result.files.single;
+    final Uint8List? bytes = await _readPickedFileBytes(file);
+    if (bytes == null || bytes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(importFailedText)),
+      );
+      return;
+    }
+
+    try {
+      await controller.importSiqPackage(
+        fileName: file.name,
+        bytes: bytes,
+      );
+      if (!mounted) {
+        return;
+      }
+      final String importedName =
+          ref.read(createRoomControllerProvider).packageDisplayName;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isRussian
+                ? 'Пакет "$importedName" импортирован.'
+                : 'Package "$importedName" imported.',
+          ),
+        ),
+      );
+    } on BackendException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            error.message.isEmpty ? importFailedText : error.message,
+          ),
+        ),
+      );
+    } on Exception {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(importFailedText)),
+      );
+    }
+  }
+
+  Future<Uint8List?> _readPickedFileBytes(PlatformFile file) async {
+    final Uint8List? bytes = file.bytes;
+    if (bytes != null && bytes.isNotEmpty) {
+      return bytes;
+    }
+    final Stream<List<int>>? readStream = file.readStream;
+    if (readStream != null) {
+      final BytesBuilder builder = BytesBuilder(copy: false);
+      await for (final List<int> chunk in readStream) {
+        builder.add(chunk);
+      }
+      final Uint8List streamBytes = builder.takeBytes();
+      if (streamBytes.isNotEmpty) {
+        return streamBytes;
+      }
+    }
+    final String? filePath = file.path;
+    if (filePath != null && filePath.isNotEmpty) {
+      return await File(filePath).readAsBytes();
+    }
+    return null;
   }
 
   @override
@@ -164,17 +256,18 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       _PackagePickerField(
-                        fileName: state.packageFileName,
-                        onPick: () {},
-                        enabled: false,
+                        displayName: state.packageDisplayName,
+                        onPick: () => _pickSiqPackage(controller),
+                        enabled: !state.isImportingPackage && !state.isLoading,
+                        isLoading: state.isImportingPackage,
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 _CreateButton(
-                  isLoading: state.isLoading,
-                  onPressed: state.isLoading
+                  isLoading: state.isLoading || state.isImportingPackage,
+                  onPressed: state.isLoading || state.isImportingPackage
                       ? null
                       : () async {
                           try {
@@ -219,14 +312,16 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
 
 class _PackagePickerField extends StatefulWidget {
   const _PackagePickerField({
-    required this.fileName,
+    required this.displayName,
     required this.onPick,
     required this.enabled,
+    required this.isLoading,
   });
 
-  final String fileName;
+  final String displayName;
   final VoidCallback onPick;
   final bool enabled;
+  final bool isLoading;
 
   @override
   State<_PackagePickerField> createState() => _PackagePickerFieldState();
@@ -331,7 +426,9 @@ class _PackagePickerFieldState extends State<_PackagePickerField> {
                 child: Row(
                   children: <Widget>[
                     Icon(
-                      Icons.file_present_rounded,
+                      widget.isLoading
+                          ? Icons.sync_rounded
+                          : Icons.file_present_rounded,
                       size: 20,
                       color: isInteractive
                           ? scheme.primary.withValues(alpha: 0.92)
@@ -340,7 +437,9 @@ class _PackagePickerFieldState extends State<_PackagePickerField> {
                     const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
-                        '${l10n.createRoomPackagePick} (${l10n.createRoomPackageSoon})',
+                        widget.displayName.trim().isEmpty
+                            ? '${l10n.createRoomPackagePick} (.siq)'
+                            : widget.displayName,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: scheme.onSurfaceVariant.withValues(

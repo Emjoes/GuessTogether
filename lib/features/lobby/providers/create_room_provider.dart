@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:guesstogether/core/constants/question_packages.dart';
@@ -25,7 +27,9 @@ class CreateRoomState {
     this.password = '',
     this.mode = RoomMode.multiplayer,
     this.packageFileName = defaultRoomPackageFileName,
+    this.packageDisplayName = '',
     this.players = 4,
+    this.isImportingPackage = false,
     this.isLoading = false,
   });
 
@@ -33,15 +37,24 @@ class CreateRoomState {
   final String password;
   final RoomMode mode;
   final String packageFileName;
+  final String packageDisplayName;
   final int players;
+  final bool isImportingPackage;
   final bool isLoading;
+
+  bool get hasCustomPackage =>
+      packageFileName.isNotEmpty &&
+      packageFileName != defaultRoomPackageFileName &&
+      packageDisplayName.trim().isNotEmpty;
 
   CreateRoomState copyWith({
     String? name,
     String? password,
     RoomMode? mode,
     String? packageFileName,
+    String? packageDisplayName,
     int? players,
+    bool? isImportingPackage,
     bool? isLoading,
   }) {
     return CreateRoomState(
@@ -49,7 +62,9 @@ class CreateRoomState {
       password: password ?? this.password,
       mode: mode ?? this.mode,
       packageFileName: packageFileName ?? this.packageFileName,
+      packageDisplayName: packageDisplayName ?? this.packageDisplayName,
       players: players ?? this.players,
+      isImportingPackage: isImportingPackage ?? this.isImportingPackage,
       isLoading: isLoading ?? this.isLoading,
     );
   }
@@ -71,6 +86,43 @@ class CreateRoomController extends StateNotifier<CreateRoomState> {
   void setPackageFileName(String value) =>
       state = state.copyWith(packageFileName: value);
 
+  void setImportedPackage(ImportedPackageSummary package) {
+    state = state.copyWith(
+      packageFileName: package.packageFileName,
+      packageDisplayName: package.packageName,
+      isImportingPackage: false,
+    );
+  }
+
+  void clearImportedPackage() {
+    state = state.copyWith(
+      packageFileName: defaultRoomPackageFileName,
+      packageDisplayName: '',
+      isImportingPackage: false,
+    );
+  }
+
+  void setImportingPackage(bool value) {
+    state = state.copyWith(isImportingPackage: value);
+  }
+
+  Future<ImportedPackageSummary> importSiqPackage({
+    required String fileName,
+    required Uint8List bytes,
+  }) async {
+    state = state.copyWith(isImportingPackage: true);
+    try {
+      final ImportedPackageSummary package = await _api.importSiqPackage(
+        fileName: fileName,
+        bytes: bytes,
+      );
+      setImportedPackage(package);
+      return package;
+    } finally {
+      state = state.copyWith(isImportingPackage: false);
+    }
+  }
+
   void setMode(RoomMode value) {
     // Elimination mode is always 2 players.
     final int nextPlayers = value == RoomMode.duel ? 2 : state.players;
@@ -89,7 +141,9 @@ class CreateRoomController extends StateNotifier<CreateRoomState> {
         name: state.name,
         password: state.password,
         mode: state.mode.name,
-        topic: state.mode == RoomMode.duel ? 'Elimination' : 'Multiplayer',
+        topic: state.hasCustomPackage
+            ? state.packageDisplayName
+            : (state.mode == RoomMode.duel ? 'Elimination' : 'Multiplayer'),
         rounds: 3,
         finalWagerEnabled: false,
         maxPlayers: state.mode == RoomMode.duel ? 2 : state.players,

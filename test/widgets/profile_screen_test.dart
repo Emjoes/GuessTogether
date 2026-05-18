@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,6 +12,19 @@ import '../test_app.dart';
 
 class _FakeProfileApi implements GameApi {
   int leaderboardCalls = 0;
+
+  @override
+  Future<ImportedPackageSummary> importSiqPackage({
+    required String fileName,
+    required Uint8List bytes,
+  }) async {
+    return ImportedPackageSummary(
+      packageFileName: '$fileName.json',
+      packageName: fileName,
+      questionCount: 1,
+      hasMedia: false,
+    );
+  }
 
   @override
   Future<ProfileSummary> loadProfile() async => ProfileSummary(
@@ -118,6 +133,19 @@ class _FakeProfileApi implements GameApi {
 }
 
 class _HostedOnlyProfileApi implements GameApi {
+  @override
+  Future<ImportedPackageSummary> importSiqPackage({
+    required String fileName,
+    required Uint8List bytes,
+  }) async {
+    return ImportedPackageSummary(
+      packageFileName: '$fileName.json',
+      packageName: fileName,
+      questionCount: 1,
+      hasMedia: false,
+    );
+  }
+
   @override
   Future<ProfileSummary> loadProfile() async => ProfileSummary(
         displayName: 'Host Player',

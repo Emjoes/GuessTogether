@@ -171,6 +171,8 @@ List<Question> _buildLegacyQuestionSet(
             category: category.isEmpty ? 'Theme ${themeIndex + 1}' : category,
             value: value,
             used: false,
+            questionMedia: _readQuestionMediaList(item['questionMedia']),
+            answerMedia: _readQuestionMediaList(item['answerMedia']),
             round: roundNumber,
           ),
         );
@@ -401,4 +403,18 @@ class _LocalizedQuestionContent {
 
 String _sourceQuestionId(String questionId) {
   return questionId.replaceFirst(RegExp(r'_r\d+$'), '');
+}
+
+List<QuestionMedia> _readQuestionMediaList(Object? raw) {
+  if (raw is! List<dynamic>) {
+    return const <QuestionMedia>[];
+  }
+  return raw
+      .whereType<Map>()
+      .map(
+        (Map item) => QuestionMedia.fromJson(
+          Map<String, dynamic>.from(item),
+        ),
+      )
+      .toList(growable: false);
 }

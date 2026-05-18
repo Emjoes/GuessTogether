@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:guesstogether/core/constants/question_packages.dart';
 import 'package:guesstogether/core/l10n/l10n.dart';
 import 'package:guesstogether/core/theme/app_spacing.dart';
 import 'package:guesstogether/data/api/game_api.dart';
@@ -235,6 +236,21 @@ class _WaitingRoomScreenState extends ConsumerState<WaitingRoomScreen> {
     }
   }
 
+  String _packageTitle(RoomDetails room) {
+    if (room.packageFileName.trim().isEmpty ||
+        room.packageFileName == standardQuestionPackFileName) {
+      return _standardPackageText;
+    }
+    final String topic = room.summary.topic.trim();
+    if (topic.isNotEmpty &&
+        topic != 'Multiplayer' &&
+        topic != 'Elimination' &&
+        topic != 'General Trivia') {
+      return topic;
+    }
+    return room.packageFileName.replaceAll('.json', '');
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -350,7 +366,7 @@ class _WaitingRoomScreenState extends ConsumerState<WaitingRoomScreen> {
                                       .packageFileName.isNotEmpty) ...<Widget>[
                                     const SizedBox(height: AppSpacing.xs),
                                     Text(
-                                      '$_packageLabel: $_standardPackageText',
+                                      '$_packageLabel: ${_packageTitle(room)}',
                                       style: theme.textTheme.bodyMedium,
                                     ),
                                   ],

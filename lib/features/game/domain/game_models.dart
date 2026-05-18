@@ -10,6 +10,62 @@ enum GamePhase {
   finished,
 }
 
+enum QuestionMediaType { image, audio, video }
+
+QuestionMediaType _parseQuestionMediaType(String value) {
+  return QuestionMediaType.values.firstWhere(
+    (QuestionMediaType candidate) => candidate.name == value,
+    orElse: () => QuestionMediaType.image,
+  );
+}
+
+class QuestionMedia extends Equatable {
+  const QuestionMedia({
+    required this.type,
+    required this.path,
+    this.label = '',
+    this.isBackground = false,
+  });
+
+  final QuestionMediaType type;
+  final String path;
+  final String label;
+  final bool isBackground;
+
+  QuestionMedia copyWith({
+    QuestionMediaType? type,
+    String? path,
+    String? label,
+    bool? isBackground,
+  }) {
+    return QuestionMedia(
+      type: type ?? this.type,
+      path: path ?? this.path,
+      label: label ?? this.label,
+      isBackground: isBackground ?? this.isBackground,
+    );
+  }
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'type': type.name,
+        'path': path,
+        'label': label,
+        'isBackground': isBackground,
+      };
+
+  factory QuestionMedia.fromJson(Map<String, dynamic> json) {
+    return QuestionMedia(
+      type: _parseQuestionMediaType(json['type'] as String? ?? 'image'),
+      path: json['path'] as String? ?? '',
+      label: json['label'] as String? ?? '',
+      isBackground: json['isBackground'] as bool? ?? false,
+    );
+  }
+
+  @override
+  List<Object?> get props => <Object?>[type, path, label, isBackground];
+}
+
 class Player extends Equatable {
   const Player({
     required this.id,
@@ -58,6 +114,8 @@ class Question extends Equatable {
     required this.category,
     required this.value,
     required this.used,
+    this.questionMedia = const <QuestionMedia>[],
+    this.answerMedia = const <QuestionMedia>[],
     this.round = 1,
   });
 
@@ -67,6 +125,8 @@ class Question extends Equatable {
   final String category;
   final int value;
   final bool used;
+  final List<QuestionMedia> questionMedia;
+  final List<QuestionMedia> answerMedia;
   final int round;
 
   Question copyWith({
@@ -75,6 +135,8 @@ class Question extends Equatable {
     String? category,
     int? value,
     bool? used,
+    List<QuestionMedia>? questionMedia,
+    List<QuestionMedia>? answerMedia,
     int? round,
   }) {
     return Question(
@@ -84,6 +146,8 @@ class Question extends Equatable {
       category: category ?? this.category,
       value: value ?? this.value,
       used: used ?? this.used,
+      questionMedia: questionMedia ?? this.questionMedia,
+      answerMedia: answerMedia ?? this.answerMedia,
       round: round ?? this.round,
     );
   }
@@ -95,6 +159,10 @@ class Question extends Equatable {
         'category': category,
         'value': value,
         'used': used,
+        'questionMedia':
+            questionMedia.map((QuestionMedia item) => item.toJson()).toList(),
+        'answerMedia':
+            answerMedia.map((QuestionMedia item) => item.toJson()).toList(),
         'round': round,
       };
 
@@ -106,6 +174,22 @@ class Question extends Equatable {
       category: json['category'] as String? ?? '',
       value: (json['value'] as num?)?.toInt() ?? 0,
       used: json['used'] as bool? ?? false,
+      questionMedia: ((json['questionMedia'] as List<dynamic>?) ?? <dynamic>[])
+          .whereType<Map>()
+          .map(
+            (Map item) => QuestionMedia.fromJson(
+              Map<String, dynamic>.from(item),
+            ),
+          )
+          .toList(growable: false),
+      answerMedia: ((json['answerMedia'] as List<dynamic>?) ?? <dynamic>[])
+          .whereType<Map>()
+          .map(
+            (Map item) => QuestionMedia.fromJson(
+              Map<String, dynamic>.from(item),
+            ),
+          )
+          .toList(growable: false),
       round: (json['round'] as num?)?.toInt() ?? 1,
     );
   }
@@ -118,6 +202,8 @@ class Question extends Equatable {
         category,
         value,
         used,
+        questionMedia,
+        answerMedia,
         round,
       ];
 }

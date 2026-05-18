@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -7,6 +9,19 @@ import 'package:guesstogether/features/session/app_session_controller.dart';
 
 class _FakeGameApi implements GameApi {
   CreateRoomRequest? lastCreateRoomRequest;
+
+  @override
+  Future<ImportedPackageSummary> importSiqPackage({
+    required String fileName,
+    required Uint8List bytes,
+  }) async {
+    return ImportedPackageSummary(
+      packageFileName: '$fileName.json',
+      packageName: fileName,
+      questionCount: 1,
+      hasMedia: false,
+    );
+  }
 
   @override
   Future<RoomSummary> createRoom(CreateRoomRequest request) async {
@@ -95,6 +110,19 @@ class _TokenAwareGameApi implements GameApi {
 
   final String token;
   final List<String> usedTokens;
+
+  @override
+  Future<ImportedPackageSummary> importSiqPackage({
+    required String fileName,
+    required Uint8List bytes,
+  }) async {
+    return ImportedPackageSummary(
+      packageFileName: '$fileName.json',
+      packageName: fileName,
+      questionCount: 1,
+      hasMedia: false,
+    );
+  }
 
   @override
   Future<RoomSummary> createRoom(CreateRoomRequest request) async {

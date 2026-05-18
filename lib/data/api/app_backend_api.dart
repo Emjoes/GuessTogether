@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -13,6 +14,11 @@ abstract class AppBackendApi implements GameApi {
   Future<BootstrapPayload> login(LoginRequest request);
   Future<BootstrapPayload> loadBootstrap();
   Future<void> saveSettings(UserSettingsDto settings);
+  @override
+  Future<ImportedPackageSummary> importSiqPackage({
+    required String fileName,
+    required Uint8List bytes,
+  });
   Future<void> chooseQuestion(String roomId, String questionId);
   Future<void> requestAnswer(String roomId);
   Future<void> passQuestion(String roomId);
@@ -173,6 +179,29 @@ class HttpAppBackendApi implements AppBackendApi {
       body: jsonEncode(settings.toJson()),
     );
     await _ensureSuccess(response);
+  }
+
+  @override
+  Future<ImportedPackageSummary> importSiqPackage({
+    required String fileName,
+    required Uint8List bytes,
+  }) async {
+    final http.Request request = http.Request(
+      'POST',
+      _uri('/api/packages/import-siq'),
+    );
+    request.headers.addAll(
+      <String, String>{
+        ..._headers(),
+        'content-type': 'application/octet-stream',
+        'x-package-file-name': fileName,
+      },
+    );
+    request.bodyBytes = bytes;
+    final http.StreamedResponse streamed = await _httpClient.send(request);
+    final http.Response response = await http.Response.fromStream(streamed);
+    await _ensureSuccess(response);
+    return ImportedPackageSummary.fromJson(await _decodeObject(response));
   }
 
   @override

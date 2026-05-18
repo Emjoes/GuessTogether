@@ -1,9 +1,15 @@
+import 'dart:typed_data';
+
 import 'package:equatable/equatable.dart';
 
 import 'package:guesstogether/features/game/domain/game_models.dart';
 
 /// High-level game API abstraction so we can plug different backends.
 abstract class GameApi {
+  Future<ImportedPackageSummary> importSiqPackage({
+    required String fileName,
+    required Uint8List bytes,
+  });
   Future<RoomSummary> createRoom(CreateRoomRequest request);
   Future<RoomSummary> joinRoom(
     String code, {
@@ -22,6 +28,49 @@ abstract class GameApi {
 enum LeaderboardScope { global, monthly, daily }
 
 enum RoomLifecycleStatus { waiting, inGame, finished }
+
+class ImportedPackageSummary extends Equatable {
+  const ImportedPackageSummary({
+    required this.packageFileName,
+    required this.packageName,
+    required this.questionCount,
+    required this.hasMedia,
+    this.mediaPackageId = '',
+  });
+
+  final String packageFileName;
+  final String packageName;
+  final int questionCount;
+  final bool hasMedia;
+  final String mediaPackageId;
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'packageFileName': packageFileName,
+        'packageName': packageName,
+        'questionCount': questionCount,
+        'hasMedia': hasMedia,
+        'mediaPackageId': mediaPackageId,
+      };
+
+  factory ImportedPackageSummary.fromJson(Map<String, dynamic> json) {
+    return ImportedPackageSummary(
+      packageFileName: json['packageFileName'] as String? ?? '',
+      packageName: json['packageName'] as String? ?? '',
+      questionCount: (json['questionCount'] as num?)?.toInt() ?? 0,
+      hasMedia: json['hasMedia'] as bool? ?? false,
+      mediaPackageId: json['mediaPackageId'] as String? ?? '',
+    );
+  }
+
+  @override
+  List<Object?> get props => <Object?>[
+        packageFileName,
+        packageName,
+        questionCount,
+        hasMedia,
+        mediaPackageId,
+      ];
+}
 
 class CreateRoomRequest extends Equatable {
   const CreateRoomRequest({

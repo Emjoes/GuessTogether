@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -25,6 +26,19 @@ class _FakeWaitingRoomApi implements AppBackendApi {
   final RoomDetails room;
   final StreamController<RoomRealtimeMessage> messages;
   final String? startErrorText;
+
+  @override
+  Future<ImportedPackageSummary> importSiqPackage({
+    required String fileName,
+    required Uint8List bytes,
+  }) async {
+    return ImportedPackageSummary(
+      packageFileName: '$fileName.json',
+      packageName: fileName,
+      questionCount: 1,
+      hasMedia: false,
+    );
+  }
 
   @override
   RoomRealtimeConnection connectToRoom(String roomId) {

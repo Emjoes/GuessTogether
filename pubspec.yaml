@@ -2,7 +2,7 @@ name: guesstogether
 description: Mobile quiz game where players compete with each other in real time, guessing answers together in engaging and interactive matches.
 publish_to: "none"
 
-version: 1.0.1+101
+version: 1.0.2+102
 
 environment:
   sdk: ">=3.2.0 <4.0.0"

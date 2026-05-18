@@ -12,9 +12,9 @@ import 'package:guesstogether/features/lobby/providers/room_session_provider.dar
 import 'package:guesstogether/features/session/app_session_controller.dart';
 
 const int _boardPickSeconds = 10;
-const int _questionRevealSeconds = 2;
 const int _answerWindowSeconds = 12;
 const int _answerRevealSeconds = 3;
+const int _roundAnnouncementSeconds = 3;
 
 enum GameViewRole { host, player }
 
@@ -71,6 +71,11 @@ class GameController extends StateNotifier<GameState> {
     if (state.isPaused) {
       return;
     }
+    // No timer for interactive phases.
+    if (state.phase == GamePhase.catInBagTransfer ||
+        state.phase == GamePhase.auctionBidding) {
+      return;
+    }
     if (state.phase == GamePhase.answerWindow &&
         state.pendingAnswerPlayerId != null) {
       if (state.pendingAnswerSecondsLeft <= 0) {
@@ -99,6 +104,11 @@ class GameController extends StateNotifier<GameState> {
   void _schedulePhaseTimeout() {
     _phaseTimeoutTimer?.cancel();
     final GamePhase phaseAtSchedule = state.phase;
+    // Interactive phases have no automatic timeout.
+    if (phaseAtSchedule == GamePhase.catInBagTransfer ||
+        phaseAtSchedule == GamePhase.auctionBidding) {
+      return;
+    }
     final bool pendingAtSchedule = state.phase == GamePhase.answerWindow &&
         state.pendingAnswerPlayerId != null;
     _phaseTimeoutTimer = Timer(const Duration(milliseconds: 120), () {
@@ -131,6 +141,10 @@ class GameController extends StateNotifier<GameState> {
       case GamePhase.boardSelection:
         _autoPickQuestion();
         return;
+      case GamePhase.catInBagTransfer:
+      case GamePhase.auctionBidding:
+        // No timeout — wait for explicit player action.
+        return;
       case GamePhase.questionReveal:
         _startQuestionAnswerWindow();
         return;
@@ -139,6 +153,9 @@ class GameController extends StateNotifier<GameState> {
         return;
       case GamePhase.answerReveal:
         _returnToBoardOrFinish();
+        return;
+      case GamePhase.roundAnnouncement:
+        _proceedToBoardSelection();
         return;
       case GamePhase.waitingForHost:
       case GamePhase.finished:
@@ -184,44 +201,49 @@ class GameController extends StateNotifier<GameState> {
     String questionId, {
     required bool hostOverride,
   }) {
-    if (state.phase != GamePhase.boardSelection ||
-        state.isMatchEnded ||
-        state.isPaused) {
-      return;
-    }
-
-    final int index =
-        state.boardQuestions.indexWhere((Question q) => q.id == questionId);
-    if (index < 0) {
-      return;
-    }
-
-    final Question selected = state.boardQuestions[index];
-    if (selected.used || selected.round != state.round) {
-      return;
-    }
-
-    final List<Question> updatedBoard =
-        List<Question>.from(state.boardQuestions);
-    updatedBoard[index] = selected.copyWith(used: true);
-    state = state.copyWith(
-      boardQuestions: updatedBoard,
-      currentQuestion: selected,
-      questionOwnerId: state.currentChooserId,
-      phase: GamePhase.questionReveal,
-      phaseSecondsLeft: _questionRevealSeconds,
-      phaseSecondsTotal: _questionRevealSeconds,
-      pendingAnswerSecondsLeft: 0,
-      pendingAnswerSecondsTotal: 0,
-      pendingAnswerPlayerId: null,
-      passedPlayerIds: const <String>[],
-      wrongAnswerPlayerIds: const <String>[],
-      lastCorrectAnswerPlayerId: null,
-      lastEvent: hostOverride
-          ? 'Host selected ${selected.category} for ${selected.value}.'
-          : '${_playerName(state.currentChooserId)} selected ${selected.category} for ${selected.value}.',
+    final GameState next = GameStateMachine.chooseQuestion(
+      state,
+      questionId: questionId,
+      hostOverride: hostOverride,
     );
+    if (next == state) return;
+    state = next;
+    if (state.phase == GamePhase.catInBagTransfer ||
+        state.phase == GamePhase.auctionBidding) {
+      // No timer needed for interactive phases.
+      _stopTimers();
+      return;
+    }
     _restartTickerAligned();
+  }
+
+  void transferCatInBag(String targetPlayerId) {
+    final GameState next =
+        GameStateMachine.transferCatInBag(state, targetPlayerId);
+    if (next == state) return;
+    state = next;
+    _restartTickerAligned();
+  }
+
+  void placeBid(int wager) {
+    final GameState next = GameStateMachine.placeBid(
+        state, state.currentChooserId, wager);
+    if (next == state) return;
+    state = next;
+    if (state.phase == GamePhase.questionReveal) {
+      _restartTickerAligned();
+    }
+  }
+
+  void passAuction() {
+    final GameState next =
+        GameStateMachine.passAuction(state, state.currentChooserId);
+    if (next == state) return;
+    state = next;
+    if (state.phase == GamePhase.answerReveal ||
+        state.phase == GamePhase.questionReveal) {
+      _restartTickerAligned();
+    }
   }
 
   void pickRandomQuestion({
@@ -572,19 +594,21 @@ class GameController extends StateNotifier<GameState> {
     if (!state.hasBoardQuestionsLeft) {
       final int? nextRound = state.nextRoundNumber;
       if (nextRound != null) {
+        // Show round announcement for 3 s then auto-proceed.
         state = state.copyWith(
-          phase: GamePhase.boardSelection,
+          phase: GamePhase.roundAnnouncement,
           round: nextRound,
           clearCurrentQuestion: true,
-          phaseSecondsLeft: _boardPickSeconds,
-          phaseSecondsTotal: _boardPickSeconds,
+          phaseSecondsLeft: _roundAnnouncementSeconds,
+          phaseSecondsTotal: _roundAnnouncementSeconds,
           pendingAnswerSecondsLeft: 0,
           pendingAnswerSecondsTotal: 0,
           pendingAnswerPlayerId: null,
           passedPlayerIds: const <String>[],
           wrongAnswerPlayerIds: const <String>[],
           lastCorrectAnswerPlayerId: null,
-          currentChooserId: state.currentChooserId,
+          auctionBids: const <String, int>{},
+          auctionPassedPlayerIds: const <String>[],
           isPaused: false,
           lastEvent: 'Round $nextRound begins.',
         );
@@ -627,6 +651,23 @@ class GameController extends StateNotifier<GameState> {
       currentChooserId: state.currentChooserId,
       isPaused: false,
       lastEvent: '${_playerName(state.currentChooserId)} picks next clue.',
+    );
+    _restartTickerAligned();
+  }
+
+  void _proceedToBoardSelection() {
+    state = state.copyWith(
+      phase: GamePhase.boardSelection,
+      phaseSecondsLeft: _boardPickSeconds,
+      phaseSecondsTotal: _boardPickSeconds,
+      pendingAnswerSecondsLeft: 0,
+      pendingAnswerSecondsTotal: 0,
+      pendingAnswerPlayerId: null,
+      passedPlayerIds: const <String>[],
+      wrongAnswerPlayerIds: const <String>[],
+      lastCorrectAnswerPlayerId: null,
+      isPaused: false,
+      lastEvent: '${_playerName(state.currentChooserId)} picks the next clue.',
     );
     _restartTickerAligned();
   }
@@ -899,6 +940,21 @@ class OnlineGameController extends GameController {
     required int score,
   }) {
     unawaited(_run(() => _api.setPlayerScore(roomId, playerId, score)));
+  }
+
+  @override
+  void transferCatInBag(String targetPlayerId) {
+    unawaited(_run(() => _api.transferCatInBag(roomId, targetPlayerId)));
+  }
+
+  @override
+  void placeBid(int wager) {
+    unawaited(_run(() => _api.placeBid(roomId, wager)));
+  }
+
+  @override
+  void passAuction() {
+    unawaited(_run(() => _api.passAuction(roomId)));
   }
 
   @override

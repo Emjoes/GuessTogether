@@ -138,6 +138,15 @@ class _FakeRealtimeApi implements AppBackendApi {
   Future<void> togglePause(String roomId) async {}
 
   @override
+  Future<void> transferCatInBag(String roomId, String targetPlayerId) async {}
+
+  @override
+  Future<void> placeBid(String roomId, int wager) async {}
+
+  @override
+  Future<void> passAuction(String roomId) async {}
+
+  @override
   Future<RoomSummary> joinRoom(
     String code, {
     required String playerName,

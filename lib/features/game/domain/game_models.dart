@@ -3,11 +3,23 @@ import 'package:equatable/equatable.dart';
 enum GamePhase {
   waitingForHost,
   boardSelection,
+  catInBagTransfer,
+  auctionBidding,
   questionReveal,
   answerWindow,
   answerReveal,
+  roundAnnouncement,
   paused,
   finished,
+}
+
+enum QuestionType { normal, catInBag, auction }
+
+QuestionType _parseQuestionType(String? value) {
+  return QuestionType.values.firstWhere(
+    (QuestionType candidate) => candidate.name == value,
+    orElse: () => QuestionType.normal,
+  );
 }
 
 enum QuestionMediaType { image, audio, video }
@@ -117,6 +129,7 @@ class Question extends Equatable {
     this.questionMedia = const <QuestionMedia>[],
     this.answerMedia = const <QuestionMedia>[],
     this.round = 1,
+    this.type = QuestionType.normal,
   });
 
   final String id;
@@ -128,6 +141,7 @@ class Question extends Equatable {
   final List<QuestionMedia> questionMedia;
   final List<QuestionMedia> answerMedia;
   final int round;
+  final QuestionType type;
 
   Question copyWith({
     String? text,
@@ -138,6 +152,7 @@ class Question extends Equatable {
     List<QuestionMedia>? questionMedia,
     List<QuestionMedia>? answerMedia,
     int? round,
+    QuestionType? type,
   }) {
     return Question(
       id: id,
@@ -149,6 +164,7 @@ class Question extends Equatable {
       questionMedia: questionMedia ?? this.questionMedia,
       answerMedia: answerMedia ?? this.answerMedia,
       round: round ?? this.round,
+      type: type ?? this.type,
     );
   }
 
@@ -164,6 +180,7 @@ class Question extends Equatable {
         'answerMedia':
             answerMedia.map((QuestionMedia item) => item.toJson()).toList(),
         'round': round,
+        'type': type.name,
       };
 
   factory Question.fromJson(Map<String, dynamic> json) {
@@ -191,6 +208,7 @@ class Question extends Equatable {
           )
           .toList(growable: false),
       round: (json['round'] as num?)?.toInt() ?? 1,
+      type: _parseQuestionType(json['type'] as String?),
     );
   }
 
@@ -205,6 +223,7 @@ class Question extends Equatable {
         questionMedia,
         answerMedia,
         round,
+        type,
       ];
 }
 
@@ -229,6 +248,8 @@ class GameState extends Equatable {
     required this.isMatchEnded,
     required this.winnerId,
     required this.lastEvent,
+    this.auctionBids = const <String, int>{},
+    this.auctionPassedPlayerIds = const <String>[],
   });
 
   factory GameState.initial({
@@ -263,6 +284,8 @@ class GameState extends Equatable {
       isMatchEnded: false,
       winnerId: null,
       lastEvent: 'Host should start the match',
+      auctionBids: const <String, int>{},
+      auctionPassedPlayerIds: const <String>[],
     );
   }
 
@@ -285,6 +308,8 @@ class GameState extends Equatable {
   final bool isMatchEnded;
   final String? winnerId;
   final String lastEvent;
+  final Map<String, int> auctionBids;
+  final List<String> auctionPassedPlayerIds;
 
   int get remainingSeconds => phaseSecondsLeft;
   bool get isAnswering => phase == GamePhase.answerWindow;
@@ -357,6 +382,8 @@ class GameState extends Equatable {
     bool? isMatchEnded,
     Object? winnerId = _unset,
     String? lastEvent,
+    Map<String, int>? auctionBids,
+    List<String>? auctionPassedPlayerIds,
   }) {
     return GameState(
       players: players ?? this.players,
@@ -387,6 +414,9 @@ class GameState extends Equatable {
       winnerId:
           identical(winnerId, _unset) ? this.winnerId : winnerId as String?,
       lastEvent: lastEvent ?? this.lastEvent,
+      auctionBids: auctionBids ?? this.auctionBids,
+      auctionPassedPlayerIds:
+          auctionPassedPlayerIds ?? this.auctionPassedPlayerIds,
     );
   }
 
@@ -412,6 +442,8 @@ class GameState extends Equatable {
         'isMatchEnded': isMatchEnded,
         'winnerId': winnerId,
         'lastEvent': lastEvent,
+        'auctionBids': auctionBids,
+        'auctionPassedPlayerIds': auctionPassedPlayerIds,
       };
 
   factory GameState.fromJson(Map<String, dynamic> json) {
@@ -456,6 +488,12 @@ class GameState extends Equatable {
       isMatchEnded: json['isMatchEnded'] as bool? ?? false,
       winnerId: json['winnerId'] as String?,
       lastEvent: json['lastEvent'] as String? ?? '',
+      auctionBids: (json['auctionBids'] as Map<String, dynamic>? ?? <String, dynamic>{})
+          .map((String k, dynamic v) => MapEntry<String, int>(k, (v as num?)?.toInt() ?? 0)),
+      auctionPassedPlayerIds:
+          ((json['auctionPassedPlayerIds'] as List<dynamic>?) ?? <dynamic>[])
+              .map((dynamic item) => item as String)
+              .toList(),
     );
   }
 
@@ -480,30 +518,45 @@ class GameState extends Equatable {
         isMatchEnded,
         winnerId,
         lastEvent,
+        auctionBids,
+        auctionPassedPlayerIds,
       ];
 }
 
 const Object _unset = Object();
 
 List<Question> _buildRoundBoard() {
-  const String category = 'Quick Test';
-  const List<int> values = <int>[100, 200];
+  const List<(String, int, QuestionType)> defs =
+      <(String, int, QuestionType)>[
+    ('Quick Test', 100, QuestionType.normal),
+    ('Quick Test', 200, QuestionType.catInBag),
+    ('Quick Test', 300, QuestionType.auction),
+    ('Quick Test', 400, QuestionType.normal),
+    ('Quick Test', 500, QuestionType.normal),
+    ('Science', 100, QuestionType.normal),
+    ('Science', 200, QuestionType.normal),
+    ('Science', 300, QuestionType.catInBag),
+    ('Science', 400, QuestionType.auction),
+    ('Science', 500, QuestionType.normal),
+  ];
 
-  final List<Question> items = <Question>[];
-  for (final int value in values) {
-    final String id = '${category.toLowerCase().replaceAll(' ', '_')}-$value';
-    items.add(
-      Question(
-        id: id,
-        category: category,
-        value: value,
-        text: '[$category for $value] Name one key fact related to this topic.',
-        answer: 'Sample answer for $category $value',
-        used: false,
-      ),
-    );
-  }
-  return items;
+  return defs.indexed
+      .map(
+        ((int, (String, int, QuestionType)) entry) {
+          final int i = entry.$1;
+          final (String cat, int value, QuestionType type) = entry.$2;
+          return Question(
+            id: 'debug_q${i + 1}',
+            category: cat,
+            value: value,
+            text: '[$cat for $value] Debug question ${i + 1}.',
+            answer: 'Answer ${i + 1}',
+            used: false,
+            type: type,
+          );
+        },
+      )
+      .toList(growable: false);
 }
 
 /// Simple scoring utility including final wager calculation.

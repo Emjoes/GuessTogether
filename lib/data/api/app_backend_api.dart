@@ -28,6 +28,9 @@ abstract class AppBackendApi implements GameApi {
   Future<void> skipQuestion(String roomId);
   Future<void> skipRound(String roomId);
   Future<void> setPlayerScore(String roomId, String playerId, int score);
+  Future<void> transferCatInBag(String roomId, String targetPlayerId);
+  Future<void> placeBid(String roomId, int wager);
+  Future<void> passAuction(String roomId);
   RoomRealtimeConnection connectToRoom(String roomId);
 }
 
@@ -345,6 +348,29 @@ class HttpAppBackendApi implements AppBackendApi {
         'score': score,
       },
     );
+  }
+
+  @override
+  Future<void> transferCatInBag(String roomId, String targetPlayerId) {
+    return _postGameAction(
+      roomId,
+      'transfer',
+      payload: <String, dynamic>{'targetPlayerId': targetPlayerId},
+    );
+  }
+
+  @override
+  Future<void> placeBid(String roomId, int wager) {
+    return _postGameAction(
+      roomId,
+      'bid',
+      payload: <String, dynamic>{'wager': wager},
+    );
+  }
+
+  @override
+  Future<void> passAuction(String roomId) {
+    return _postGameAction(roomId, 'pass-auction');
   }
 
   @override

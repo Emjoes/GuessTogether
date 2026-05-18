@@ -151,6 +151,15 @@ class _FakeWaitingRoomApi implements AppBackendApi {
 
   @override
   Future<void> togglePause(String roomId) async {}
+
+  @override
+  Future<void> transferCatInBag(String roomId, String targetPlayerId) async {}
+
+  @override
+  Future<void> placeBid(String roomId, int wager) async {}
+
+  @override
+  Future<void> passAuction(String roomId) async {}
 }
 
 RoomDetails _buildRoom({

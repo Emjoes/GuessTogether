@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:media_kit/media_kit.dart' as mk;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
 import 'package:guesstogether/core/l10n/l10n.dart';
@@ -22,6 +23,35 @@ import 'package:guesstogether/features/result/presentation/result_screen.dart';
 import 'package:guesstogether/features/session/app_session_controller.dart';
 import 'package:guesstogether/widgets/app_panel.dart';
 import 'package:guesstogether/widgets/back_shortcut_scope.dart';
+
+final _mediaPlayingProvider = StateProvider<bool>((ref) => false);
+
+class _MediaVolumeNotifier extends StateNotifier<double> {
+  _MediaVolumeNotifier() : super(1.0) {
+    unawaited(_load());
+  }
+
+  static const String _key = 'media_volume';
+
+  Future<void> _load() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    state = (prefs.getDouble(_key) ?? 1.0).clamp(0.0, 1.0);
+  }
+
+  void set(double v) {
+    state = v.clamp(0.0, 1.0);
+    SharedPreferences.getInstance().then(
+      (SharedPreferences p) => p.setDouble(_key, state),
+    );
+  }
+}
+
+final _mediaVolumeProvider =
+    StateNotifierProvider<_MediaVolumeNotifier, double>(
+  (ref) => _MediaVolumeNotifier(),
+);
+
+final _mediaStopRequestProvider = StateProvider<int>((ref) => 0);
 
 Color _timedFrameActiveStripeColor(ColorScheme scheme) {
   if (scheme.brightness == Brightness.light) {
@@ -335,6 +365,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           in activeRoom?.playerParticipants ?? const <RoomParticipant>[])
         participant.id: participant.isConnected,
     };
+    final bool mediaPlaying = ref.watch(_mediaPlayingProvider);
     final GameViewRole effectiveRole = role;
     final String effectiveLocalPlayerId = game.players.any(
       (Player p) => p.id == selectedLocalPlayerId,
@@ -426,7 +457,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                         activeColorOverride: questionStripeColor,
                         progress: _panelTimerProgress(game),
                         active: _panelTimerActive(game),
-                        paused: _panelTimerPaused(game),
+                        paused: _panelTimerPaused(game) || mediaPlaying,
                         secondsLeft: game.phaseSecondsLeft,
                         secondsTotal: game.phaseSecondsTotal,
                         borderRadius: 22,
@@ -446,6 +477,13 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                                         effectiveRole == GameViewRole.host,
                                   );
                                 },
+                                onTransferCatInBag: (String targetPlayerId) {
+                                  controller.transferCatInBag(targetPlayerId);
+                                },
+                                onPlaceBid: (int wager) {
+                                  controller.placeBid(wager);
+                                },
+                                onPassAuction: controller.passAuction,
                               ),
                             ),
                             if (game.isPaused)
@@ -737,6 +775,9 @@ class _MatchStageBody extends StatelessWidget {
     required this.baseHttpUrl,
     required this.localPlayerId,
     required this.onPickQuestion,
+    required this.onTransferCatInBag,
+    required this.onPlaceBid,
+    required this.onPassAuction,
   });
 
   final GameState game;
@@ -744,6 +785,9 @@ class _MatchStageBody extends StatelessWidget {
   final String baseHttpUrl;
   final String localPlayerId;
   final ValueChanged<String> onPickQuestion;
+  final ValueChanged<String> onTransferCatInBag;
+  final ValueChanged<int> onPlaceBid;
+  final VoidCallback onPassAuction;
 
   @override
   Widget build(BuildContext context) {
@@ -756,6 +800,25 @@ class _MatchStageBody extends StatelessWidget {
     if (game.phase == GamePhase.finished) {
       return Center(
         child: Text(l10n.gameMatchFinishedBody),
+      );
+    }
+    if (game.phase == GamePhase.roundAnnouncement) {
+      return _RoundAnnouncementView(round: game.round);
+    }
+    if (game.phase == GamePhase.catInBagTransfer) {
+      return _CatInBagView(
+        game: game,
+        role: role,
+        onSelectPlayer: onTransferCatInBag,
+      );
+    }
+    if (game.phase == GamePhase.auctionBidding) {
+      return _AuctionBiddingView(
+        game: game,
+        role: role,
+        localPlayerId: localPlayerId,
+        onPlaceBid: onPlaceBid,
+        onPass: onPassAuction,
       );
     }
 
@@ -772,6 +835,7 @@ class _MatchStageBody extends StatelessWidget {
             ? game.currentQuestion?.id
             : null,
         onPickQuestion: onPickQuestion,
+        isHost: role == GameViewRole.host,
       );
     }
 
@@ -789,12 +853,14 @@ class _JeopardyBoard extends StatelessWidget {
     required this.enabled,
     required this.highlightedQuestionId,
     required this.onPickQuestion,
+    this.isHost = false,
   });
 
   final List<Question> questions;
   final bool enabled;
   final String? highlightedQuestionId;
   final ValueChanged<String> onPickQuestion;
+  final bool isHost;
 
   @override
   Widget build(BuildContext context) {
@@ -863,6 +929,7 @@ class _JeopardyBoard extends StatelessWidget {
                                 highlighted:
                                     question.id == highlightedQuestionId,
                                 onTap: () => onPickQuestion(question.id),
+                                isHost: isHost,
                               ),
                             ),
                           );
@@ -932,12 +999,14 @@ class _BoardQuestionCell extends StatelessWidget {
     required this.enabled,
     required this.highlighted,
     required this.onTap,
+    this.isHost = false,
   });
 
   final Question? question;
   final bool enabled;
   final bool highlighted;
   final VoidCallback onTap;
+  final bool isHost;
 
   @override
   Widget build(BuildContext context) {
@@ -954,30 +1023,57 @@ class _BoardQuestionCell extends StatelessWidget {
         isLight ? const Color(0xFF4C2A00) : const Color(0xFFF3FBFF);
     final bool isUsed = question == null || (question!.used && !highlighted);
     final bool canTap = enabled && !isUsed;
+    final QuestionType questionType = question?.type ?? QuestionType.normal;
+    final bool isSpecial =
+        isHost && !isUsed && questionType != QuestionType.normal;
+    final bool isCatInBag = isSpecial && questionType == QuestionType.catInBag;
+    final bool isAuction = isSpecial && questionType == QuestionType.auction;
+
+    // Cell background: special types get their own color for the host.
+    final Color normalBg =
+        isLight ? const Color(0xFF3F74BE) : const Color(0xFF1D4A8A);
+    final Color catInBagBg =
+        isLight ? const Color(0xFF7B3FA8) : const Color(0xFF4A1E72);
+    final Color auctionBg =
+        isLight ? const Color(0xFF8A6200) : const Color(0xFF5A4000);
+    final Color usedBg =
+        isLight ? const Color(0xFFB8C9E7) : const Color(0xFF0F2445);
+
+    final Color cellColor = highlighted
+        ? highlightedBackground
+        : isUsed
+            ? usedBg
+            : isCatInBag
+                ? catInBagBg
+                : isAuction
+                    ? auctionBg
+                    : normalBg;
+
+    final Color borderColor = highlighted
+        ? highlightedBorder
+        : isUsed
+            ? (isLight
+                ? scheme.outline.withValues(alpha: 0.32)
+                : Colors.transparent)
+            : isSpecial
+                ? Colors.white.withValues(alpha: canTap ? 0.7 : 0.35)
+                : Colors.white.withValues(alpha: canTap ? 0.56 : 0.24);
+
+    // Value text color: keep yellow for normal, white-ish for special.
+    final Color valueColor = highlighted
+        ? highlightedText
+        : isSpecial
+            ? Colors.white.withValues(alpha: 0.95)
+            : (isLight ? const Color(0xFFFFEDAD) : const Color(0xFFF7D66A));
+
     return InkWell(
       borderRadius: BorderRadius.circular(10),
       onTap: canTap ? onTap : null,
       child: Ink(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
-          color: highlighted
-              ? highlightedBackground
-              : isUsed
-                  ? (isLight
-                      ? const Color(0xFFB8C9E7)
-                      : const Color(0xFF0F2445))
-                  : (isLight
-                      ? const Color(0xFF3F74BE)
-                      : const Color(0xFF1D4A8A)),
-          border: Border.all(
-            color: highlighted
-                ? highlightedBorder
-                : isUsed
-                    ? (isLight
-                        ? scheme.outline.withValues(alpha: 0.32)
-                        : Colors.transparent)
-                    : Colors.white.withValues(alpha: canTap ? 0.56 : 0.24),
-          ),
+          color: cellColor,
+          border: Border.all(color: borderColor),
           boxShadow: highlighted
               ? <BoxShadow>[
                   BoxShadow(
@@ -995,11 +1091,7 @@ class _BoardQuestionCell extends StatelessWidget {
             child: _SingleLineScaleText(
               isUsed ? '' : '${question!.value}',
               style: theme.textTheme.titleMedium?.copyWith(
-                color: highlighted
-                    ? highlightedText
-                    : (isLight
-                        ? const Color(0xFFFFEDAD)
-                        : const Color(0xFFF7D66A)),
+                color: valueColor,
                 fontWeight: FontWeight.w800,
                 fontFeatures: const <ui.FontFeature>[
                   ui.FontFeature.tabularFigures(),
@@ -1045,7 +1137,417 @@ class _SingleLineScaleText extends StatelessWidget {
   }
 }
 
-class _QuestionView extends StatelessWidget {
+class _RoundAnnouncementView extends StatelessWidget {
+  const _RoundAnnouncementView({required this.round});
+
+  final int round;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final bool isLight = theme.brightness == Brightness.light;
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isLight
+              ? <Color>[const Color(0xFF3D6FB7), const Color(0xFF1E3C70)]
+              : <Color>[const Color(0xFF1A3464), const Color(0xFF0D1F3D)],
+        ),
+      ),
+      child: Center(
+        child: Text(
+          'РАУНД $round',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.displayMedium?.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 4,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CatInBagView extends StatelessWidget {
+  const _CatInBagView({
+    required this.game,
+    required this.role,
+    required this.onSelectPlayer,
+  });
+
+  final GameState game;
+  final GameViewRole role;
+  final ValueChanged<String> onSelectPlayer;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final bool isLight = theme.brightness == Brightness.light;
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isLight
+              ? <Color>[const Color(0xFF6B3A8F), const Color(0xFF3A1860)]
+              : <Color>[const Color(0xFF35154D), const Color(0xFF1A0830)],
+        ),
+        border: Border.all(
+          color: const Color(0xFFAA66CC).withValues(alpha: 0.45),
+        ),
+      ),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Text(
+            'Кот в мешке!',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          if (role == GameViewRole.host) ...<Widget>[
+            Text(
+              'Выберите игрока:',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: Colors.white.withValues(alpha: 0.8),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            ...game.players.map(
+              (Player player) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.white.withValues(alpha: 0.18),
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 48),
+                  ),
+                  onPressed: () => onSelectPlayer(player.id),
+                  child: Text(
+                    '${player.name}  (${player.score})',
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ),
+            ),
+          ] else
+            Text(
+              'Хост выбирает получателя вопроса...',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: Colors.white.withValues(alpha: 0.75),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AuctionBiddingView extends StatefulWidget {
+  const _AuctionBiddingView({
+    required this.game,
+    required this.role,
+    required this.localPlayerId,
+    required this.onPlaceBid,
+    required this.onPass,
+  });
+
+  final GameState game;
+  final GameViewRole role;
+  final String localPlayerId;
+  final ValueChanged<int> onPlaceBid;
+  final VoidCallback onPass;
+
+  @override
+  State<_AuctionBiddingView> createState() => _AuctionBiddingViewState();
+}
+
+class _AuctionBiddingViewState extends State<_AuctionBiddingView> {
+  late int _wager;
+
+  int get _minWager => widget.game.currentQuestion?.value ?? 100;
+
+  int get _maxWager {
+    final Player me = widget.game.players.firstWhere(
+      (Player p) => p.id == widget.localPlayerId,
+      orElse: () => const Player(id: '', name: '', score: 0),
+    );
+    return math.max(_minWager, me.score);
+  }
+
+  bool get _isAllIn => _wager >= _maxWager;
+
+  bool _hasBid(String playerId) =>
+      widget.game.auctionBids.containsKey(playerId);
+  bool _hasPassed(String playerId) =>
+      widget.game.auctionPassedPlayerIds.contains(playerId);
+
+  bool get _canBid {
+    if (widget.role != GameViewRole.player) return false;
+    if (_hasBid(widget.localPlayerId)) return false;
+    if (_hasPassed(widget.localPlayerId)) return false;
+    if (widget.localPlayerId != widget.game.currentChooserId) {
+      final int? chooserBid =
+          widget.game.auctionBids[widget.game.currentChooserId];
+      if (chooserBid == null) return false;
+      final Player chooser = widget.game.players.firstWhere(
+        (Player p) => p.id == widget.game.currentChooserId,
+        orElse: () => const Player(id: '', name: '', score: 0),
+      );
+      if (chooserBid < chooser.score) return false;
+      final Player me = widget.game.players.firstWhere(
+        (Player p) => p.id == widget.localPlayerId,
+        orElse: () => const Player(id: '', name: '', score: 0),
+      );
+      if (me.score <= chooserBid) return false;
+    }
+    return true;
+  }
+
+  bool get _waitingForChooser {
+    if (widget.role != GameViewRole.player) return false;
+    if (widget.localPlayerId == widget.game.currentChooserId) return false;
+    return !widget.game.auctionBids.containsKey(widget.game.currentChooserId);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _wager = _minWager;
+  }
+
+  @override
+  void didUpdateWidget(covariant _AuctionBiddingView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _wager = _wager.clamp(_minWager, _maxWager);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final GameState game = widget.game;
+
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: <Color>[Color(0xFF4A3000), Color(0xFF251800)],
+        ),
+        border: Border.all(
+          color: const Color(0xFFD7A53A).withValues(alpha: 0.45),
+        ),
+      ),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(
+            'Вопрос со ставкой!',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              color: const Color(0xFFFFD96A),
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          if (game.currentQuestion != null) ...<Widget>[
+            const SizedBox(height: 4),
+            Text(
+              '${game.currentQuestion!.category} — ${game.currentQuestion!.value}',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: Colors.white.withValues(alpha: 0.65),
+              ),
+            ),
+          ],
+          const SizedBox(height: AppSpacing.sm),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: game.players.map((Player player) {
+                  final bool hasBid = _hasBid(player.id);
+                  final bool hasPassed = _hasPassed(player.id);
+                  final int? bid = game.auctionBids[player.id];
+                  final bool isChooser = player.id == game.currentChooserId;
+                  final String status;
+                  if (hasPassed) {
+                    status = 'Пас';
+                  } else if (hasBid && bid != null) {
+                    status = bid >= player.score ? '$bid (ва-банк)' : '$bid';
+                  } else {
+                    status = isChooser ? '...' : '—';
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 3),
+                    child: Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: Text(
+                            isChooser ? '${player.name} ★' : player.name,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              fontWeight: isChooser
+                                  ? FontWeight.w700
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          status,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: hasBid
+                                ? const Color(0xFFFFD96A)
+                                : hasPassed
+                                    ? Colors.white.withValues(alpha: 0.38)
+                                    : Colors.white.withValues(alpha: 0.55),
+                            fontWeight:
+                                hasBid ? FontWeight.w700 : FontWeight.normal,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+          if (_canBid) ...<Widget>[
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: <Widget>[
+                Text(
+                  '$_minWager',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.55),
+                  ),
+                ),
+                Expanded(
+                  child: SliderTheme(
+                    data: const SliderThemeData(
+                      trackHeight: 4,
+                      thumbShape: RoundSliderThumbShape(enabledThumbRadius: 8),
+                      overlayShape:
+                          RoundSliderOverlayShape(overlayRadius: 16),
+                      activeTrackColor: Color(0xFFFFD96A),
+                      thumbColor: Color(0xFFFFD96A),
+                      inactiveTrackColor: Colors.white24,
+                      overlayColor: Color(0x33FFD96A),
+                    ),
+                    child: Slider(
+                      min: _minWager.toDouble(),
+                      max: _maxWager.toDouble(),
+                      value: _wager
+                          .toDouble()
+                          .clamp(_minWager.toDouble(), _maxWager.toDouble()),
+                      divisions: _maxWager > _minWager
+                          ? math.min(_maxWager - _minWager, 100)
+                          : null,
+                      onChanged: _maxWager > _minWager
+                          ? (double v) => setState(() => _wager = v.round())
+                          : null,
+                    ),
+                  ),
+                ),
+                Text(
+                  '$_maxWager',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.55),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _isAllIn ? 'Ставка: $_wager (ва-банк)' : 'Ставка: $_wager',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: const Color(0xFFFFD96A),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFFFFD96A),
+                      foregroundColor: Colors.black,
+                    ),
+                    onPressed: () => widget.onPlaceBid(_wager),
+                    child: const Text(
+                      'Ставить',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.white.withValues(alpha: 0.18),
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: widget.onPass,
+                    child: const Text('Пас'),
+                  ),
+                ),
+              ],
+            ),
+          ] else if (_hasBid(widget.localPlayerId)) ...<Widget>[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Ваша ставка: ${game.auctionBids[widget.localPlayerId]}',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: const Color(0xFFFFD96A),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ] else if (_hasPassed(widget.localPlayerId)) ...<Widget>[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Вы пропустили ставку',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: Colors.white.withValues(alpha: 0.55),
+              ),
+            ),
+          ] else if (_waitingForChooser) ...<Widget>[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Ожидание ставки выбирающего...',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: Colors.white.withValues(alpha: 0.55),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _QuestionView extends ConsumerWidget {
   const _QuestionView({
     required this.game,
     required this.role,
@@ -1057,7 +1559,7 @@ class _QuestionView extends StatelessWidget {
   final String baseHttpUrl;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
@@ -1075,6 +1577,14 @@ class _QuestionView extends StatelessWidget {
     final String infoText = revealAnswer
         ? l10n.gameCorrectAnswerLabel
         : '${question.category} - ${question.value}';
+
+    final List<QuestionMedia> activeMedia =
+        revealAnswer ? question.answerMedia : question.questionMedia;
+    final bool hasAvMedia = activeMedia.any(
+      (QuestionMedia m) =>
+          m.type == QuestionMediaType.audio ||
+          m.type == QuestionMediaType.video,
+    );
 
     return Container(
       width: double.infinity,
@@ -1164,8 +1674,55 @@ class _QuestionView extends StatelessWidget {
               ),
             ),
           ],
+          if (hasAvMedia) ...<Widget>[
+            const SizedBox(height: AppSpacing.sm),
+            const _VolumeSlider(),
+          ],
         ],
       ),
+    );
+  }
+}
+
+class _VolumeSlider extends ConsumerWidget {
+  const _VolumeSlider();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final double volume = ref.watch(_mediaVolumeProvider);
+    final ThemeData theme = Theme.of(context);
+    final bool isLight = theme.brightness == Brightness.light;
+    final Color iconColor = isLight
+        ? theme.colorScheme.onSurfaceVariant
+        : Colors.white.withValues(alpha: 0.7);
+
+    return Row(
+      children: <Widget>[
+        Icon(
+          volume == 0
+              ? Icons.volume_off_rounded
+              : volume < 0.5
+                  ? Icons.volume_down_rounded
+                  : Icons.volume_up_rounded,
+          size: 20,
+          color: iconColor,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: SliderTheme(
+            data: const SliderThemeData(
+              trackHeight: 3,
+              thumbShape: RoundSliderThumbShape(enabledThumbRadius: 7),
+              overlayShape: RoundSliderOverlayShape(overlayRadius: 14),
+            ),
+            child: Slider(
+              value: volume,
+              onChanged: (double v) =>
+                  ref.read(_mediaVolumeProvider.notifier).set(v),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1308,40 +1865,52 @@ class _QuestionMediaBlock extends StatelessWidget {
   }
 }
 
-class _InlineAudioPlayer extends StatefulWidget {
+class _InlineAudioPlayer extends ConsumerStatefulWidget {
   const _InlineAudioPlayer({required this.url, required this.label});
 
   final String url;
   final String label;
 
   @override
-  State<_InlineAudioPlayer> createState() => _InlineAudioPlayerState();
+  ConsumerState<_InlineAudioPlayer> createState() => _InlineAudioPlayerState();
 }
 
-class _InlineAudioPlayerState extends State<_InlineAudioPlayer> {
+class _InlineAudioPlayerState extends ConsumerState<_InlineAudioPlayer> {
   late final mk.Player _player;
   final List<StreamSubscription<dynamic>> _subs =
       <StreamSubscription<dynamic>>[];
-
-  bool _playing = false;
-  bool _buffering = true;
-  Duration _position = Duration.zero;
-  Duration _duration = Duration.zero;
+  bool _pausedByMedia = false;
 
   @override
   void initState() {
     super.initState();
     _player = mk.Player();
     _subs
-      ..add(_player.stream.playing
-          .listen((bool v) { if (mounted) setState(() => _playing = v); }))
-      ..add(_player.stream.buffering
-          .listen((bool v) { if (mounted) setState(() => _buffering = v); }))
-      ..add(_player.stream.position
-          .listen((Duration v) { if (mounted) setState(() => _position = v); }))
-      ..add(_player.stream.duration
-          .listen((Duration v) { if (mounted) setState(() => _duration = v); }));
+      ..add(_player.stream.playing.listen(_onPlayingChanged))
+      ..add(_player.stream.completed.listen(_onCompleted));
+    unawaited(_player.setVolume(ref.read(_mediaVolumeProvider) * 100));
     unawaited(_player.open(mk.Media(widget.url)));
+  }
+
+  void _onPlayingChanged(bool playing) {
+    if (!playing || !mounted) return;
+    ref.read(_mediaPlayingProvider.notifier).state = true;
+    if (ref.read(gameViewRoleProvider) == GameViewRole.host) {
+      final GameState game = ref.read(gameControllerProvider);
+      if (!game.isPaused) {
+        _pausedByMedia = true;
+        ref.read(gameControllerProvider.notifier).togglePause();
+      }
+    }
+  }
+
+  void _onCompleted(bool completed) {
+    if (!completed || !mounted) return;
+    ref.read(_mediaPlayingProvider.notifier).state = false;
+    if (_pausedByMedia) {
+      _pausedByMedia = false;
+      ref.read(gameControllerProvider.notifier).togglePause();
+    }
   }
 
   @override
@@ -1354,6 +1923,7 @@ class _InlineAudioPlayerState extends State<_InlineAudioPlayer> {
 
   @override
   void dispose() {
+    ref.read(_mediaPlayingProvider.notifier).state = false;
     for (final StreamSubscription<dynamic> sub in _subs) {
       unawaited(sub.cancel());
     }
@@ -1361,119 +1931,81 @@ class _InlineAudioPlayerState extends State<_InlineAudioPlayer> {
     super.dispose();
   }
 
-  String _fmt(Duration d) {
-    final int m = d.inMinutes;
-    final int s = d.inSeconds.remainder(60);
-    return '$m:${s.toString().padLeft(2, '0')}';
-  }
-
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme scheme = theme.colorScheme;
-    final bool isLight = theme.brightness == Brightness.light;
-    final double progress = _duration.inMilliseconds > 0
-        ? (_position.inMilliseconds / _duration.inMilliseconds).clamp(0.0, 1.0)
-        : 0.0;
-
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        color: isLight
-            ? const Color(0xFF2D5496).withValues(alpha: 0.12)
-            : Colors.white.withValues(alpha: 0.1),
-        border: Border.all(
-          color: isLight
-              ? const Color(0xFF2D5496).withValues(alpha: 0.3)
-              : Colors.white.withValues(alpha: 0.18),
-        ),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      child: Row(
-        children: <Widget>[
-          IconButton(
-            onPressed: _buffering
-                ? null
-                : () => unawaited(_player.playOrPause()),
-            icon: _buffering
-                ? SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      color: scheme.primary,
-                    ),
-                  )
-                : Icon(
-                    _playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                    size: 28,
-                    color: isLight ? const Color(0xFF2D5496) : Colors.white,
-                  ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Text(
-                  widget.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: isLight
-                        ? const Color(0xFF1A3A72)
-                        : Colors.white.withValues(alpha: 0.7),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                LinearProgressIndicator(
-                  value: progress,
-                  borderRadius: BorderRadius.circular(4),
-                  color: isLight
-                      ? const Color(0xFF2D5496)
-                      : Colors.white.withValues(alpha: 0.8),
-                  backgroundColor: isLight
-                      ? const Color(0xFF2D5496).withValues(alpha: 0.2)
-                      : Colors.white.withValues(alpha: 0.2),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${_fmt(_position)} / ${_fmt(_duration)}',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: isLight
-                        ? const Color(0xFF1A3A72).withValues(alpha: 0.7)
-                        : Colors.white.withValues(alpha: 0.5),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    ref.listen<double>(_mediaVolumeProvider, (double? _, double v) {
+      unawaited(_player.setVolume(v * 100));
+    });
+    ref.listen<int>(_mediaStopRequestProvider, (int? prev, int next) {
+      if (prev != null && next > prev) {
+        unawaited(_player.stop());
+        if (mounted) {
+          ref.read(_mediaPlayingProvider.notifier).state = false;
+          if (_pausedByMedia) {
+            _pausedByMedia = false;
+            ref.read(gameControllerProvider.notifier).togglePause();
+          }
+        }
+      }
+    });
+    final bool isLight = Theme.of(context).brightness == Brightness.light;
+    return Icon(
+      Icons.music_note_rounded,
+      size: 96,
+      color: isLight
+          ? const Color(0xFF2D5496).withValues(alpha: 0.85)
+          : Colors.white.withValues(alpha: 0.75),
     );
   }
 }
 
-class _InlineVideoPlayer extends StatefulWidget {
+class _InlineVideoPlayer extends ConsumerStatefulWidget {
   const _InlineVideoPlayer({required this.url});
 
   final String url;
 
   @override
-  State<_InlineVideoPlayer> createState() => _InlineVideoPlayerState();
+  ConsumerState<_InlineVideoPlayer> createState() => _InlineVideoPlayerState();
 }
 
-class _InlineVideoPlayerState extends State<_InlineVideoPlayer> {
+class _InlineVideoPlayerState extends ConsumerState<_InlineVideoPlayer> {
   late final mk.Player _player;
   late final VideoController _controller;
+  final List<StreamSubscription<dynamic>> _subs =
+      <StreamSubscription<dynamic>>[];
+  bool _pausedByMedia = false;
 
   @override
   void initState() {
     super.initState();
     _player = mk.Player();
     _controller = VideoController(_player);
+    _subs
+      ..add(_player.stream.playing.listen(_onPlayingChanged))
+      ..add(_player.stream.completed.listen(_onCompleted));
+    unawaited(_player.setVolume(ref.read(_mediaVolumeProvider) * 100));
     unawaited(_player.open(mk.Media(widget.url)));
+  }
+
+  void _onPlayingChanged(bool playing) {
+    if (!playing || !mounted) return;
+    ref.read(_mediaPlayingProvider.notifier).state = true;
+    if (ref.read(gameViewRoleProvider) == GameViewRole.host) {
+      final GameState game = ref.read(gameControllerProvider);
+      if (!game.isPaused) {
+        _pausedByMedia = true;
+        ref.read(gameControllerProvider.notifier).togglePause();
+      }
+    }
+  }
+
+  void _onCompleted(bool completed) {
+    if (!completed || !mounted) return;
+    ref.read(_mediaPlayingProvider.notifier).state = false;
+    if (_pausedByMedia) {
+      _pausedByMedia = false;
+      ref.read(gameControllerProvider.notifier).togglePause();
+    }
   }
 
   @override
@@ -1486,18 +2018,40 @@ class _InlineVideoPlayerState extends State<_InlineVideoPlayer> {
 
   @override
   void dispose() {
+    ref.read(_mediaPlayingProvider.notifier).state = false;
+    for (final StreamSubscription<dynamic> sub in _subs) {
+      unawaited(sub.cancel());
+    }
     unawaited(_player.dispose());
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<double>(_mediaVolumeProvider, (double? _, double v) {
+      unawaited(_player.setVolume(v * 100));
+    });
+    ref.listen<int>(_mediaStopRequestProvider, (int? prev, int next) {
+      if (prev != null && next > prev) {
+        unawaited(_player.stop());
+        if (mounted) {
+          ref.read(_mediaPlayingProvider.notifier).state = false;
+          if (_pausedByMedia) {
+            _pausedByMedia = false;
+            ref.read(gameControllerProvider.notifier).togglePause();
+          }
+        }
+      }
+    });
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: Container(
         constraints: const BoxConstraints(maxHeight: 280),
         color: Colors.black,
-        child: Video(controller: _controller),
+        child: Video(
+          controller: _controller,
+          controls: (VideoState _) => const SizedBox.shrink(),
+        ),
       ),
     );
   }
@@ -1650,7 +2204,7 @@ class _CompactControlsBar extends StatelessWidget {
   }
 }
 
-class _HostCompactControls extends StatelessWidget {
+class _HostCompactControls extends ConsumerWidget {
   const _HostCompactControls({
     required this.game,
     required this.onStart,
@@ -1668,7 +2222,7 @@ class _HostCompactControls extends StatelessWidget {
   final VoidCallback onReject;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final ThemeData theme = Theme.of(context);
     final bool isLight = theme.brightness == Brightness.light;
@@ -1681,11 +2235,58 @@ class _HostCompactControls extends StatelessWidget {
     final bool canModerate = pending && !game.isMatchEnded;
     final bool canTogglePauseOrStart = !game.isMatchEnded;
     final bool canEditScores = !waiting && !game.isMatchEnded;
+
+    final bool mediaPlaying = ref.watch(_mediaPlayingProvider);
+    final RoomDetails? room = ref.watch(activeRoomProvider);
+
+    final bool canSkip = !game.isMatchEnded &&
+        (mediaPlaying ||
+            game.phase == GamePhase.boardSelection ||
+            game.phase == GamePhase.catInBagTransfer ||
+            game.phase == GamePhase.auctionBidding ||
+            game.phase == GamePhase.answerReveal ||
+            (game.phase == GamePhase.answerWindow &&
+                game.pendingAnswerPlayerId == null));
+
+    void onSkip() {
+      final bool hasMedia = ref.read(_mediaPlayingProvider);
+      final GameState current = ref.read(gameControllerProvider);
+      if (hasMedia) {
+        ref.read(_mediaStopRequestProvider.notifier).state++;
+        if (current.phase == GamePhase.answerReveal) {
+          ref.read(gameControllerProvider.notifier).skipCurrentQuestion();
+        }
+        return;
+      }
+      if (current.phase == GamePhase.boardSelection) {
+        ref.read(gameControllerProvider.notifier).pickRandomQuestion(
+              hostOverride: true,
+            );
+      } else if (current.phase == GamePhase.catInBagTransfer ||
+          current.phase == GamePhase.auctionBidding) {
+        ref.read(gameControllerProvider.notifier).skipCurrentQuestion();
+      } else if (current.phase == GamePhase.answerWindow &&
+          current.pendingAnswerPlayerId == null) {
+        ref.read(gameControllerProvider.notifier).skipCurrentQuestion();
+      } else if (current.phase == GamePhase.answerReveal) {
+        ref.read(gameControllerProvider.notifier).skipCurrentQuestion();
+      }
+    }
+
+    void onCopyLink() {
+      if (room == null) return;
+      const String baseUrl = 'https://guess-together.gall-studio.com';
+      final String link = '$baseUrl/join?code=${room.summary.code}';
+      Clipboard.setData(ClipboardData(text: link));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ссылка скопирована')),
+      );
+    }
+
     final ButtonStyle hostMainStyle = FilledButton.styleFrom(
       foregroundColor: Colors.black,
       disabledForegroundColor: Colors.black.withValues(alpha: 0.58),
     );
-    final ButtonStyle editScoresStyle = hostMainStyle;
     final ButtonStyle acceptStyle = FilledButton.styleFrom(
       backgroundColor:
           isLight ? const Color(0xFF2A8346) : const Color(0xFF2F8F4E),
@@ -1707,25 +2308,54 @@ class _HostCompactControls extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          _AdaptiveButtonPair(
-            leading: _CompactFilledButton(
-              style: hostMainStyle,
-              onPressed: canTogglePauseOrStart
-                  ? (waiting ? onStart : onTogglePause)
-                  : null,
-              icon: waiting
-                  ? Icons.play_arrow_rounded
-                  : (paused ? Icons.play_arrow_rounded : Icons.pause_rounded),
-              label: waiting
-                  ? l10n.gameHostStartCta
-                  : (paused ? l10n.gameHostUnpauseCta : l10n.gameHostPauseCta),
-            ),
-            trailing: _CompactFilledButton(
-              style: editScoresStyle,
-              onPressed: canEditScores ? onEditScores : null,
-              icon: Icons.tune_rounded,
-              label: l10n.gameHostScoresCta,
-            ),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: _CompactFilledButton(
+                  style: hostMainStyle,
+                  onPressed: room != null ? onCopyLink : null,
+                  icon: Icons.link_rounded,
+                  label: '',
+                  iconOnly: true,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _CompactFilledButton(
+                  style: hostMainStyle,
+                  onPressed: canEditScores ? onEditScores : null,
+                  icon: Icons.savings_rounded,
+                  label: '',
+                  iconOnly: true,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _CompactFilledButton(
+                  style: hostMainStyle,
+                  onPressed: canTogglePauseOrStart
+                      ? (waiting ? onStart : onTogglePause)
+                      : null,
+                  icon: waiting
+                      ? Icons.play_arrow_rounded
+                      : (paused
+                          ? Icons.play_arrow_rounded
+                          : Icons.pause_rounded),
+                  label: '',
+                  iconOnly: true,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _CompactFilledButton(
+                  style: hostMainStyle,
+                  onPressed: canSkip ? onSkip : null,
+                  icon: Icons.skip_next_rounded,
+                  label: '',
+                  iconOnly: true,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           _AdaptiveButtonPair(
@@ -1818,12 +2448,14 @@ class _CompactFilledButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.style,
+    this.iconOnly = false,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback? onPressed;
   final ButtonStyle? style;
+  final bool iconOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -1872,20 +2504,22 @@ class _CompactFilledButton extends StatelessWidget {
             width: double.infinity,
             child: FittedBox(
               fit: BoxFit.scaleDown,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Icon(icon, size: iconSize, color: contentColor),
-                  SizedBox(width: spacing),
-                  Text(
-                    label,
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.visible,
-                    style: labelStyle,
-                  ),
-                ],
-              ),
+              child: iconOnly
+                  ? Icon(icon, size: iconSize, color: contentColor)
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Icon(icon, size: iconSize, color: contentColor),
+                        SizedBox(width: spacing),
+                        Text(
+                          label,
+                          maxLines: 1,
+                          softWrap: false,
+                          overflow: TextOverflow.visible,
+                          style: labelStyle,
+                        ),
+                      ],
+                    ),
             ),
           ),
         );

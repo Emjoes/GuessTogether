@@ -206,6 +206,13 @@ class SiqPackageImporter {
                 questionElement.getAttribute('price')?.trim() ?? '',
               ) ??
               0;
+          final String rawType =
+              (questionElement.getAttribute('type') ?? '').trim().toLowerCase();
+          final String questionTypeName = switch (rawType) {
+            'cat' => QuestionType.catInBag.name,
+            'auction' => QuestionType.auction.name,
+            _ => QuestionType.normal.name,
+          };
           final _ContentBundle prompt = _contentBundleForParam(
             questionElement,
             paramName: 'question',
@@ -228,6 +235,7 @@ class SiqPackageImporter {
               'answer': answerText,
               'category': themeName,
               'value': value,
+              'type': questionTypeName,
               'questionMedia': prompt.media
                   .map((QuestionMedia item) => item.toJson())
                   .toList(),

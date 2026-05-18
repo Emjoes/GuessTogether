@@ -207,6 +207,9 @@ class AppServer {
       ..post('/api/rooms/<roomId>/game/skip', _handleSkipQuestion)
       ..post('/api/rooms/<roomId>/game/skip-round', _handleSkipRound)
       ..post('/api/rooms/<roomId>/game/score', _handleSetPlayerScore)
+      ..post('/api/rooms/<roomId>/game/transfer', _handleTransferCatInBag)
+      ..post('/api/rooms/<roomId>/game/bid', _handlePlaceBid)
+      ..post('/api/rooms/<roomId>/game/pass-auction', _handlePassAuction)
       ..get('/ws/rooms/<roomId>', _handleRoomSocket);
 
     final Handler handler = const Pipeline()
@@ -1476,6 +1479,69 @@ class AppServer {
           playerId: playerId,
           score: score,
         ),
+      );
+      await _store.save();
+      await _broadcastRoom(room, eventType: 'game_state');
+      return _json(<String, dynamic>{'ok': true});
+    });
+  }
+
+  Future<Response> _handleTransferCatInBag(
+      Request request, String roomId) {
+    return _guarded(() async {
+      final StoredUser user = _requireUser(request);
+      final StoredRoom room = _requireRoom(roomId);
+      _requireRoomMember(room, user);
+      _requireGameAvailable(room);
+      _requireHost(room, user);
+      final Map<String, dynamic> json = await _readJson(request);
+      final String targetPlayerId =
+          (json['targetPlayerId'] as String? ?? '').trim();
+      if (targetPlayerId.isEmpty) {
+        throw const ApiError(400, 'targetPlayerId is required');
+      }
+      _setRoomGameState(
+        room,
+        GameStateMachine.transferCatInBag(room.gameState!, targetPlayerId),
+      );
+      await _store.save();
+      await _broadcastRoom(room, eventType: 'game_state');
+      return _json(<String, dynamic>{'ok': true});
+    });
+  }
+
+  Future<Response> _handlePlaceBid(Request request, String roomId) {
+    return _guarded(() async {
+      final StoredUser user = _requireUser(request);
+      final StoredRoom room = _requireRoom(roomId);
+      _requireRoomMember(room, user);
+      _requireGameAvailable(room);
+      _requirePlayerInMatch(room, user);
+      final Map<String, dynamic> json = await _readJson(request);
+      final int? wager = (json['wager'] as num?)?.toInt();
+      if (wager == null) {
+        throw const ApiError(400, 'wager is required');
+      }
+      _setRoomGameState(
+        room,
+        GameStateMachine.placeBid(room.gameState!, user.id, wager),
+      );
+      await _store.save();
+      await _broadcastRoom(room, eventType: 'game_state');
+      return _json(<String, dynamic>{'ok': true});
+    });
+  }
+
+  Future<Response> _handlePassAuction(Request request, String roomId) {
+    return _guarded(() async {
+      final StoredUser user = _requireUser(request);
+      final StoredRoom room = _requireRoom(roomId);
+      _requireRoomMember(room, user);
+      _requireGameAvailable(room);
+      _requirePlayerInMatch(room, user);
+      _setRoomGameState(
+        room,
+        GameStateMachine.passAuction(room.gameState!, user.id),
       );
       await _store.save();
       await _broadcastRoom(room, eventType: 'game_state');

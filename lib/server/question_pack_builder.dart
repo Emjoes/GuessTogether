@@ -163,6 +163,11 @@ List<Question> _buildLegacyQuestionSet(
         final String id = (item['id'] as String? ?? '').trim().isEmpty
             ? 'r${roundNumber}_t${themeIndex + 1}_q${questionIndex + 1}'
             : (item['id'] as String).trim();
+        final String typeStr = (item['type'] as String? ?? '').trim();
+        final QuestionType questionType = QuestionType.values.firstWhere(
+          (QuestionType q) => q.name == typeStr,
+          orElse: () => QuestionType.normal,
+        );
         questions.add(
           Question(
             id: id,
@@ -174,6 +179,7 @@ List<Question> _buildLegacyQuestionSet(
             questionMedia: _readQuestionMediaList(item['questionMedia']),
             answerMedia: _readQuestionMediaList(item['answerMedia']),
             round: roundNumber,
+            type: questionType,
           ),
         );
       }
@@ -272,6 +278,7 @@ List<Question> _buildStructuredQuestionSet(
     final int roundNumber = roundIndex + 1;
     final List<_ThemePool> roundThemes =
         pickedThemes.skip(roundIndex * 5).take(5).toList(growable: false);
+    final List<Question> roundQuestions = <Question>[];
     for (final _ThemePool theme in roundThemes) {
       for (int difficulty = 1; difficulty <= 5; difficulty++) {
         final List<_QuestionVariant> variants =
@@ -279,7 +286,7 @@ List<Question> _buildStructuredQuestionSet(
         final _QuestionVariant selected = random == null
             ? variants.first
             : variants[random.nextInt(variants.length)];
-        result.add(
+        roundQuestions.add(
           Question(
             id: '${selected.id}_r$roundNumber',
             text: selected.text,
@@ -292,6 +299,19 @@ List<Question> _buildStructuredQuestionSet(
         );
       }
     }
+    if (random != null) {
+      final List<int> indices =
+          List<int>.generate(roundQuestions.length, (int i) => i);
+      _shuffle(indices, random);
+      final List<int> specialIndices = indices.take(4).toList(growable: false);
+      for (int i = 0; i < specialIndices.length; i++) {
+        final int idx = specialIndices[i];
+        final QuestionType type =
+            i < 2 ? QuestionType.catInBag : QuestionType.auction;
+        roundQuestions[idx] = roundQuestions[idx].copyWith(type: type);
+      }
+    }
+    result.addAll(roundQuestions);
   }
   return result;
 }

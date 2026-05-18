@@ -18,7 +18,7 @@ void main() {
     expect(state.currentChooserId, 'p1');
     expect(state.players, players);
     expect(state.round, 1);
-    expect(state.boardQuestions, hasLength(2));
+    expect(state.boardQuestions, hasLength(10));
   });
 
   test('chooseQuestion enters short reveal phase before answer window', () {
@@ -237,11 +237,17 @@ void main() {
       phaseSecondsTotal: GameStateMachine.answerRevealSeconds,
     );
 
-    final GameState nextRound = GameStateMachine.tick(accepted);
+    final GameState announcement = GameStateMachine.tick(accepted);
 
-    expect(nextRound.phase, GamePhase.boardSelection);
-    expect(nextRound.round, 2);
-    expect(nextRound.currentQuestion, isNull);
-    expect(nextRound.lastEvent, 'Round 2 begins.');
+    expect(announcement.phase, GamePhase.roundAnnouncement);
+    expect(announcement.round, 2);
+    expect(announcement.currentQuestion, isNull);
+    expect(announcement.lastEvent, 'Round 2 begins.');
+
+    final GameState boardSelection = GameStateMachine.tick(
+      announcement.copyWith(phaseSecondsLeft: 1),
+    );
+    expect(boardSelection.phase, GamePhase.boardSelection);
+    expect(boardSelection.round, 2);
   });
 }

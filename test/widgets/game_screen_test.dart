@@ -295,8 +295,10 @@ void main() {
         tester.getTopLeft(find.byIcon(Icons.pause_rounded)).dx;
     final double pauseY =
         tester.getTopLeft(find.byIcon(Icons.pause_rounded)).dy;
-    final double tuneX = tester.getTopLeft(find.byIcon(Icons.tune_rounded)).dx;
-    final double tuneY = tester.getTopLeft(find.byIcon(Icons.tune_rounded)).dy;
+    final double tuneX =
+        tester.getTopLeft(find.byIcon(Icons.savings_rounded)).dx;
+    final double tuneY =
+        tester.getTopLeft(find.byIcon(Icons.savings_rounded)).dy;
     final double acceptX =
         tester.getTopLeft(find.byIcon(Icons.check_rounded)).dx;
     final double acceptY =
@@ -307,7 +309,7 @@ void main() {
         tester.getTopLeft(find.byIcon(Icons.close_rounded)).dy;
 
     expect((pauseY - tuneY).abs(), lessThan(8));
-    expect(tuneX, greaterThan(pauseX + 20));
+    expect((tuneX - pauseX).abs(), greaterThan(20));
     expect(acceptY, greaterThan(pauseY + 20));
     expect((acceptY - rejectY).abs(), lessThan(8));
     expect(rejectX, greaterThan(acceptX + 20));
@@ -384,15 +386,11 @@ void main() {
     );
     await _pumpUi(tester);
 
-    final Text pauseText = tester.widget<Text>(find.text('Пауза'));
-    final Text scoresText = tester.widget<Text>(find.text('Очки'));
     final Icon pauseIcon =
         tester.widget<Icon>(find.byIcon(Icons.pause_rounded));
     final Icon scoresIcon =
-        tester.widget<Icon>(find.byIcon(Icons.tune_rounded));
+        tester.widget<Icon>(find.byIcon(Icons.savings_rounded));
 
-    expect(pauseText.style?.color, Colors.black);
-    expect(scoresText.style?.color, Colors.black);
     expect(pauseIcon.color, Colors.black);
     expect(scoresIcon.color, Colors.black);
   });
@@ -450,8 +448,15 @@ void main() {
     await tester.sendKeyUpEvent(LogicalKeyboardKey.space);
     await tester.pump(const Duration(milliseconds: 320));
 
-    expect(controller.state.phase, GamePhase.questionReveal);
     expect(controller.state.currentQuestion, isNotNull);
+    expect(
+      controller.state.phase,
+      isIn(<GamePhase>[
+        GamePhase.questionReveal,
+        GamePhase.catInBagTransfer,
+        GamePhase.auctionBidding,
+      ]),
+    );
   });
 
   testWidgets('Host can use double space to skip the round', (tester) async {

@@ -55,6 +55,9 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
 
     final PlatformFile file = result.files.single;
     final Uint8List? bytes = await _readPickedFileBytes(file);
+    if (!mounted) {
+      return;
+    }
     if (bytes == null || bytes.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(importFailedText)),

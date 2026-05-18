@@ -797,24 +797,25 @@ class _JeopardyBoard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<String> categories = questions
-        .map((Question question) => question.category)
-        .toSet()
-        .toList();
-    final List<int> values = questions
-        .map((Question question) => question.value)
-        .toSet()
-        .toList()
-      ..sort();
-
-    Question? findQuestion(String category, int value) {
-      for (final Question question in questions) {
-        if (question.category == category && question.value == value) {
-          return question;
-        }
+    // Group questions by category, preserving insertion order.
+    final List<String> categories = <String>[];
+    final Map<String, List<Question>> byCategory =
+        <String, List<Question>>{};
+    for (final Question question in questions) {
+      if (!byCategory.containsKey(question.category)) {
+        categories.add(question.category);
+        byCategory[question.category] = <Question>[];
       }
-      return null;
+      byCategory[question.category]!.add(question);
     }
+
+    if (categories.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final int maxCols = byCategory.values
+        .map((List<Question> q) => q.length)
+        .reduce(math.max);
 
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
@@ -841,9 +842,14 @@ class _JeopardyBoard extends StatelessWidget {
                     ),
                     Expanded(
                       child: Row(
-                        children: values.map((int value) {
-                          final Question? question =
-                              findQuestion(category, value);
+                        children: List.generate(maxCols, (int i) {
+                          final List<Question> themeQuestions =
+                              byCategory[category]!;
+                          if (i >= themeQuestions.length) {
+                            // Empty space on the right — no cell rendered.
+                            return const Expanded(child: SizedBox.shrink());
+                          }
+                          final Question question = themeQuestions[i];
                           return Expanded(
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
@@ -854,16 +860,12 @@ class _JeopardyBoard extends StatelessWidget {
                                 question: question,
                                 enabled: enabled,
                                 highlighted:
-                                    question?.id == highlightedQuestionId,
-                                onTap: () {
-                                  if (question != null) {
-                                    onPickQuestion(question.id);
-                                  }
-                                },
+                                    question.id == highlightedQuestionId,
+                                onTap: () => onPickQuestion(question.id),
                               ),
                             ),
                           );
-                        }).toList(),
+                        }),
                       ),
                     ),
                   ],
@@ -898,15 +900,26 @@ class _BoardHeaderCell extends StatelessWidget {
         ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 6),
-      child: Text(
-        title,
-        textAlign: TextAlign.center,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        style: theme.textTheme.labelMedium?.copyWith(
-          color: Colors.white,
-          fontWeight: FontWeight.w700,
-        ),
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          return FittedBox(
+            fit: BoxFit.scaleDown,
+            child: SizedBox(
+              width: constraints.maxWidth,
+              child: Text(
+                title,
+                textAlign: TextAlign.center,
+                softWrap: true,
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

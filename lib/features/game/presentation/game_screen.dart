@@ -7,7 +7,8 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:media_kit/media_kit.dart' as mk;
+import 'package:media_kit_video/media_kit_video.dart';
 
 import 'package:guesstogether/core/l10n/l10n.dart';
 import 'package:guesstogether/core/theme/app_colors.dart';
@@ -1242,11 +1243,6 @@ class _QuestionMediaBlock extends StatelessWidget {
   final QuestionMedia media;
   final String baseHttpUrl;
 
-  Future<void> _openExternalMedia() async {
-    final Uri uri = Uri.parse(_resolveBackendMediaUrl(baseHttpUrl, media.path));
-    await launchUrl(uri, mode: LaunchMode.platformDefault);
-  }
-
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
@@ -1304,13 +1300,205 @@ class _QuestionMediaBlock extends StatelessWidget {
       );
     }
 
-    final bool isAudio = media.type == QuestionMediaType.audio;
-    return FilledButton.tonalIcon(
-      onPressed: () => unawaited(_openExternalMedia()),
-      icon: Icon(
-        isAudio ? Icons.audiotrack_rounded : Icons.play_circle_outline_rounded,
+    if (media.type == QuestionMediaType.audio) {
+      return _InlineAudioPlayer(url: url, label: label);
+    }
+
+    return _InlineVideoPlayer(url: url);
+  }
+}
+
+class _InlineAudioPlayer extends StatefulWidget {
+  const _InlineAudioPlayer({required this.url, required this.label});
+
+  final String url;
+  final String label;
+
+  @override
+  State<_InlineAudioPlayer> createState() => _InlineAudioPlayerState();
+}
+
+class _InlineAudioPlayerState extends State<_InlineAudioPlayer> {
+  late final mk.Player _player;
+  final List<StreamSubscription<dynamic>> _subs =
+      <StreamSubscription<dynamic>>[];
+
+  bool _playing = false;
+  bool _buffering = true;
+  Duration _position = Duration.zero;
+  Duration _duration = Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _player = mk.Player();
+    _subs
+      ..add(_player.stream.playing
+          .listen((bool v) { if (mounted) setState(() => _playing = v); }))
+      ..add(_player.stream.buffering
+          .listen((bool v) { if (mounted) setState(() => _buffering = v); }))
+      ..add(_player.stream.position
+          .listen((Duration v) { if (mounted) setState(() => _position = v); }))
+      ..add(_player.stream.duration
+          .listen((Duration v) { if (mounted) setState(() => _duration = v); }));
+    unawaited(_player.open(mk.Media(widget.url)));
+  }
+
+  @override
+  void didUpdateWidget(covariant _InlineAudioPlayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.url != widget.url) {
+      unawaited(_player.open(mk.Media(widget.url)));
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final StreamSubscription<dynamic> sub in _subs) {
+      unawaited(sub.cancel());
+    }
+    unawaited(_player.dispose());
+    super.dispose();
+  }
+
+  String _fmt(Duration d) {
+    final int m = d.inMinutes;
+    final int s = d.inSeconds.remainder(60);
+    return '$m:${s.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final bool isLight = theme.brightness == Brightness.light;
+    final double progress = _duration.inMilliseconds > 0
+        ? (_position.inMilliseconds / _duration.inMilliseconds).clamp(0.0, 1.0)
+        : 0.0;
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: isLight
+            ? const Color(0xFF2D5496).withValues(alpha: 0.12)
+            : Colors.white.withValues(alpha: 0.1),
+        border: Border.all(
+          color: isLight
+              ? const Color(0xFF2D5496).withValues(alpha: 0.3)
+              : Colors.white.withValues(alpha: 0.18),
+        ),
       ),
-      label: Text(label),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Row(
+        children: <Widget>[
+          IconButton(
+            onPressed: _buffering
+                ? null
+                : () => unawaited(_player.playOrPause()),
+            icon: _buffering
+                ? SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: scheme.primary,
+                    ),
+                  )
+                : Icon(
+                    _playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                    size: 28,
+                    color: isLight ? const Color(0xFF2D5496) : Colors.white,
+                  ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  widget.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: isLight
+                        ? const Color(0xFF1A3A72)
+                        : Colors.white.withValues(alpha: 0.7),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                LinearProgressIndicator(
+                  value: progress,
+                  borderRadius: BorderRadius.circular(4),
+                  color: isLight
+                      ? const Color(0xFF2D5496)
+                      : Colors.white.withValues(alpha: 0.8),
+                  backgroundColor: isLight
+                      ? const Color(0xFF2D5496).withValues(alpha: 0.2)
+                      : Colors.white.withValues(alpha: 0.2),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${_fmt(_position)} / ${_fmt(_duration)}',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: isLight
+                        ? const Color(0xFF1A3A72).withValues(alpha: 0.7)
+                        : Colors.white.withValues(alpha: 0.5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InlineVideoPlayer extends StatefulWidget {
+  const _InlineVideoPlayer({required this.url});
+
+  final String url;
+
+  @override
+  State<_InlineVideoPlayer> createState() => _InlineVideoPlayerState();
+}
+
+class _InlineVideoPlayerState extends State<_InlineVideoPlayer> {
+  late final mk.Player _player;
+  late final VideoController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _player = mk.Player();
+    _controller = VideoController(_player);
+    unawaited(_player.open(mk.Media(widget.url)));
+  }
+
+  @override
+  void didUpdateWidget(covariant _InlineVideoPlayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.url != widget.url) {
+      unawaited(_player.open(mk.Media(widget.url)));
+    }
+  }
+
+  @override
+  void dispose() {
+    unawaited(_player.dispose());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        constraints: const BoxConstraints(maxHeight: 280),
+        color: Colors.black,
+        child: Video(controller: _controller),
+      ),
     );
   }
 }

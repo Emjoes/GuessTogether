@@ -10,6 +10,8 @@ import 'package:guesstogether/core/l10n/app_locale.dart';
 import 'package:guesstogether/core/l10n/generated/app_localizations.dart';
 import 'package:guesstogether/core/theme/app_theme.dart';
 import 'package:guesstogether/features/session/app_session_controller.dart';
+import 'package:media_kit/media_kit.dart';
+
 import 'package:guesstogether/widgets/mobile_shell.dart';
 
 Future<void> _preloadCriticalFonts() async {
@@ -26,6 +28,7 @@ Future<void> _preloadCriticalFonts() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  MediaKit.ensureInitialized();
   GoogleFonts.config.allowRuntimeFetching = false;
   await _preloadCriticalFonts();
 
